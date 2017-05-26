@@ -4,13 +4,15 @@ import hunlgame
 import copy
 import traceback
 import time
+import json
+import handsinfocommon
 
 def nextplayer(inpoolstate,curplayer):
     for i in xrange(curplayer - 1,0,-1):
-        if inpoolstate(i) == 1:
+        if inpoolstate[i] == 1:
             return i
-    for i in xrange(len(inpoolstate),curplayer ,-1):
-        if inpoolstate(i) == 1:
+    for i in xrange(len(inpoolstate) - 1,curplayer ,-1):
+        if inpoolstate[i] == 1:
             return i
     return 0
 
@@ -57,20 +59,28 @@ def seppot(gameinvest, inpoolstate):
             if value not in inpoolinvest:
                 inpoolinvest[value] = []
             inpoolinvest[value].append(idx)
+    # print "-"*100
+    # print gameinvest
+    # print inpoolinvest
+
     inpoolinvestlist = inpoolinvest.keys()
     inpoolinvestlist.sort()
     inpoolinvestlist.insert(0,0)
     for idx in xrange(len(inpoolinvestlist[1:])):
         lowbound = inpoolinvestlist[idx]
         upperbound = inpoolinvestlist[idx + 1]
-        newsep = [copy.deepcopy(inpoolinvest[upperbound]),0]
+        newsep = [[],0]
+
+        for betvalue in inpoolinvestlist[idx + 1:]:
+            newsep[0].extend(inpoolinvest[betvalue])
+
         for idx,value in enumerate(gameinvest):
             if value <= lowbound:
                 continue
             if value > upperbound:
-                newsep += (upperbound - lowbound)
+                newsep[1] += (upperbound - lowbound)
             else:
-                newsep += (value - lowbound)
+                newsep[1] += (value - lowbound)
 
         potresult.append(newsep)
 
@@ -94,10 +104,10 @@ def calpayoff(showcard, seppotresult,inpoolstate,gameinvest ,handsdata = []):
         if value != 0:
             inpoolnum += 1
 
-    board = handsdata[-1]
-    privatecard = handsdata[-2]
+    board = handsinfocommon.getboard(handsdata)
+    privatecard = handsdata[5]
 
-    if not isprivatecardvalid():
+    if not isprivatecardvalid(privatecard, inpoolstate):
         # read card fail, try to read the winner
         if len(seppotresult) == 1:
             # no side pot, we can read the winner directly
@@ -124,8 +134,8 @@ def calpayoff(showcard, seppotresult,inpoolstate,gameinvest ,handsdata = []):
     for potinfo in seppotresult:
         competitor = potinfo[0]
         potsize = potinfo[1]
-        newprivatecard = extractprivatecard(competitor,potsize)
-        winner = hunlgame.getwinner(board,newprivatecard)
+        newprivatecard = extractprivatecard(competitor,privatecard)
+        winner = hunlgame.getwinner(board,newprivatecard,-1)
         for idx in xrange(len(winner)):
             winner[idx] = competitor[winner[idx]]
 
@@ -152,20 +162,21 @@ def calinvest(invest,actiondict,inpool,anti,bbvalue,handsdata,inpoolstate):
     for roundnum in xrange(1,5):
         totalinvest = [0] * 10
         if roundnum == 1:
+            curbet = bbvalue
             curplayer = inpool[1]
-            totalinvest[0] = bbvalue / 2
-            totalinvest[1] = bbvalue
+
+            totalinvest[inpool[0]] = bbvalue / 2
+            totalinvest[inpool[1]] = bbvalue
         else:
+            curbet = 0
             curplayer = inpool[-1]
 
         currounddata = handsdata[roundnum]
-
 
         totalaction = []
         for idx in xrange(9):
             totalaction.append({})
 
-        curbet = 0
         # enumerate each action
         for actioninfo in currounddata:
             curplayer = nextplayer(inpoolstate, curplayer)
@@ -175,7 +186,7 @@ def calinvest(invest,actiondict,inpool,anti,bbvalue,handsdata,inpoolstate):
             action = actioninfo[0]
             value = actioninfo[1]
 
-            if action == 1:
+            if action == 1 or action == -1:
                 # fold
                 remainplayer -= 1
                 inpoolstate[curplayer] = 0
@@ -204,6 +215,13 @@ def calinvest(invest,actiondict,inpool,anti,bbvalue,handsdata,inpoolstate):
             elif action == 6:
                 # call
                 totalinvest[curplayer] = curbet
+            elif action == 12:
+                # win pot
+                for iiidx in xrange(len(inpoolstate)):
+                    inpoolstate[iiidx] = 0
+                inpoolstate[curplayer] = 1
+                remainplayer = 1
+                allinplayer= 0
 
             if action not in curactiondict:
                 curactiondict[action] = 0
@@ -215,9 +233,9 @@ def calinvest(invest,actiondict,inpool,anti,bbvalue,handsdata,inpoolstate):
 
         invest[roundnum] = totalinvest[1:]
         actiondict[roundnum] = totalaction
-        if remainplayer - allinplayer == 1:
+        if remainplayer - allinplayer <= 1 :
             # bet over
-            if allinplayer == 0:
+            if remainplayer == 1:
                 # game over
                 showcard = 0
                 break
@@ -244,51 +262,93 @@ def tongjiinfo(handsinfo):
     invest = {  }
     action = {  }
 
+    showcard = calinvest(invest,action,inpool,anti,bbvalue,handsdata,inpoolstate)
+
     gameinvest = [0]*10
     for investlist in invest.values():
         for idx, value in enumerate(investlist):
-            gameinvest[idx + 1] += gameinvest[idx]
+            gameinvest[idx + 1] += value
+
     invest["total"]  = gameinvest[1:]
 
     seppotresult = seppot(gameinvest,inpoolstate)
 
-    showcard = calinvest(invest,inpool,anti,bbvalue,handsdata,inpoolstate)
-
-    payofflist = calpayoff(showcard,action,seppotresult,inpoolstate,gameinvest,handsdata)
+    payofflist = calpayoff(showcard,seppotresult,inpoolstate,gameinvest,handsdata)
     if not payofflist:
         # cannot calculate payoff, this hand must be abandoned
         pass
         return False
 
-    handsinfo["payoff"] = payofflist[1:]
-    handsinfo["invest"] = invest
-    handsinfo["action"] = action
+    handsinfo["payoff"] = json.dumps(payofflist[1:])
+    handsinfo["invest"] = json.dumps(invest)
+    handsinfo["action"] = json.dumps(action)
+
+    # if len(seppotresult) == 5:
+    #     import pprint
+    #     pp = pprint.PrettyPrinter(indent=4)
+    #     pp.pprint(handsinfo)
+    #     print "="*100
+    #     pp.pprint(seppotresult)
+    #     abc
+
+# tongji total wins, and total hands
+def tongjicumuinfo(handsinfo):
+    # update all player
+    result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":"player"})
+    if result.count() == 0:
+        playerdoc = {"_id":"player","name":{}}
+    else:
+        playerdoc = result.next()
+
+    for playername in handsinfo["playername"]:
+        playerdoc[playername] = 1
+
+    if result.count() != 0:
+        DBOperater.DeleteData(Constant.HANDSDB,Constant.CUMUCLT,{"_id":"player"})
+
+    DBOperater.ReplaceOne(Constant.HANDSDB,Constant.CUMUCLT,{"_id":"player"},playerdoc)
+
+
+    # update total win
+
 
 def tongjimain():
-    result = DBOperater.StoreData(Constant.HANDSDB,Constant.HANDSCLT,{})
+    result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
 
     for rawhand in result:
         try:
             curid = rawhand["_id"]
-            tongjiinfo(rawhand)
 
             # store history hands data
-            DBOperater.StoreData(Constant.HANDSDB,Constant.TJHISHANDSCLT,rawhand)
+            try:
+                DBOperater.StoreData(Constant.HANDSDB,Constant.TJHISHANDSCLT,rawhand)
+            except:
+                DBOperater.DeleteData(Constant.HANDSDB,Constant.TJHISHANDSCLT,{"_id":curid})
+                DBOperater.StoreData(Constant.HANDSDB,Constant.TJHISHANDSCLT,rawhand)
+
+            tongjiinfo(rawhand)
+
+            tongjicumuinfo(rawhand)
 
             # store complete hands data
-            DBOperater.StoreData(Constant.HANDSDB,Constant.TJHANDSCLT,rawhand)
+            try:
+                DBOperater.StoreData(Constant.HANDSDB,Constant.TJHANDSCLT,rawhand)
+            except:
+                DBOperater.DeleteData(Constant.HANDSDB,Constant.TJHANDSCLT,{"_id":curid})
+                DBOperater.StoreData(Constant.HANDSDB,Constant.TJHANDSCLT,rawhand)
 
             # remove raw hands data
-            delresult = DBOperater.DeleteData(Constant.HANDSDB,Constant.HANDSCLT,{"_id":curid})
-            if delresult.deleted_count == 0:
-                print "error: the _id is ",curid
-                break
+            # delresult = DBOperater.DeleteData(Constant.HANDSDB,Constant.HANDSCLT,{"_id":curid})
+            # if delresult.deleted_count == 0:
+            #     print "error: the _id is ",curid
+            #     break
         except KeyboardInterrupt:
             raise
         except:
             print "excepttion occur:",curid
             traceback.print_exc()
-        # break
+            raise
+        #break
 
 def main():
     while True:
@@ -302,4 +362,6 @@ def main():
             traceback.print_exc()
 
 if __name__ == "__main__":
-    main()
+    #main()
+    #tongjimain()
+    tongjicumuinfo(0)

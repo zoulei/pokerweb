@@ -12,10 +12,13 @@ HANDSDB = "handsdb"
 HANDSCLT = "handsclt"
 
 RAWHANDSCLT = "rawhandsclt"
-
 HISHANDSCLT = "hishandsclt"
+TJHISHANDSCLT = "tjhishandsclt"
+TJHANDSCLT = "tjhandsclt"
 
 GAMESEQCLT = "gameseqclt"
+
+CUMUCLT = "cumuclt"
 
 UPLOAD_FOLDER = '/mnt/mfs/users/zoul15/pmimg/'
 OCR_ERROR_FOLDER = "/mnt/mfs/users/zoul15/errorimg/"

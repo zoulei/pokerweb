@@ -23,3 +23,8 @@ def DeleteData(db,clt,query):
 
 def Find(db,clt,query):
     return client[db][clt].find(query)
+
+def ReplaceOne(db,clt,query,newdoc):
+    return client[db][clt].replace_one(query,newdoc)
+
+Connect()
