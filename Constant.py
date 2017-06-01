@@ -20,6 +20,10 @@ GAMESEQCLT = "gameseqclt"
 
 CUMUCLT = "cumuclt"
 
+# =====================preflop state related=============================
+PREFLOPRANGEDOC = "prefloprange"
+FTDATA = "ftdata"
+
 UPLOAD_FOLDER = '/mnt/mfs/users/zoul15/pmimg/'
 OCR_ERROR_FOLDER = "/mnt/mfs/users/zoul15/errorimg/"
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])

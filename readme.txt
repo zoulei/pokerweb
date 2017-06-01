@@ -1,6 +1,7 @@
 各个文件的主要作用：
 1. tongjihandsinfo.py
 此文件中的函数用于统计各种引申信息
+tongjiinfo 函数检查该牌局信息是否正确记录
 
 2. completehands.py
 此文件中的函数用于识别玩家的名字并清理图片

@@ -16,6 +16,16 @@ def nextplayer(inpoolstate,curplayer):
             return i
     return 0
 
+# no matter if some one all in
+def virtualnextplayer(inpoolstate,curplayer):
+    for i in xrange(curplayer - 1,0,-1):
+        if inpoolstate[i] != 0:
+            return i
+    for i in xrange(len(inpoolstate) - 1,curplayer ,-1):
+        if inpoolstate[i] != 0:
+            return i
+    return 0
+
 def isprivatecardvalid(privatecard,inpoolstate):
     for idx, state in enumerate(inpoolstate):
         if state != 0:
@@ -112,6 +122,9 @@ def calpayoff(showcard, seppotresult,inpoolstate,gameinvest ,handsdata = []):
         if len(seppotresult) == 1:
             # no side pot, we can read the winner directly
             winner = readwinner(privatecard)
+            if not winner:
+                # read winner fail
+                return []
 
             payofflist = [0]*10
             for idx, value in enumerate(gameinvest):
@@ -158,6 +171,9 @@ def calinvest(invest,actiondict,inpool,anti,bbvalue,handsdata,inpoolstate):
     alltotalaction = []
     for idx in xrange(9):
         alltotalaction.append({})
+
+    isactionvalid = True
+
     # enumerate each round
     for roundnum in xrange(1,5):
         totalinvest = [0] * 10
@@ -177,8 +193,22 @@ def calinvest(invest,actiondict,inpool,anti,bbvalue,handsdata,inpoolstate):
         for idx in xrange(9):
             totalaction.append({})
 
+        # if not isactionvalid:
+        #     # not valid last round
+        #     pass
+        # else:
+        isactionvalid = False
+        raiser = 0
+
         # enumerate each action
         for actioninfo in currounddata:
+            if virtualnextplayer(inpoolstate, curplayer) == raiser:
+                #error, should have end this turn, this checks the case when extra actin is recorded
+                print "extra action"
+                return -1
+                pass
+
+
             curplayer = nextplayer(inpoolstate, curplayer)
             curactiondict = totalaction[curplayer - 1]
             allcuractiondict = alltotalaction[curplayer - 1]
@@ -194,9 +224,15 @@ def calinvest(invest,actiondict,inpool,anti,bbvalue,handsdata,inpoolstate):
                 # raise
                 curbet = value
                 totalinvest[curplayer] = curbet
+
+
+                raiser = curplayer
             elif action == 3:
                 # check
                 pass
+
+                if raiser == 0:
+                    raiser = curplayer
             elif action == 4:
                 # all in
                 if value <= curbet:
@@ -205,6 +241,11 @@ def calinvest(invest,actiondict,inpool,anti,bbvalue,handsdata,inpoolstate):
                     allinplayer += 1
                     inpoolstate[curplayer] = 2
                     action = 4.6
+
+
+
+                    if raiser == 0:
+                        raiser = curplayer
                 else:
                     # raise all in
                     curbet = value
@@ -212,9 +253,21 @@ def calinvest(invest,actiondict,inpool,anti,bbvalue,handsdata,inpoolstate):
                     allinplayer += 1
                     inpoolstate[curplayer] = 2
                     action = 4.2
+
+
+                    raiser = curplayer
             elif action == 6:
                 # call
                 totalinvest[curplayer] = curbet
+
+
+                if curbet == 0:
+                    # error, call bet 0
+                    print "call bet 0"
+                    return -1
+
+                if raiser == 0:
+                    raiser = curplayer
             elif action == 12:
                 # win pot
                 for iiidx in xrange(len(inpoolstate)):
@@ -222,6 +275,15 @@ def calinvest(invest,actiondict,inpool,anti,bbvalue,handsdata,inpoolstate):
                 inpoolstate[curplayer] = 1
                 remainplayer = 1
                 allinplayer= 0
+
+
+                isactionvalid = True
+
+            if virtualnextplayer(inpoolstate, curplayer) == raiser:
+                # this turn end
+                pass
+
+                isactionvalid = True
 
             if action not in curactiondict:
                 curactiondict[action] = 0
@@ -242,10 +304,17 @@ def calinvest(invest,actiondict,inpool,anti,bbvalue,handsdata,inpoolstate):
             else:
                 # all in
                 break
+
+        if not isactionvalid:
+            # this checks when not enough action is recorded
+            print "not enough action"
+            return -1
+
     actiondict["total"] = alltotalaction
 
     return showcard
 
+# return the result of basic info statistical, such as if the hands is valid
 def tongjiinfo(handsinfo):
     handsdata = handsinfo["data"]
 
@@ -264,6 +333,11 @@ def tongjiinfo(handsinfo):
 
     showcard = calinvest(invest,action,inpool,anti,bbvalue,handsdata,inpoolstate)
 
+    if showcard == -1:
+        # action record error
+        print "action error:",handsinfo ["_id"]
+        return -2
+
     gameinvest = [0]*10
     for investlist in invest.values():
         for idx, value in enumerate(investlist):
@@ -275,13 +349,25 @@ def tongjiinfo(handsinfo):
 
     payofflist = calpayoff(showcard,seppotresult,inpoolstate,gameinvest,handsdata)
     if not payofflist:
-        # cannot calculate payoff, this hand must be abandoned
+        # cannot calculate payoff, this hand must be abandoned, mainly because fail to record show card
+        print "empty payoff:",handsinfo["_id"]
         pass
-        return False
+        return -3
+
+    if sum(payofflist) != 0:
+        # cannot calculate payoff, this hand must be abandoned, check specific reason
+        pass
+        print "sum not zero:",handsinfo ["_id"]
+
+        return -1
 
     handsinfo["payoff"] = json.dumps(payofflist[1:])
     handsinfo["invest"] = json.dumps(invest)
     handsinfo["action"] = json.dumps(action)
+    handsinfo["showcard"] = showcard
+
+    #return True
+    return showcard
 
     # if len(seppotresult) == 5:
     #     import pprint
@@ -290,6 +376,9 @@ def tongjiinfo(handsinfo):
     #     print "="*100
     #     pp.pprint(seppotresult)
     #     abc
+
+def removecumuinfo():
+    DBOperater.DeleteData(Constant.HANDSDB,Constant.CUMUCLT,{"_id":"player"})
 
 # tongji total wins, and total hands
 def tongjicumuinfo(handsinfo):
@@ -300,14 +389,35 @@ def tongjicumuinfo(handsinfo):
     else:
         playerdoc = result.next()
 
+    playerinfo = playerdoc["name"]
+
     for playername in handsinfo["playername"]:
-        playerdoc[playername] = 1
+        playername = playername.replace(".","_dot_")
+        playername = playername.replace("$","_dollar_")
+        if playername not in playerinfo:
+            playerinfo[playername] = {"payoff":0,"hands":0}
+
+        playerinfo[playername]["hands"] += 1
+
+    payoff = json.loads(handsinfo["payoff"])
+
+    inpool = handsinfo["data"][0][2]
+
+    inpoolcopy = copy.deepcopy(inpool)
+    inpoolcopy.sort()
+
+    for idx,pos in enumerate(inpool):
+        playername = handsinfo["playername"][idx]
+        playername = playername.replace(".","_dot_")
+        playername = playername.replace("$","_dollar_")
+        playerpayoff = payoff[pos - 1]
+
+        playerinfo[playername]["payoff"] += playerpayoff
 
     if result.count() != 0:
         DBOperater.DeleteData(Constant.HANDSDB,Constant.CUMUCLT,{"_id":"player"})
 
-    DBOperater.ReplaceOne(Constant.HANDSDB,Constant.CUMUCLT,{"_id":"player"},playerdoc)
-
+    DBOperater.ReplaceOne(Constant.HANDSDB,Constant.CUMUCLT,{"_id":"player"},playerdoc,True)
 
     # update total win
 
@@ -315,27 +425,44 @@ def tongjicumuinfo(handsinfo):
 def tongjimain():
     result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
 
+    wronghands  = 0
+    cnt = 0
+    showcardinfo = {}
+
     for rawhand in result:
+        cnt  += 1
+        if cnt < 80000:
+            continue
+
+        if cnt % 1000 == 0:
+            print "="*100,cnt,"   --wrong--   :",wronghands
+
+        if cnt % 10000 == 0:
+            print "-"*100
+            print showcardinfo
+
         try:
             curid = rawhand["_id"]
 
             # store history hands data
-            try:
-                DBOperater.StoreData(Constant.HANDSDB,Constant.TJHISHANDSCLT,rawhand)
-            except:
-                DBOperater.DeleteData(Constant.HANDSDB,Constant.TJHISHANDSCLT,{"_id":curid})
-                DBOperater.StoreData(Constant.HANDSDB,Constant.TJHISHANDSCLT,rawhand)
+            DBOperater.ReplaceOne(Constant.HANDSDB,Constant.TJHANDSCLT,{"_id":curid},rawhand,True)
 
-            tongjiinfo(rawhand)
+            showcard = tongjiinfo(rawhand)
 
-            tongjicumuinfo(rawhand)
+            if showcard not in showcardinfo:
+                showcardinfo[showcard] = 0
+            showcardinfo[showcard] += 1
+
+            if showcard < 0:
+                #print "ID:",rawhand["_id"]
+                wronghands += 1
+                rawhand["showcard"] = showcard
+                # continue
+            else:
+                tongjicumuinfo(rawhand)
 
             # store complete hands data
-            try:
-                DBOperater.StoreData(Constant.HANDSDB,Constant.TJHANDSCLT,rawhand)
-            except:
-                DBOperater.DeleteData(Constant.HANDSDB,Constant.TJHANDSCLT,{"_id":curid})
-                DBOperater.StoreData(Constant.HANDSDB,Constant.TJHANDSCLT,rawhand)
+            DBOperater.ReplaceOne(Constant.HANDSDB,Constant.TJHANDSCLT,{"_id":curid},rawhand,True)
 
             # remove raw hands data
             # delresult = DBOperater.DeleteData(Constant.HANDSDB,Constant.HANDSCLT,{"_id":curid})
@@ -349,6 +476,8 @@ def tongjimain():
             traceback.print_exc()
             raise
         #break
+    print "wronghands:",wronghands
+    print showcardinfo
 
 def main():
     while True:
@@ -363,5 +492,7 @@ def main():
 
 if __name__ == "__main__":
     #main()
-    #tongjimain()
-    tongjicumuinfo(0)
+    #DBOperater.ReplaceOne(Constant.HANDSDB,Constant.CUMUCLT,{"_id":"player"},{"_id":"player","ts":12},True)
+    removecumuinfo()
+    tongjimain()
+    #tongjicumuinfo(0)
