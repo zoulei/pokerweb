@@ -222,9 +222,13 @@ def calinvest(invest,actiondict,inpool,anti,bbvalue,handsdata,inpoolstate):
                 inpoolstate[curplayer] = 0
             elif action == 2:
                 # raise
+                if curbet >= value:
+                    # record wrong
+                    print "error, raise value smaller than bet value"
+                    return -1
+
                 curbet = value
                 totalinvest[curplayer] = curbet
-
 
                 raiser = curplayer
             elif action == 3:

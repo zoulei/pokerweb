@@ -1,5 +1,6 @@
 import DBOperater
 import Constant
+import pprint
 
 def totalplayer():
     result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":"player"})
@@ -55,7 +56,24 @@ def payoffdis():
         key = handsnumlist[idx]
         print key," : ",handsdis[key]
 
+def preflopftdata():
+    result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
+    rawdata = result.next()
+    rawdata = rawdata[Constant.FTDATA]
+    pp = pprint.PrettyPrinter(indent= 4)
+    # for pos, data in rawdata.items():
+    pos = "9"
+    data = rawdata[pos]
+    print "====================="*2,pos,"==========================="*2
+    betbblist = data.keys()
+    betbblist.sort(key = lambda v:int(v))
+
+    for key in betbblist:
+        print "betbb: ",key
+        pp.pprint(data[key])
+
 if __name__ == "__main__":
-    totalplayer()
-    playerhandsdis()
-    payoffdis()
+    # totalplayer()
+    # playerhandsdis()
+    # payoffdis()
+    preflopftdata()
