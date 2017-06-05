@@ -319,13 +319,14 @@ def calinvest(invest,actiondict,inpool,anti,bbvalue,handsdata,inpoolstate):
     return showcard
 
 # return the result of basic info statistical, such as if the hands is valid
-def tongjiinfo(handsinfo):
+def tongjiinfo(handsinfo,bbvalue,anti):
     handsdata = handsinfo["data"]
 
     # read info
-    bbvalue = handsdata[0][0]
+    if bbvalue != handsdata[0][0]:
+        return -2
     inpool = handsdata[0][2]
-    anti = handsdata[0][1] / len(inpool)
+    #anti = handsdata[0][1] / len(inpool)
 
     # start from index 1, value 0 means fold, value 1 means in pool, value 2 means all in
     inpoolstate = [0]*10
@@ -384,6 +385,9 @@ def tongjiinfo(handsinfo):
 def removecumuinfo():
     DBOperater.DeleteData(Constant.HANDSDB,Constant.CUMUCLT,{"_id":"player"})
 
+def removetjinfo():
+    DBOperater.DeleteData(Constant.HANDSDB,Constant.TJHANDSCLT,{})
+
 # tongji total wins, and total hands
 def tongjicumuinfo(handsinfo):
     # update all player
@@ -424,9 +428,15 @@ def tongjicumuinfo(handsinfo):
     DBOperater.ReplaceOne(Constant.HANDSDB,Constant.CUMUCLT,{"_id":"player"},playerdoc,True)
 
     # update total win
-
-
 def tongjimain():
+    result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
+    doclen =  result.count()
+
+    iternum = doclen / 10000 + 1
+    for idx in xrange(iternum):
+        tongjimain_(idx)
+
+def tongjimain_(idx):
     result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
 
     wronghands  = 0
@@ -435,8 +445,11 @@ def tongjimain():
 
     for rawhand in result:
         cnt  += 1
-        if cnt < 80000:
+        if cnt < idx * 10000:
             continue
+
+        if cnt >= (idx+1) * 10000:
+            break
 
         if cnt % 1000 == 0:
             print "="*100,cnt,"   --wrong--   :",wronghands
@@ -451,7 +464,7 @@ def tongjimain():
             # store history hands data
             DBOperater.ReplaceOne(Constant.HANDSDB,Constant.TJHANDSCLT,{"_id":curid},rawhand,True)
 
-            showcard = tongjiinfo(rawhand)
+            showcard = tongjiinfo(rawhand,Constant.BB,Constant.ANTI)
 
             if showcard not in showcardinfo:
                 showcardinfo[showcard] = 0
@@ -498,5 +511,6 @@ if __name__ == "__main__":
     #main()
     #DBOperater.ReplaceOne(Constant.HANDSDB,Constant.CUMUCLT,{"_id":"player"},{"_id":"player","ts":12},True)
     removecumuinfo()
+    removetjinfo()
     tongjimain()
     #tongjicumuinfo(0)

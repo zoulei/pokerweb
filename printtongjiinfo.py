@@ -59,14 +59,14 @@ def payoffdis():
 def preflopftdata():
     result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
     rawdata = result.next()
-    rawdata = rawdata[Constant.FTDATA]
+    rawdata = rawdata[Constant.JOINRATEDATA]
     pp = pprint.PrettyPrinter(indent= 4)
     # for pos, data in rawdata.items():
     pos = "9"
     data = rawdata[pos]
     print "====================="*2,pos,"==========================="*2
     betbblist = data.keys()
-    betbblist.sort(key = lambda v:int(v))
+    betbblist.sort(key = lambda v:int(v),reverse=True)
 
     for key in betbblist:
         print "betbb: ",key

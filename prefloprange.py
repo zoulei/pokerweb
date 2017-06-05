@@ -4,6 +4,8 @@ import handsinfocommon
 
 # key order,{pos, how many bb, payoffrate}
 def tongjifirstturnstate(handsinfo,anti):
+    if "showcard" not in handsinfo:
+        print handsinfo["_id"]
     showcard = handsinfo["showcard"]
     if not (showcard >= 0 or showcard == -3):
         return
@@ -61,8 +63,8 @@ def tongjifirstturnstate(handsinfo,anti):
         if str(betvalue / bb) not in ftdata_pos:
             ftdata_pos[str(betvalue / bb)] = {}
         ftdata_pos_bet = ftdata_pos[str(betvalue / bb)]
-        normalpayoff = int(round(payoffrate * 2))
-        if pos == 9 and betvalue == bb and normalpayoff < 10:
+        normalpayoff = int(round(payoffrate * 2)) * 5
+        if pos == 9 and betvalue == bb and normalpayoff > 170:
             print "info: ",total, needtobet,payoffrate,normalpayoff,handsinfo["_id"]
         if str(normalpayoff) not in ftdata_pos_bet:
             ftdata_pos_bet[str(normalpayoff)] = {"call":0,"raise":0,"fold":0}
@@ -97,6 +99,33 @@ def tongjifirstturnstate(handsinfo,anti):
 
     DBOperater.ReplaceOne(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC},prefloprange,True)
 
+def tongjijoinrate():
+    result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
+    if result.count() == 0:
+        return
+    preflopdoc = result.next()
+    joinratedoc = {}
+    preflopdoc[Constant.JOINRATEDATA] = joinratedoc
+
+    ftdata = preflopdoc[Constant.FTDATA]
+    for pos, posdata in ftdata.items():
+        if pos not in joinratedoc:
+            joinratedoc[pos] = {}
+        for betbb, betbbdata in posdata.items():
+            if betbb not in joinratedoc[pos]:
+                joinratedoc[pos][betbb] = {}
+            for payoffrate, payoffratedata in betbbdata.items():
+                if payoffrate not in joinratedoc[pos][betbb]:
+                    joinratedoc[pos][betbb][payoffrate] = {}
+                curdict = joinratedoc[pos][betbb][payoffrate]
+                sumhands = sum(payoffratedata.values())
+                curdict["sum"] = sumhands
+                for action, value in payoffratedata.items():
+                    curdict[action] = round(value * 1.0 / sumhands * 100,1)
+
+    DBOperater.ReplaceOne(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC},preflopdoc,True)
+
+
 def removepreflopdoc():
     DBOperater.DeleteData(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
 
@@ -104,8 +133,9 @@ def tongjiftmain():
     result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,{})
     for handsinfo in result:
         # if handsinfo["_id"] == "35357006093039820170526040210":
-        tongjifirstturnstate(handsinfo, 2)
+        tongjifirstturnstate(handsinfo, Constant.ANTI)
 
 if __name__ == "__main__":
     removepreflopdoc()
     tongjiftmain()
+    tongjijoinrate()

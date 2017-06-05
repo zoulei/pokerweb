@@ -24,8 +24,15 @@ CUMUCLT = "cumuclt"
 PREFLOPRANGEDOC = "prefloprange"
 FTDATA = "ftdata"
 
+JOINRATEDATA = "joinratedata"
+
 UPLOAD_FOLDER = '/mnt/mfs/users/zoul15/pmimg/'
 OCR_ERROR_FOLDER = "/mnt/mfs/users/zoul15/errorimg/"
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
 
 NAMEIMGPREFIX = "shotname"
+
+
+# ========================game level related=============================
+BB = 10
+ANTI = 2
