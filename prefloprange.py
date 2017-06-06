@@ -6,6 +6,7 @@ import handsinfocommon
 def tongjifirstturnstate(handsinfo,anti):
     if "showcard" not in handsinfo:
         print handsinfo["_id"]
+    # if len(handsinfo["data"])
     showcard = handsinfo["showcard"]
     if not (showcard >= 0 or showcard == -3):
         return
@@ -19,6 +20,8 @@ def tongjifirstturnstate(handsinfo,anti):
             prefloprange["ftdata"] = {}
 
     playerquantitiy = len(handsinfo["data"][0][2])
+    if playerquantitiy < 6:
+        return
     preflopaction = handsinfo["data"][1]
     ftaction = preflopaction[:playerquantitiy]
 
@@ -122,6 +125,7 @@ def tongjijoinrate():
                 curdict["sum"] = sumhands
                 for action, value in payoffratedata.items():
                     curdict[action] = round(value * 1.0 / sumhands * 100,1)
+                curdict["call"] += curdict["raise"]
 
     DBOperater.ReplaceOne(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC},preflopdoc,True)
 
