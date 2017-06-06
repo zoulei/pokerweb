@@ -129,6 +129,44 @@ def tongjijoinrate():
 
     DBOperater.ReplaceOne(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC},preflopdoc,True)
 
+def enoughdata(betbbdata,handsthre, instancethre):
+    mininstance = instancethre
+    for payoffrate in betbbdata:
+        if betbbdata[payoffrate]["sum"] >= handsthre:
+            mininstance -= 1
+            if mininstance == 0:
+                return True
+    return False
+
+def repairjoinrate():
+    result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
+    if result.count() == 0:
+        return
+    preflopdoc = result.next()
+    repairratedoc = {}
+    preflopdoc[Constant.REPAIRJOINRATE] = repairratedoc
+
+    joinratedoc = preflopdoc[Constant.JOINRATEDATA]
+    for pos, posdata in joinratedoc.items():
+        if pos not in repairratedoc:
+            repairratedoc[pos] = {}
+        for betbb, betbbdata in posdata.items():
+            if betbb not in repairratedoc[pos]:
+                repairratedoc[pos][betbb] = {}
+            payoffratelist = betbbdata.keys()
+            payoffratelist.sort(key= lambda v:int(v))
+
+
+
+            for payoffrate, payoffratedata in betbbdata.items():
+                if payoffrate not in joinratedoc[pos][betbb]:
+                    joinratedoc[pos][betbb][payoffrate] = {}
+                curdict = joinratedoc[pos][betbb][payoffrate]
+                sumhands = sum(payoffratedata.values())
+                curdict["sum"] = sumhands
+                for action, value in payoffratedata.items():
+                    curdict[action] = round(value * 1.0 / sumhands * 100,1)
+                curdict["call"] += curdict["raise"]
 
 def removepreflopdoc():
     DBOperater.DeleteData(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})

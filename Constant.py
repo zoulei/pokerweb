@@ -25,6 +25,7 @@ PREFLOPRANGEDOC = "prefloprange"
 FTDATA = "ftdata"
 
 JOINRATEDATA = "joinratedata"
+REPAIRJOINRATE = "repairjoinrate"
 
 UPLOAD_FOLDER = '/mnt/mfs/users/zoul15/pmimg/'
 OCR_ERROR_FOLDER = "/mnt/mfs/users/zoul15/errorimg/"
