@@ -2,39 +2,75 @@ import Constant
 import DBOperater
 import handsinfocommon
 import copy
+import believeinterval
 
 class Joinrate:
     def __init__(self, ftdata):
         self.ftdata  =ftdata
 
-    def combineposdata(self, pos):
-        posdata = self.repairedftata[pos]
-        betbblist = posdata.keys()
-        betbblist.sort(key = lambda v:int(v))
+    def combineinto(self,posdata,betbb,combinedbetbb):
+        for key in posdata[betbb].keys():
+            posdata[betbb][key] += posdata[combinedbetbb][key]
+            del posdata[combinedbetbb]
 
-        idx = 1
-        curidx = 0
-        while curidx < len(betbblist):
-            betbb = betbblist[curidx]
-            if enoughdata(posdata[betbb]):
-                curidx = idx
-                idx += 1
-            elif idx == len(betbblist):
-                # no more data, combine the last two betbb data and break
-                pass
-                break
-            else:
-                # combine idx and curidx
-                pass
-                # combine idx and curidx
-                idx += 1
-
-    def combine(self):
+    def combine(self,handsthre,statethre):
         self.repairedftata = copy.deepcopy(self.ftdata)
         for pos in self.ftdata.keys():
-            self.combineposdata(pos)
+            posdata = self.repairedftata[pos]
+            betbblist = posdata.keys()
+            betbblist.sort(key = lambda v:int(v))
 
+            idx = 1
+            curidx = 0
+            while curidx < len(betbblist):
+                betbb = betbblist[curidx]
+                if enoughdata(posdata[betbb],handsthre,statethre):
+                    curidx = idx
+                    idx += 1
+                elif idx == len(betbblist):
+                    # no more data, combine the last two betbb data and break
+                    tmpbetbblist = posdata.keys()
+                    tmpbetbblist.sort(key = lambda v:int(v) )
+                    self.combineinto(posdata,tmpbetbblist[-2],tmpbetbblist[-1])
+                    break
+                else:
+                    # combine idx and curidx
+                    self.combineinto(posdata,betbblist[curidx],betbblist[idx])
+                    idx += 1
 
+    def getbestpayoffratedata(self,intervaldata,joininratedata):
+        pass
+
+    def repair(self,believerate,filterhands):
+        believeintervaldata = {}
+        joinratedata = {}
+        for pos,posdata in self.repairedftata.items():
+            believeintervaldata[pos] = {}
+            joinratedata[pos] = {}
+
+            for betbb, betbbdata in posdata.items():
+                believeintervaldata[pos][betbb] = {}
+                joinratedata[pos][betbb] = {}
+
+                for payoffrate, payoffratedata in betbbdata.items():
+                    believeintervaldata[pos][betbb][payoffrate] = {}
+                    joinratedata[pos][betbb][payoffrate] = {}
+
+                    believeintervaldict = believeintervaldata[pos][betbb][payoffrate]
+                    joinratedict = joinratedata[pos][betbb][payoffrate]
+
+                    sumhands = sum(payoffratedata.values())
+                    if sumhands < filterhands:
+                        continue
+                    callhands = payoffratedata["call"] + payoffratedata["raise"]
+                    raisehands = payoffratedata["raise"]
+
+                    believeintervaldict["call"] = believeinterval.calcBin(callhands, sumhands, believerate)
+                    believeintervaldict["raise"] = believeinterval.calcBin(raisehands, sumhands, believerate)
+                    joinratedict["call"] = callhands * 1.0 / sumhands
+                    joinratedict["raise"] = raisehands * 1.0 / sumhands
+
+                self.getbestpayoffratedata(believeintervaldata[pos][betbb],joinratedata[pos][betbb])
 
 # key order,{pos, how many bb, payoffrate}
 def tongjifirstturnstate(handsinfo,anti):
@@ -206,7 +242,7 @@ def repairjoinrate():
                 repairratedoc[pos][betbb] = {}
 
             if not enoughdata(betbbdata, Constant.HANDSTHRE, Constant.STATETHRE):
-
+                pass
 
             payoffratelist = betbbdata.keys()
             payoffratelist.sort(key= lambda v:int(v))
