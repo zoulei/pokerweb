@@ -36,6 +36,9 @@ NAMEIMGPREFIX = "shotname"
 HANDSTHRE = 200
 STATETHRE = 2
 
+BELIEVERATE = 60
+FILTERHANDS = 10
+
 # ========================game level related=============================
 BB = 10
 ANTI = 2

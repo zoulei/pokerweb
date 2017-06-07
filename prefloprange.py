@@ -3,10 +3,24 @@ import DBOperater
 import handsinfocommon
 import copy
 import believeinterval
+import math
 
-class Joinrate:
+class JoinrateRepairer:
     def __init__(self, ftdata):
         self.ftdata  =ftdata
+
+    def repairdata(self):
+        self.combine(Constant.HANDSTHRE,Constant.STATETHRE)
+        self.repair(Constant.BELIEVERATE,Constant.FILTERHANDS)
+
+    def enoughdata(self,betbbdata,handsthre, instancethre):
+        mininstance = instancethre
+        for payoffrate in betbbdata:
+            if betbbdata[payoffrate]["sum"] >= handsthre:
+                mininstance -= 1
+                if mininstance == 0:
+                    return True
+        return False
 
     def combineinto(self,posdata,betbb,combinedbetbb):
         for key in posdata[betbb].keys():
@@ -24,7 +38,7 @@ class Joinrate:
             curidx = 0
             while curidx < len(betbblist):
                 betbb = betbblist[curidx]
-                if enoughdata(posdata[betbb],handsthre,statethre):
+                if self.enoughdata(posdata[betbb],handsthre,statethre):
                     curidx = idx
                     idx += 1
                 elif idx == len(betbblist):
@@ -38,12 +52,74 @@ class Joinrate:
                     self.combineinto(posdata,betbblist[curidx],betbblist[idx])
                     idx += 1
 
-    def getbestpayoffratedata(self,intervaldata,joininratedata):
-        pass
+    def payoffdatavalid(self,payoffratedata):
+        up = 0
+        down = 0
+        for idx in xrange(len(payoffratedata) - 1):
+            if payoffratedata[idx + 1] > payoffratedata[idx]:
+                up = 1
+            elif payoffratedata[idx + 1] < payoffratedata[idx]:
+                down = 1
+        if up == 1 and down == 1:
+            return False
+        return True
+
+    def caloffset(self,payoffratedata,intervaldata,joinratedata):
+        offset = 0
+        for idx in xrange(len(payoffratedata)):
+            repaireddata = payoffratedata[idx]
+            intervallen = intervaldata[idx][1] - intervaldata[idx][0]
+            vieweddata = joinratedata[idx]
+
+            offset += math.fabs(vieweddata - repaireddata) / intervallen
+
+        return offset
+
+    def nextpayoffrate(self,payoffratetmp,intervaldata,datatype,step = 0.1):
+        payoffratelist = intervaldata.keys()
+        payoffratelist.sort(key = lambda v: int(v))
+        for idx in xrange(len(payoffratetmp) - 1 , -1 , -1):
+            payoffrate = payoffratelist[idx]
+            payoffratetmp[idx] += 0.1
+            if payoffratetmp[idx] > intervaldata[payoffrate][datatype][1]:
+                payoffratetmp[idx] = intervaldata[payoffrate][datatype][0]
+            else:
+                return True
+        else:
+            return False
+
+    def getbestpayoffratedata(self,intervaldata,joininratedata,datatype):
+        payoffratelist = intervaldata.keys()
+        payoffratelist.sort(key = lambda v: int(v))
+
+        payoffratetmp = []
+        for payoffrate in payoffratelist:
+            payoffratetmp.append(intervaldata[payoffrate][datatype][0])
+
+        offset = 100000
+        bestpayoffrate = []
+        while True:
+            if self.payoffdatavalid(payoffratetmp):
+                curoffset = self.caloffset(payoffratetmp,intervaldata,joininratedata)
+                if curoffset < offset:
+                    offset = curoffset
+                    bestpayoffrate = copy.deepcopy(payoffratetmp)
+            if not self.nextpayoffrate(payoffratetmp,intervaldata,datatype):
+                break
+        return bestpayoffrate
+
+    def insertrepaireddata(self,betbbdata,repairedrate,datatype):
+        payoffratelist = betbbdata.keys()
+        payoffratelist.sort(key = lambda v: int(v))
+
+        for idx in xrange(len(repairedrate)):
+            payoffrate = payoffratelist[idx]
+            betbbdata[payoffrate][datatype] = repairedrate[idx]
 
     def repair(self,believerate,filterhands):
         believeintervaldata = {}
         joinratedata = {}
+
         for pos,posdata in self.repairedftata.items():
             believeintervaldata[pos] = {}
             joinratedata[pos] = {}
@@ -70,7 +146,12 @@ class Joinrate:
                     joinratedict["call"] = callhands * 1.0 / sumhands
                     joinratedict["raise"] = raisehands * 1.0 / sumhands
 
-                self.getbestpayoffratedata(believeintervaldata[pos][betbb],joinratedata[pos][betbb])
+                repairedcalldata = self.getbestpayoffratedata(believeintervaldata[pos][betbb],joinratedata[pos][betbb],"call")
+                repairedraisedata = self.getbestpayoffratedata(believeintervaldata[pos][betbb],joinratedata[pos][betbb],"raise")
+
+                self.insertrepaireddata(betbbdata,repairedcalldata,"call")
+                self.insertrepaireddata(betbbdata,repairedraisedata,"raise")
+
 
 # key order,{pos, how many bb, payoffrate}
 def tongjifirstturnstate(handsinfo,anti):
@@ -199,68 +280,18 @@ def tongjijoinrate():
 
     DBOperater.ReplaceOne(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC},preflopdoc,True)
 
-def enoughdata(betbbdata,handsthre, instancethre):
-    mininstance = instancethre
-    for payoffrate in betbbdata:
-        if betbbdata[payoffrate]["sum"] >= handsthre:
-            mininstance -= 1
-            if mininstance == 0:
-                return True
-    return False
-
-def combinepayoffrate(posdata):
-    betbblist = posdata.keys()
-    betbblist.sort(key = lambda v:int(v))
-    combineresult = []
-
-    for idx in xrange(len(betbblist)):
-        betbb = betbblist[idx]
-        betbbdata = posdata[betbb]
-
-        if enoughdata(betbbdata, Constant.HANDSTHRE, Constant.STATETHRE):
-            combineresult
-
-
 def repairjoinrate():
     result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
     if result.count() == 0:
         return
     preflopdoc = result.next()
-    repairratedoc = {}
-    preflopdoc[Constant.REPAIRJOINRATE] = repairratedoc
 
-    joinratedoc = preflopdoc[Constant.JOINRATEDATA]
-    for pos, posdata in joinratedoc.items():
-        if pos not in repairratedoc:
-            repairratedoc[pos] = {}
+    ftdata = preflopdoc[Constant.FTDATA]
+    repairer = JoinrateRepairer(ftdata)
+    repairer.repairdata()
+    preflopdoc[Constant.REPAIRJOINRATE] = repairer.repairedftata
 
-        betbblist = posdata.keys()
-        betbblist.sort(key = lambda v:int(v))
-
-        for betbb, betbbdata in posdata.items():
-            if betbb not in repairratedoc[pos]:
-                repairratedoc[pos][betbb] = {}
-
-            if not enoughdata(betbbdata, Constant.HANDSTHRE, Constant.STATETHRE):
-                pass
-
-            payoffratelist = betbbdata.keys()
-            payoffratelist.sort(key= lambda v:int(v))
-
-
-
-
-
-
-            for payoffrate, payoffratedata in betbbdata.items():
-                if payoffrate not in joinratedoc[pos][betbb]:
-                    joinratedoc[pos][betbb][payoffrate] = {}
-                curdict = joinratedoc[pos][betbb][payoffrate]
-                sumhands = sum(payoffratedata.values())
-                curdict["sum"] = sumhands
-                for action, value in payoffratedata.items():
-                    curdict[action] = round(value * 1.0 / sumhands * 100,1)
-                curdict["call"] += curdict["raise"]
+    DBOperater.ReplaceOne(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC},preflopdoc,True)
 
 def removepreflopdoc():
     DBOperater.DeleteData(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
@@ -275,3 +306,4 @@ if __name__ == "__main__":
     removepreflopdoc()
     tongjiftmain()
     tongjijoinrate()
+    repairjoinrate()
