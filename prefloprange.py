@@ -1,6 +1,40 @@
 import Constant
 import DBOperater
 import handsinfocommon
+import copy
+
+class Joinrate:
+    def __init__(self, ftdata):
+        self.ftdata  =ftdata
+
+    def combineposdata(self, pos):
+        posdata = self.repairedftata[pos]
+        betbblist = posdata.keys()
+        betbblist.sort(key = lambda v:int(v))
+
+        idx = 1
+        curidx = 0
+        while curidx < len(betbblist):
+            betbb = betbblist[curidx]
+            if enoughdata(posdata[betbb]):
+                curidx = idx
+                idx += 1
+            elif idx == len(betbblist):
+                # no more data, combine the last two betbb data and break
+                pass
+                break
+            else:
+                # combine idx and curidx
+                pass
+                # combine idx and curidx
+                idx += 1
+
+    def combine(self):
+        self.repairedftata = copy.deepcopy(self.ftdata)
+        for pos in self.ftdata.keys():
+            self.combineposdata(pos)
+
+
 
 # key order,{pos, how many bb, payoffrate}
 def tongjifirstturnstate(handsinfo,anti):
@@ -138,6 +172,19 @@ def enoughdata(betbbdata,handsthre, instancethre):
                 return True
     return False
 
+def combinepayoffrate(posdata):
+    betbblist = posdata.keys()
+    betbblist.sort(key = lambda v:int(v))
+    combineresult = []
+
+    for idx in xrange(len(betbblist)):
+        betbb = betbblist[idx]
+        betbbdata = posdata[betbb]
+
+        if enoughdata(betbbdata, Constant.HANDSTHRE, Constant.STATETHRE):
+            combineresult
+
+
 def repairjoinrate():
     result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
     if result.count() == 0:
@@ -150,11 +197,22 @@ def repairjoinrate():
     for pos, posdata in joinratedoc.items():
         if pos not in repairratedoc:
             repairratedoc[pos] = {}
+
+        betbblist = posdata.keys()
+        betbblist.sort(key = lambda v:int(v))
+
         for betbb, betbbdata in posdata.items():
             if betbb not in repairratedoc[pos]:
                 repairratedoc[pos][betbb] = {}
+
+            if not enoughdata(betbbdata, Constant.HANDSTHRE, Constant.STATETHRE):
+
+
             payoffratelist = betbbdata.keys()
             payoffratelist.sort(key= lambda v:int(v))
+
+
+
 
 
 

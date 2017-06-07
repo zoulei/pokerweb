@@ -33,6 +33,8 @@ ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
 
 NAMEIMGPREFIX = "shotname"
 
+HANDSTHRE = 200
+STATETHRE = 2
 
 # ========================game level related=============================
 BB = 10
