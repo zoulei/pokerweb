@@ -218,7 +218,7 @@ def tongjifirstturnstate(handsinfo,anti):
             ftdata_pos[str(betvalue / bb)] = {}
         ftdata_pos_bet = ftdata_pos[str(betvalue / bb)]
         normalpayoff = int(round(payoffrate * 2)) * 5
-        if pos == 9 and betvalue == bb and normalpayoff > 170:
+        if pos == 9 and betvalue == bb and normalpayoff == 45:
             print "info: ",total, needtobet,payoffrate,normalpayoff,handsinfo["_id"]
         if str(normalpayoff) not in ftdata_pos_bet:
             ftdata_pos_bet[str(normalpayoff)] = {"call":0,"raise":0,"fold":0}
@@ -277,6 +277,7 @@ def tongjijoinrate():
                 for action, value in payoffratedata.items():
                     curdict[action] = round(value * 1.0 / sumhands * 100,1)
                 curdict["call"] += curdict["raise"]
+                curdict["call"] = round(curdict["call"],1)
 
     DBOperater.ReplaceOne(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC},preflopdoc,True)
 
