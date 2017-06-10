@@ -16,16 +16,37 @@ class JoinrateRepairer:
     def enoughdata(self,betbbdata,handsthre, instancethre):
         mininstance = instancethre
         for payoffrate in betbbdata:
-            if betbbdata[payoffrate]["sum"] >= handsthre:
+            if sum(betbbdata[payoffrate].values() ) >= handsthre:
                 mininstance -= 1
                 if mininstance == 0:
                     return True
         return False
 
     def combineinto(self,posdata,betbb,combinedbetbb):
-        for key in posdata[betbb].keys():
-            posdata[betbb][key] += posdata[combinedbetbb][key]
-            del posdata[combinedbetbb]
+        keylist1 = posdata[betbb].keys()
+        keylist2 = posdata[combinedbetbb].keys()
+        keymap = {}
+        for key in keylist1:
+            keymap[key] = 1
+        for key in keylist2:
+            keymap[key] = 1
+        keylist = keymap.keys()
+        keylist.sort(key=lambda v:int(v))
+
+        for key in keylist:
+            if key not in posdata[betbb]:
+                posdata[betbb][key] = {"call":0,"fold":0,"raise":0}
+            if key not in posdata[combinedbetbb]:
+                posdata[combinedbetbb][key] = {"call":0,"fold":0,"raise":0}
+
+        for key in keylist:
+            betbbdata = posdata[betbb].get(key)
+            combineddata = posdata[combinedbetbb].get(key)
+            # if not betbbdata or not combineddata:
+            #     continue
+            for key in betbbdata.keys():
+                betbbdata[key] += combineddata[key]
+        del posdata[combinedbetbb]
 
     def combine(self,handsthre,statethre):
         self.repairedftata = copy.deepcopy(self.ftdata)
@@ -45,7 +66,9 @@ class JoinrateRepairer:
                     # no more data, combine the last two betbb data and break
                     tmpbetbblist = posdata.keys()
                     tmpbetbblist.sort(key = lambda v:int(v) )
-                    self.combineinto(posdata,tmpbetbblist[-2],tmpbetbblist[-1])
+                    print tmpbetbblist,pos
+                    if len(tmpbetbblist) > 1:
+                        self.combineinto(posdata,tmpbetbblist[-2],tmpbetbblist[-1])
                     break
                 else:
                     # combine idx and curidx
@@ -201,7 +224,11 @@ def tongjifirstturnstate(handsinfo,anti):
         else:
             payoffrate = 10000
 
-
+        haveinvested = 0
+        if pos == 9:
+            haveinvested = bb/2
+        elif pos == 8:
+            haveinvested = bb
 
         # betvalue / bb , pos ,round(payoffrate * 2) * 0.5
         # action just think about raise and call and fold
@@ -214,15 +241,20 @@ def tongjifirstturnstate(handsinfo,anti):
             print handsinfo["_id"]
             print betvalue,bb,idx,action,value
 
-        if str(betvalue / bb) not in ftdata_pos:
-            ftdata_pos[str(betvalue / bb)] = {}
-        ftdata_pos_bet = ftdata_pos[str(betvalue / bb)]
+        betbb = int((betvalue + 0.5 * bb) / bb)
+
+        if str(betbb) not in ftdata_pos:
+            ftdata_pos[str(betbb)] = {}
+        ftdata_pos_bet = ftdata_pos[str(betbb)]
         normalpayoff = int(round(payoffrate * 2)) * 5
-        if pos == 9 and betvalue == bb and normalpayoff == 45:
-            print "info: ",total, needtobet,payoffrate,normalpayoff,handsinfo["_id"]
+        # print pos,betvalue,bb,normalpayoff
+        # if pos == 9 and betbb == 1 and normalpayoff < 55:
+        #     print "info: ",total, needtobet,payoffrate,normalpayoff,handsinfo["_id"],betvalue,int((betvalue + 0.5) / bb),bb,betbb
+
         if str(normalpayoff) not in ftdata_pos_bet:
             ftdata_pos_bet[str(normalpayoff)] = {"call":0,"raise":0,"fold":0}
         curstate = ftdata_pos_bet[str(normalpayoff)]
+
         if action == 1 or action == -1:
             curstate["fold"] += 1
         elif action == 2:
@@ -232,10 +264,10 @@ def tongjifirstturnstate(handsinfo,anti):
                 break
 
             betvalue = value
-            total += value
+            total += value -haveinvested
         elif action == 3 or action == 6:
             curstate["call"] += 1
-            total += betvalue
+            total += betvalue-haveinvested
         elif action == 4:
             if value <= betvalue:
                  curstate["call"] += 1
@@ -247,9 +279,13 @@ def tongjifirstturnstate(handsinfo,anti):
                 else:
                     curstate["call"] += 1
                 betvalue = value
-            total += value
+            total += value-haveinvested
         elif action == 12:
             break
+
+    # if "9" in prefloprange["ftdata"] and "1" in prefloprange["ftdata"]["9"] and "45" in prefloprange["ftdata"]["9"]["1"]:
+    #     print handsinfo["_id"]
+    #     asbc
 
     DBOperater.ReplaceOne(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC},prefloprange,True)
 
@@ -299,12 +335,17 @@ def removepreflopdoc():
 
 def tongjiftmain():
     result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,{})
+    idx = 0
     for handsinfo in result:
         # if handsinfo["_id"] == "35357006093039820170526040210":
+        idx += 1
+        if idx % 1000 == 0:
+            print idx
         tongjifirstturnstate(handsinfo, Constant.ANTI)
 
 if __name__ == "__main__":
-    removepreflopdoc()
-    tongjiftmain()
-    tongjijoinrate()
+    # removepreflopdoc()
+    #
+    # tongjiftmain()
+    # tongjijoinrate()
     repairjoinrate()

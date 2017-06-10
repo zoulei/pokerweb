@@ -60,9 +60,10 @@ def preflopftdata():
     result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
     rawdata = result.next()
     rawdata = rawdata[Constant.JOINRATEDATA]
+    # rawdata = rawdata[Constant.FTDATA]
     pp = pprint.PrettyPrinter(indent= 4)
     # for pos, data in rawdata.items():
-    pos = "9"
+    pos = "2"
     data = rawdata[pos]
     print "====================="*2,pos,"==========================="*2
     betbblist = data.keys()
