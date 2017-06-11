@@ -133,9 +133,23 @@ class JoinrateRepairer:
             # print payoffrate
             payoffratetmp.append(intervaldata[payoffrate][datatype][0])
 
+        #====print data size
+        timecomp = 1
+        for key in intervaldata:
+            timecomp *= int((intervaldata[key][datatype][1] - intervaldata[key][datatype][0]) / 0.001)
+        print "timecomp:",timecomp
+        pp.pprint( intervaldata)
+        #====print data size
+
         offset = 100000
         bestpayoffrate = []
+        idx = 0
         while True:
+            idx += 1
+            if idx % 1000000 == 0:
+                print "idx:",idx
+                print "payoffratetmp:", payoffratetmp
+                print "bestpayoffrate:",bestpayoffrate
             if self.payoffdatavalid(payoffratetmp):
                 curoffset = self.caloffset(payoffratetmp,intervaldata,joininratedata,datatype)
                 if curoffset < offset:
@@ -368,8 +382,8 @@ def tongjiftmain():
         tongjifirstturnstate(handsinfo, Constant.ANTI)
 
 if __name__ == "__main__":
-    removepreflopdoc()
-
-    tongjiftmain()
-    tongjijoinrate()
+    # removepreflopdoc()
+    #
+    # tongjiftmain()
+    # tongjijoinrate()
     repairjoinrate()
