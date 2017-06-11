@@ -4,6 +4,8 @@ import handsinfocommon
 import copy
 import believeinterval
 import math
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
 
 class JoinrateRepairer:
     def __init__(self, ftdata):
@@ -50,6 +52,7 @@ class JoinrateRepairer:
 
     def combine(self,handsthre,statethre):
         self.repairedftata = copy.deepcopy(self.ftdata)
+        # pp.pprint(self.repairedftata["9"])
         for pos in self.ftdata.keys():
             posdata = self.repairedftata[pos]
             betbblist = posdata.keys()
@@ -74,6 +77,8 @@ class JoinrateRepairer:
                     # combine idx and curidx
                     self.combineinto(posdata,betbblist[curidx],betbblist[idx])
                     idx += 1
+        # print "-"*100
+        # pp.pprint(self.repairedftata["9"])
 
     def payoffdatavalid(self,payoffratedata):
         up = 0
@@ -87,12 +92,18 @@ class JoinrateRepairer:
             return False
         return True
 
-    def caloffset(self,payoffratedata,intervaldata,joinratedata):
+    def caloffset(self,payoffratedata,intervaldata,joinratedata,datatype):
         offset = 0
+        keylist = intervaldata.keys()
+        keylist.sort(key = lambda v: int(v))
         for idx in xrange(len(payoffratedata)):
             repaireddata = payoffratedata[idx]
-            intervallen = intervaldata[idx][1] - intervaldata[idx][0]
-            vieweddata = joinratedata[idx]
+            # print "+"*100
+            # print intervaldata
+            # print idx
+            key = keylist[idx]
+            intervallen = intervaldata[key][datatype][1] - intervaldata[key][datatype][0]
+            vieweddata = joinratedata[key][datatype]
 
             offset += math.fabs(vieweddata - repaireddata) / intervallen
 
@@ -103,7 +114,7 @@ class JoinrateRepairer:
         payoffratelist.sort(key = lambda v: int(v))
         for idx in xrange(len(payoffratetmp) - 1 , -1 , -1):
             payoffrate = payoffratelist[idx]
-            payoffratetmp[idx] += 0.1
+            payoffratetmp[idx] += 0.001
             if payoffratetmp[idx] > intervaldata[payoffrate][datatype][1]:
                 payoffratetmp[idx] = intervaldata[payoffrate][datatype][0]
             else:
@@ -117,13 +128,16 @@ class JoinrateRepairer:
 
         payoffratetmp = []
         for payoffrate in payoffratelist:
+            # print "+"*100
+            # print intervaldata
+            # print payoffrate
             payoffratetmp.append(intervaldata[payoffrate][datatype][0])
 
         offset = 100000
         bestpayoffrate = []
         while True:
             if self.payoffdatavalid(payoffratetmp):
-                curoffset = self.caloffset(payoffratetmp,intervaldata,joininratedata)
+                curoffset = self.caloffset(payoffratetmp,intervaldata,joininratedata,datatype)
                 if curoffset < offset:
                     offset = curoffset
                     bestpayoffrate = copy.deepcopy(payoffratetmp)
@@ -146,21 +160,26 @@ class JoinrateRepairer:
         for pos,posdata in self.repairedftata.items():
             believeintervaldata[pos] = {}
             joinratedata[pos] = {}
-
+            if pos != "9":
+                continue
             for betbb, betbbdata in posdata.items():
+                if betbb != "1":
+                    continue
                 believeintervaldata[pos][betbb] = {}
                 joinratedata[pos][betbb] = {}
 
                 for payoffrate, payoffratedata in betbbdata.items():
-                    believeintervaldata[pos][betbb][payoffrate] = {}
-                    joinratedata[pos][betbb][payoffrate] = {}
-
-                    believeintervaldict = believeintervaldata[pos][betbb][payoffrate]
-                    joinratedict = joinratedata[pos][betbb][payoffrate]
 
                     sumhands = sum(payoffratedata.values())
                     if sumhands < filterhands:
                         continue
+                    else:
+                        believeintervaldata[pos][betbb][payoffrate] = {}
+                        joinratedata[pos][betbb][payoffrate] = {}
+
+                        believeintervaldict = believeintervaldata[pos][betbb][payoffrate]
+                        joinratedict = joinratedata[pos][betbb][payoffrate]
+
                     callhands = payoffratedata["call"] + payoffratedata["raise"]
                     raisehands = payoffratedata["raise"]
 
@@ -171,7 +190,12 @@ class JoinrateRepairer:
 
                 repairedcalldata = self.getbestpayoffratedata(believeintervaldata[pos][betbb],joinratedata[pos][betbb],"call")
                 repairedraisedata = self.getbestpayoffratedata(believeintervaldata[pos][betbb],joinratedata[pos][betbb],"raise")
-
+                if pos == "9" and betbb == "1":
+                    print "+"*100
+                    print repairedcalldata
+                    print repairedraisedata
+                    pp.pprint(believeintervaldata[pos][betbb])
+                    pp.pprint(joinratedata[pos][betbb])
                 self.insertrepaireddata(betbbdata,repairedcalldata,"call")
                 self.insertrepaireddata(betbbdata,repairedraisedata,"raise")
 
@@ -344,8 +368,8 @@ def tongjiftmain():
         tongjifirstturnstate(handsinfo, Constant.ANTI)
 
 if __name__ == "__main__":
-    # removepreflopdoc()
-    #
-    # tongjiftmain()
-    # tongjijoinrate()
+    removepreflopdoc()
+
+    tongjiftmain()
+    tongjijoinrate()
     repairjoinrate()
