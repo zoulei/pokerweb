@@ -37,7 +37,7 @@ HANDSTHRE = 100
 STATETHRE = 1
 
 BELIEVERATE = 60
-FILTERHANDS = 10
+FILTERHANDS = 20
 
 # ========================game level related=============================
 BB = 10
