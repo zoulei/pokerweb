@@ -94,5 +94,5 @@ if __name__ == "__main__":
     # totalplayer()
     # playerhandsdis()
     # payoffdis()
-    preflopftdata()
-    # prefloprepaireddata()
+    # preflopftdata()
+    prefloprepaireddata()

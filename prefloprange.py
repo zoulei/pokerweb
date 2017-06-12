@@ -44,15 +44,12 @@ class JoinrateRepairer:
         for key in keylist:
             betbbdata = posdata[betbb].get(key)
             combineddata = posdata[combinedbetbb].get(key)
-            # if not betbbdata or not combineddata:
-            #     continue
             for key in betbbdata.keys():
                 betbbdata[key] += combineddata[key]
         del posdata[combinedbetbb]
 
     def combine(self,handsthre,statethre):
         self.repairedftata = copy.deepcopy(self.ftdata)
-        # pp.pprint(self.repairedftata["9"])
         for pos in self.ftdata.keys():
             posdata = self.repairedftata[pos]
             betbblist = posdata.keys()
@@ -77,8 +74,6 @@ class JoinrateRepairer:
                     # combine idx and curidx
                     self.combineinto(posdata,betbblist[curidx],betbblist[idx])
                     idx += 1
-        # print "-"*100
-        # pp.pprint(self.repairedftata["9"])
 
     def payoffdatavalid(self,payoffratedata):
         up = 0
@@ -98,9 +93,6 @@ class JoinrateRepairer:
         keylist.sort(key = lambda v: int(v))
         for idx in xrange(len(payoffratedata)):
             repaireddata = payoffratedata[idx]
-            # print "+"*100
-            # print intervaldata
-            # print idx
             key = keylist[idx]
             intervallen = intervaldata[key][datatype][1] - intervaldata[key][datatype][0]
             vieweddata = joinratedata[key][datatype]
@@ -109,173 +101,77 @@ class JoinrateRepairer:
 
         return offset
 
-    def nextpayoffrate(self,payoffratetmp,intervaldata,datatype,step = 0.1):
-        payoffratelist = intervaldata.keys()
-        payoffratelist.sort(key = lambda v: int(v))
-        for idx in xrange(len(payoffratetmp) - 1 , -1 , -1):
-            payoffrate = payoffratelist[idx]
-            payoffratetmp[idx] += 0.001
-            if payoffratetmp[idx] > intervaldata[payoffrate][datatype][1]:
-                payoffratetmp[idx] = intervaldata[payoffrate][datatype][0]
-            else:
-                return True
-        else:
-            return False
-
-    # def getbestpayoffratedata(self,intervaldata,joininratedata,datatype):
-    #     payoffratelist = intervaldata.keys()
-    #     payoffratelist.sort(key = lambda v: int(v))
-    #
-    #     payoffratetmp = []
-    #     for payoffrate in payoffratelist:
-    #         # print "+"*100
-    #         # print intervaldata
-    #         # print payoffrate
-    #         payoffratetmp.append(intervaldata[payoffrate][datatype][0])
-    #
-    #     #====print data size
-    #     timecomp = 1
-    #     for key in intervaldata:
-    #         timecomp *= int((intervaldata[key][datatype][1] - intervaldata[key][datatype][0]) / 0.001)
-    #     print "timecomp:",timecomp
-    #     pp.pprint( intervaldata)
-    #     #====print data size
-    #
-    #     offset = 100000
-    #     bestpayoffrate = []
-    #     idx = 0
-    #     while True:
-    #         idx += 1
-    #         if idx % 1000000 == 0:
-    #             print "idx:",idx
-    #             print "payoffratetmp:", payoffratetmp
-    #             print "bestpayoffrate:",bestpayoffrate
-    #         if self.payoffdatavalid(payoffratetmp):
-    #             curoffset = self.caloffset(payoffratetmp,intervaldata,joininratedata,datatype)
-    #             if curoffset < offset:
-    #                 offset = curoffset
-    #                 bestpayoffrate = copy.deepcopy(payoffratetmp)
-    #         if not self.nextpayoffrate(payoffratetmp,intervaldata,datatype):
-    #             break
-    #     return bestpayoffrate
-
-    def generateignorelist(self,len,ignorelen):
-        ignoretypelist = []
-
-        idx = 0
-        while True:
-            binarystr = "{0:b}".format(idx)
-            if len(binarystr) > len:
-                break
-            if binarystr.count("1") != ignorelen:
-                continue
-            ignoretypelist.append(idx)
-
-        return ignoretypelist
-
-    def iscurveup(self,joinratedata,datatype,ignoretag):
-        up = 1
-        last = -1
-        payofflist = joinratedata.keys()
-        payofflist.sort(key = lambda v:int(v))
-
-        for idx in xrange(len(ignoretag)):
-            ignore = ignoretag[idx]
-            if ignore == "1":
-                continue
-            else:
-                if last == -1:
-                    last = idx
-                elif joinratedata[payofflist[idx]][datatype] < joinratedata[payofflist[last]][datatype]:
-                    return False
-                else:
-                    last = idx
-        return True
-
-    def calcurvekpi(self,joinratedata,datatype,ignoretag,repaireddata,kpitype="handsnum"):
-        payofflist = joinratedata.keys()
-        payofflist.sort(key = lambda v: int(v))
-
-        if kpitype == "handsnum":
-            kpi = 0
-            for idx in xrange(len(ignoretag)):
-                ignore = ignoretag[idx]
-                if ignore == "1":
-                    continue
-                else:
-                    kpi += sum(repaireddata[payofflist[idx]].values() )
-            return kpi
-        elif kpitype == "slope":
-            pass
-            return 0
-
-
-    def chooselongestcurve(self,joininratedata,datatype,repaireddata):
-        payofflist = joininratedata.keys()
-        payofflist.sort(key = lambda v: int(v))
-        payofflistlen = len(payofflist)
-
-        for idx in xrange(payofflistlen,0,-1):
-
-            remove = payofflistlen - idx
-            ignoretypelist = self.generateignorelist(payofflistlen,remove)
-            found = False
-            kpi = -1
-            foundtag = None
-            for ignoretype in ignoretypelist:
-                ignoretag = list(ignoretype)
-                ignoretag.reverse()
-                ignoretag.extend(["0"]*(payofflistlen - len(ignoretag)) )
-
-                if self.iscurveup(joininratedata,datatype,ignoretag):
-                    curkpi = self.calcurvekpi(joininratedata,datatype,ignoretag,repaireddata)
-                    if kpi == -1 or kpi > curkpi:
-                        found = True
-                        kpi = curkpi
-                        foundtag = ignoretag
-
-            if found:
-                return foundtag
-
-    def completecurve(self,intervaldata,joinratedata,datatype,ignoretag):
-        pass
-
-    def getbestpayoffratedata(self,intervaldata,joininratedata,datatype):
+    def getbestuppayoffratedata(self,intervaldata,joininratedata,datatype):
         payoffratelist = intervaldata.keys()
         payoffratelist.sort(key = lambda v: int(v))
 
-        payoffratetmp = []
+        repairedrate = []
         for payoffrate in payoffratelist:
-            # print "+"*100
-            # print intervaldata
-            # print payoffrate
-            payoffratetmp.append(intervaldata[payoffrate][datatype][0])
+            repairedrate.append(joininratedata[payoffrate][datatype])
+        for idx in xrange(1,len(repairedrate)):
+            maxjoinrate = max(repairedrate[:idx])
+            if repairedrate[idx] >= repairedrate[idx - 1]:
+                continue
+            joinrate = repairedrate[idx]
+            offset = -1
+            bestjoinrate = joinrate
 
-        #====print data size
-        timecomp = 1
-        for key in intervaldata:
-            timecomp *= int((intervaldata][key][datatype][1] - intervaldata[key][datatype][0]) / 0.001)
-        print "timecomp:",timecomp
-        pp.pprint( intervaldata)
-        #====print data size
-
-        offset = 100000
-        bestpayoffrate = []
-        idx = 0
-        while True:
-            idx += 1
-            if idx % 1000000 == 0:
-                print "idx:",idx
-                print "payoffratetmp:", payoffratetmp
-                print "bestpayoffrate:",bestpayoffrate
-            if self.payoffdatavalid(payoffratetmp):
-                curoffset = self.caloffset(payoffratetmp,intervaldata,joininratedata,datatype)
-                if curoffset < offset:
+            while joinrate <= maxjoinrate:
+                tmprepairedrate = copy.deepcopy(repairedrate)
+                tmprepairedrate[idx] = joinrate
+                for i in xrange(idx):
+                    if tmprepairedrate[i] > joinrate:
+                        tmprepairedrate[i] = joinrate
+                curoffset = self.caloffset(tmprepairedrate[:idx + 1],intervaldata,joininratedata,datatype)
+                if offset == -1 or curoffset < offset:
+                    bestjoinrate = joinrate
                     offset = curoffset
-                    bestpayoffrate = copy.deepcopy(payoffratetmp)
-            if not self.nextpayoffrate(payoffratetmp,intervaldata,datatype):
-                break
-        return bestpayoffrate
+                joinrate = round(joinrate+0.001,3)
+            repairedrate[idx] = bestjoinrate
+            for i in xrange(idx):
+                if repairedrate[i] > bestjoinrate:
+                    repairedrate[i] = bestjoinrate
+
+        return repairedrate
+
+    def getbestdownpayoffratedata(self,intervaldata,joininratedata,datatype):
+        payoffratelist = intervaldata.keys()
+        payoffratelist.sort(key = lambda v: int(v))
+
+        repairedrate = []
+        for payoffrate in payoffratelist:
+            repairedrate.append(joininratedata[payoffrate][datatype])
+        for idx in xrange(1,len(repairedrate)):
+            minjoinrate = min(repairedrate[:idx])
+            if repairedrate[idx] <= repairedrate[idx - 1]:
+                continue
+            joinrate = repairedrate[idx]
+            offset = -1
+            bestjoinrate = joinrate
+
+            while joinrate >= minjoinrate:
+                tmprepairedrate = copy.deepcopy(repairedrate)
+                tmprepairedrate[idx] = joinrate
+                for i in xrange(idx):
+                    if tmprepairedrate[i] < joinrate:
+                        tmprepairedrate[i] = joinrate
+                curoffset = self.caloffset(tmprepairedrate[:idx + 1],intervaldata,joininratedata,datatype)
+                if offset == -1 or curoffset < offset:
+                    bestjoinrate = joinrate
+                    offset = curoffset
+                joinrate = round(joinrate-0.001,3)
+            repairedrate[idx] = bestjoinrate
+            for i in xrange(idx):
+                if repairedrate[i] < bestjoinrate:
+                    repairedrate[i] = bestjoinrate
+
+        return repairedrate
+
+    def getbestpayoffratedata(self,intervaldata,joininratedata,datatype,sorttype="up"):
+        if sorttype == "up":
+            return self.getbestuppayoffratedata(intervaldata,joininratedata,datatype)
+        elif sorttype == "down":
+            return self.getbestdownpayoffratedata(intervaldata,joininratedata,datatype)
 
     def insertrepaireddata(self,betbbdata,repairedrate,datatype):
         payoffratelist = betbbdata.keys()
@@ -285,6 +181,10 @@ class JoinrateRepairer:
             payoffrate = payoffratelist[idx]
             betbbdata[payoffrate][datatype] = repairedrate[idx]
 
+    def calfoldrate(self,betbbdata):
+        for payoffrate,payoffratedata in betbbdata.items():
+            payoffratedata["fold"] = round(1 - payoffratedata["call"],3)
+
     def repair(self,believerate,filterhands):
         believeintervaldata = {}
         joinratedata = {}
@@ -292,18 +192,20 @@ class JoinrateRepairer:
         for pos,posdata in self.repairedftata.items():
             believeintervaldata[pos] = {}
             joinratedata[pos] = {}
-            if pos != "9":
-                continue
+            # if pos != "9":
+            #     continue
             for betbb, betbbdata in posdata.items():
-                if betbb != "1":
-                    continue
+                # if betbb != "1":
+                #     continue
                 believeintervaldata[pos][betbb] = {}
                 joinratedata[pos][betbb] = {}
 
                 for payoffrate, payoffratedata in betbbdata.items():
 
                     sumhands = sum(payoffratedata.values())
+                    payoffratedata["sum"] = sumhands
                     if sumhands < filterhands:
+                        del betbbdata[payoffrate]
                         continue
                     else:
                         believeintervaldata[pos][betbb][payoffrate] = {}
@@ -317,11 +219,11 @@ class JoinrateRepairer:
 
                     believeintervaldict["call"] = believeinterval.calcBin(callhands, sumhands, believerate)
                     believeintervaldict["raise"] = believeinterval.calcBin(raisehands, sumhands, believerate)
-                    joinratedict["call"] = callhands * 1.0 / sumhands
-                    joinratedict["raise"] = raisehands * 1.0 / sumhands
+                    joinratedict["call"] = round(callhands * 1.0 / sumhands,3)
+                    joinratedict["raise"] = round(raisehands * 1.0 / sumhands,3)
 
-                repairedcalldata = self.getbestpayoffratedata(believeintervaldata[pos][betbb],joinratedata[pos][betbb],"call")
-                repairedraisedata = self.getbestpayoffratedata(believeintervaldata[pos][betbb],joinratedata[pos][betbb],"raise")
+                repairedcalldata = self.getbestpayoffratedata(believeintervaldata[pos][betbb],joinratedata[pos][betbb],"call","up")
+                repairedraisedata = self.getbestpayoffratedata(believeintervaldata[pos][betbb],joinratedata[pos][betbb],"raise","down")
                 if pos == "9" and betbb == "1":
                     print "+"*100
                     print repairedcalldata
@@ -330,6 +232,11 @@ class JoinrateRepairer:
                     pp.pprint(joinratedata[pos][betbb])
                 self.insertrepaireddata(betbbdata,repairedcalldata,"call")
                 self.insertrepaireddata(betbbdata,repairedraisedata,"raise")
+                self.calfoldrate(betbbdata)
+                print "betbbdata"
+                pp.pprint( betbbdata)
+                print "repairedcalldata: ",repairedcalldata
+                print "repairedraisedata: ",repairedraisedata
 
 
 # key order,{pos, how many bb, payoffrate}
