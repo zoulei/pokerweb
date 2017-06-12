@@ -122,6 +122,124 @@ class JoinrateRepairer:
         else:
             return False
 
+    # def getbestpayoffratedata(self,intervaldata,joininratedata,datatype):
+    #     payoffratelist = intervaldata.keys()
+    #     payoffratelist.sort(key = lambda v: int(v))
+    #
+    #     payoffratetmp = []
+    #     for payoffrate in payoffratelist:
+    #         # print "+"*100
+    #         # print intervaldata
+    #         # print payoffrate
+    #         payoffratetmp.append(intervaldata[payoffrate][datatype][0])
+    #
+    #     #====print data size
+    #     timecomp = 1
+    #     for key in intervaldata:
+    #         timecomp *= int((intervaldata[key][datatype][1] - intervaldata[key][datatype][0]) / 0.001)
+    #     print "timecomp:",timecomp
+    #     pp.pprint( intervaldata)
+    #     #====print data size
+    #
+    #     offset = 100000
+    #     bestpayoffrate = []
+    #     idx = 0
+    #     while True:
+    #         idx += 1
+    #         if idx % 1000000 == 0:
+    #             print "idx:",idx
+    #             print "payoffratetmp:", payoffratetmp
+    #             print "bestpayoffrate:",bestpayoffrate
+    #         if self.payoffdatavalid(payoffratetmp):
+    #             curoffset = self.caloffset(payoffratetmp,intervaldata,joininratedata,datatype)
+    #             if curoffset < offset:
+    #                 offset = curoffset
+    #                 bestpayoffrate = copy.deepcopy(payoffratetmp)
+    #         if not self.nextpayoffrate(payoffratetmp,intervaldata,datatype):
+    #             break
+    #     return bestpayoffrate
+
+    def generateignorelist(self,len,ignorelen):
+        ignoretypelist = []
+
+        idx = 0
+        while True:
+            binarystr = "{0:b}".format(idx)
+            if len(binarystr) > len:
+                break
+            if binarystr.count("1") != ignorelen:
+                continue
+            ignoretypelist.append(idx)
+
+        return ignoretypelist
+
+    def iscurveup(self,joinratedata,datatype,ignoretag):
+        up = 1
+        last = -1
+        payofflist = joinratedata.keys()
+        payofflist.sort(key = lambda v:int(v))
+
+        for idx in xrange(len(ignoretag)):
+            ignore = ignoretag[idx]
+            if ignore == "1":
+                continue
+            else:
+                if last == -1:
+                    last = idx
+                elif joinratedata[payofflist[idx]][datatype] < joinratedata[payofflist[last]][datatype]:
+                    return False
+                else:
+                    last = idx
+        return True
+
+    def calcurvekpi(self,joinratedata,datatype,ignoretag,repaireddata,kpitype="handsnum"):
+        payofflist = joinratedata.keys()
+        payofflist.sort(key = lambda v: int(v))
+
+        if kpitype == "handsnum":
+            kpi = 0
+            for idx in xrange(len(ignoretag)):
+                ignore = ignoretag[idx]
+                if ignore == "1":
+                    continue
+                else:
+                    kpi += sum(repaireddata[payofflist[idx]].values() )
+            return kpi
+        elif kpitype == "slope":
+            pass
+            return 0
+
+
+    def chooselongestcurve(self,joininratedata,datatype,repaireddata):
+        payofflist = joininratedata.keys()
+        payofflist.sort(key = lambda v: int(v))
+        payofflistlen = len(payofflist)
+
+        for idx in xrange(payofflistlen,0,-1):
+
+            remove = payofflistlen - idx
+            ignoretypelist = self.generateignorelist(payofflistlen,remove)
+            found = False
+            kpi = -1
+            foundtag = None
+            for ignoretype in ignoretypelist:
+                ignoretag = list(ignoretype)
+                ignoretag.reverse()
+                ignoretag.extend(["0"]*(payofflistlen - len(ignoretag)) )
+
+                if self.iscurveup(joininratedata,datatype,ignoretag):
+                    curkpi = self.calcurvekpi(joininratedata,datatype,ignoretag,repaireddata)
+                    if kpi == -1 or kpi > curkpi:
+                        found = True
+                        kpi = curkpi
+                        foundtag = ignoretag
+
+            if found:
+                return foundtag
+
+    def completecurve(self,intervaldata,joinratedata,datatype,ignoretag):
+        pass
+
     def getbestpayoffratedata(self,intervaldata,joininratedata,datatype):
         payoffratelist = intervaldata.keys()
         payoffratelist.sort(key = lambda v: int(v))
@@ -136,7 +254,7 @@ class JoinrateRepairer:
         #====print data size
         timecomp = 1
         for key in intervaldata:
-            timecomp *= int((intervaldata[key][datatype][1] - intervaldata[key][datatype][0]) / 0.001)
+            timecomp *= int((intervaldata][key][datatype][1] - intervaldata[key][datatype][0]) / 0.001)
         print "timecomp:",timecomp
         pp.pprint( intervaldata)
         #====print data size
