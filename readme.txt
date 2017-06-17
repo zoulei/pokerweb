@@ -1,6 +1,6 @@
 各个文件的主要作用：
 1. tongjihandsinfo.py
-此文件中的函数用于统计各种引申信息
+此文件中的函数用于统计各种引申信息,比如各玩家的盈亏
 tongjiinfo 函数检查该牌局信息是否正确记录
 
 2. completehands.py
@@ -8,6 +8,15 @@ tongjiinfo 函数检查该牌局信息是否正确记录
 
 3. collecthands.py
 此文件中的函数用于收集数据相关的函数，就是各种URL的后台处理函数
+
+4. printtongjiinfo.py
+此文件用于输出数据库中的数据到屏幕
+
+5. prefloprange.py
+此文件用于计算preflop的range
+
+6. privatecardsstrength.py
+此文件用于计算手牌的强弱关系
 
 /*
 4. tongjicumuinfo.py
