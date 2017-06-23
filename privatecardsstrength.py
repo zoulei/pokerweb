@@ -116,14 +116,14 @@ def calsingleturncardstrength():
     # turnstr = "{}"
     # riverstr = "{}"
 
-    file = open("privatecardstrengthdata","w")
+    file = open(Constant.PRIVATECARDSSTRENGTH,"w")
     file.write(flopstr+"\n")
     file.write(turnstr+"\n")
     file.write(riverstr+"\n")
     file.close()
 
 def calprivatecardstrength():
-    file = open("privatecardstrengthdata")
+    file = open(Constant.PRIVATECARDSSTRENGTH)
     flopstr = file.readline()
     flopstr = flopstr.strip()
     flopstrengthmap = json.loads(flopstr)
@@ -157,6 +157,7 @@ def removesymmetry(avgstrengthmap):
     return newmap
 
 def test():
+    calsingleturncardstrength()
     avgstrengthmap = calprivatecardstrength()
     avgstrengthmap = removesymmetry(avgstrengthmap)
     strengthlist = avgstrengthmap.items()
@@ -173,7 +174,9 @@ def testcalcompletestrengthmap():
         raw_input()
 
 if __name__ == "__main__":
-    calsingleturncardstrength()
+    test()
+    # calsingleturncardstrength()
+    # calprivatecardstrength
     # calavgstrength(3)
     # testcalcompletestrengthmap()
     # test()

@@ -52,6 +52,8 @@ AFTERFLOPSTATEDATA = CACHEDIR + "afterflopstatedata"
 COMPLETESTRENGTHMAPPREFIX = CACHEDIR + "strengthmap"
 REVERSECOMPLETESTRENGTHMAPPREFIX = CACHEDIR + "reversestrengthmap"
 
+PRIVATECARDSSTRENGTH = CACHEDIR + "privatecardsstrength"
+
 # ========================symbol======================================
 TAB = "\t"
 SPACE = " "
