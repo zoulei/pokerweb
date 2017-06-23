@@ -1,11 +1,15 @@
+
 import sys
-sys.path.append("C:/Users/zoulei/PycharmProjects/")
 
 import math
 import hunlgame
 import itertools
 import copy
 import json
+import pprint
+import Constant
+import handsinfocommon
+import pickle
 
 # print math.factorial(52) / math.factorial(2) / math.factorial(52 - 2)
 # print math.factorial(52) / math.factorial(3) / math.factorial(52 - 3)
@@ -17,6 +21,23 @@ def f(v):
 def g(v1,v2,v3):
     return v1 + v2 + v3
 
+def readcompletestrengthmap(boardlen):
+    file = open(Constant.COMPLETESTRENGTHMAPPREFIX+str(boardlen))
+    return json.loads(file.readline())
+
+def readreversecompletestrengthmap(boardlen):
+    file = open(Constant.REVERSECOMPLETESTRENGTHMAPPREFIX+str(boardlen))
+    return json.loads(file.readline())
+
+# completestrengthmap records the hands strength of each hands
+# on each board. The first level key is string of board, the
+# Second level key is the rank of specific hands, and the value
+# is array of string of hands.
+
+# reversecompletestrengthmap records the same information as completestrengthmap,
+# with the difference that the data is organised in different structure.
+# The first level key is string of board, the second level key is
+# string of hands, and the value is the rank of specific hands.
 def calavgstrength( boardlen):
     rangeobj = hunlgame.HandsRange()
 
@@ -31,6 +52,10 @@ def calavgstrength( boardlen):
     allcards = rangeobj._generateallcard()
     allboards = itertools.combinations(allcards,boardlen)
     boardidx = 0
+
+    completestrengthmap = {}
+    reversecompletestrengthmap = {}
+
     for board in allboards:
         boardidx += 1
         if boardidx % 1000 == 0:
@@ -42,17 +67,39 @@ def calavgstrength( boardlen):
         allhandslist = []
         for hands in allhands:
             allhandslist.append(list(hands))
-
-        strengthorder = hunlgame.sorthands_(board, allhandslist)
+        tmpallhandslist = copy.deepcopy(allhandslist)
+        strengthorder = hunlgame.sorthands_(board, tmpallhandslist)
 
         for rank, handsidxlist in strengthorder.items():
             for handsidx in handsidxlist:
                 handsstr = str(hunlgame.Hands(allhandslist[handsidx]))
                 strengthmap[handsstr] += f(rank)
 
+        reversestrengthorder = {}
+        for key in strengthorder.keys():
+            handsidxlist = strengthorder[key]
+            handslist = [str(hunlgame.Hands(allhandslist[v])) for v in handsidxlist]
+            strengthorder[key] = handslist
+            for handsstr in handslist:
+                reversestrengthorder[handsstr] = key
+
+        completestrengthmap[hunlgame.board2str(board)] = strengthorder
+        reversecompletestrengthmap[hunlgame.board2str(board)] = reversestrengthorder
+        # pp.pprint(strengthmap)
+        # raw_input()
+
     for key in strengthmap.keys():
         strengthmap[key] /= (boardidx * 1.0)
 
+    completemapstr = pickle.dumps(completestrengthmap)
+    reversecompletemapstr = pickle.dumps(reversecompletestrengthmap)
+    file = open(Constant.COMPLETESTRENGTHMAPPREFIX + str(boardlen),"w")
+    file.write(completemapstr)
+    pickle.loads(completemapstr)
+    file.close()
+    file = open(Constant.REVERSECOMPLETESTRENGTHMAPPREFIX + str(boardlen),"w")
+    file.write(reversecompletemapstr)
+    file.close()
     return strengthmap
 
 def calsingleturncardstrength():
@@ -66,6 +113,9 @@ def calsingleturncardstrength():
     riverstrengthmap = calavgstrength(5)
     riverstr = json.dumps(riverstrengthmap)
 
+    # turnstr = "{}"
+    # riverstr = "{}"
+
     file = open("privatecardstrengthdata","w")
     file.write(flopstr+"\n")
     file.write(turnstr+"\n")
@@ -77,6 +127,12 @@ def calprivatecardstrength():
     flopstr = file.readline()
     flopstr = flopstr.strip()
     flopstrengthmap = json.loads(flopstr)
+    strenglist = flopstrengthmap.items()
+    strenglist.sort(key = lambda v:v[1],reverse = True)
+    # for key, value in strenglist:
+    #     print key," : ",value
+    return flopstrengthmap
+
     turnstr = file.readline()
     turnstr = turnstr.strip()
     turnstrengthmap = json.loads(turnstr)
@@ -108,8 +164,18 @@ def test():
     for handsstr ,strength in strengthlist:
         print handsstr, " : ", strength
 
+def testcalcompletestrengthmap():
+    file = open(Constant.REVERSECOMPLETESTRENGTHMAPPREFIX + "3","rb")
+    cmpmap = pickle.load(file)
+    for boardstr in cmpmap:
+        print "board: ",boardstr
+        handsinfocommon.pp.pprint(cmpmap[boardstr])
+        raw_input()
+
 if __name__ == "__main__":
     calsingleturncardstrength()
+    # calavgstrength(3)
+    # testcalcompletestrengthmap()
     # test()
-
+    # calavgstrength(3)
 

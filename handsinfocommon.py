@@ -1,3 +1,5 @@
+import pprint
+
 # change the raw data format collected to hunlgame format
 def getboard(handsdata):
     infolen = len(handsdata)
@@ -20,3 +22,7 @@ def readanti(handsinfo):
 
 def roundhalf(value):
     return int(round(value * 2)) * 0.5
+
+
+# ==================debug related===========================
+pp = pprint.PrettyPrinter(indent= 4)

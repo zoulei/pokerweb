@@ -42,3 +42,18 @@ FILTERHANDS = 20
 # ========================game level related=============================
 BB = 10
 ANTI = 2
+
+# ========================cache data related=============================
+CACHEDIR = "data/"
+AFTERFLOPSTATEHEADER = CACHEDIR + "afterflopstateheader"
+AFTERFLOPSTATEDATA = CACHEDIR + "afterflopstatedata"
+
+# ========================hands strength related=====================
+COMPLETESTRENGTHMAPPREFIX = CACHEDIR + "strengthmap"
+REVERSECOMPLETESTRENGTHMAPPREFIX = CACHEDIR + "reversestrengthmap"
+
+# ========================symbol======================================
+TAB = "\t"
+SPACE = " "
+DOT = ","
+
