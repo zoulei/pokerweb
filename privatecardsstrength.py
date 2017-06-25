@@ -11,6 +11,10 @@ import Constant
 import handsinfocommon
 import pickle
 
+from contextlib import closing
+import shelve
+
+
 # print math.factorial(52) / math.factorial(2) / math.factorial(52 - 2)
 # print math.factorial(52) / math.factorial(3) / math.factorial(52 - 3)
 # print math.factorial(52) / math.factorial(4) / math.factorial(52 - 4)
@@ -53,8 +57,12 @@ def calavgstrength( boardlen):
     allboards = itertools.combinations(allcards,boardlen)
     boardidx = 0
 
-    completestrengthmap = {}
-    reversecompletestrengthmap = {}
+    # completestrengthmap = {}
+    # reversecompletestrengthmap = {}
+
+    completestrengthmap = shelve.open(Constant.COMPLETESTRENGTHMAPPREFIX + str(boardlen), 'c')
+    reversecompletestrengthmap = shelve.open(Constant.REVERSECOMPLETESTRENGTHMAPPREFIX + str(boardlen), 'c')
+
 
     for board in allboards:
         boardidx += 1
@@ -90,16 +98,17 @@ def calavgstrength( boardlen):
 
     for key in strengthmap.keys():
         strengthmap[key] /= (boardidx * 1.0)
-
-    completemapstr = pickle.dumps(completestrengthmap)
-    reversecompletemapstr = pickle.dumps(reversecompletestrengthmap)
-    file = open(Constant.COMPLETESTRENGTHMAPPREFIX + str(boardlen),"w")
-    file.write(completemapstr)
-    pickle.loads(completemapstr)
-    file.close()
-    file = open(Constant.REVERSECOMPLETESTRENGTHMAPPREFIX + str(boardlen),"w")
-    file.write(reversecompletemapstr)
-    file.close()
+    completestrengthmap.close()
+    reversecompletestrengthmap.close()
+    # completemapstr = pickle.dumps(completestrengthmap)
+    # reversecompletemapstr = pickle.dumps(reversecompletestrengthmap)
+    # file = open(Constant.COMPLETESTRENGTHMAPPREFIX + str(boardlen),"w")
+    # file.write(completemapstr)
+    # pickle.loads(completemapstr)
+    # file.close()
+    # file = open(Constant.REVERSECOMPLETESTRENGTHMAPPREFIX + str(boardlen),"w")
+    # file.write(reversecompletemapstr)
+    # file.close()
     return strengthmap
 
 def calsingleturncardstrength():

@@ -44,7 +44,7 @@ BB = 10
 ANTI = 2
 
 # ========================cache data related=============================
-CACHEDIR = "data/"
+CACHEDIR = "/mnt/mfs/users/zoul15/pokercachedata/"
 AFTERFLOPSTATEHEADER = CACHEDIR + "afterflopstateheader"
 AFTERFLOPSTATEDATA = CACHEDIR + "afterflopstatedata"
 
