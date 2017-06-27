@@ -175,19 +175,34 @@ def test():
         print handsstr, " : ", strength
 
 def testcalcompletestrengthmap():
-    file = open(Constant.REVERSECOMPLETESTRENGTHMAPPREFIX + "3","rb")
-    cmpmap = pickle.load(file)
-    for boardstr in cmpmap:
-        print "board: ",boardstr
-        handsinfocommon.pp.pprint(cmpmap[boardstr])
-        raw_input()
+    import time
+    startload = time.time()
+    completestrengthmap = shelve.open(Constant.COMPLETESTRENGTHMAPPREFIX + str(4))
+    endload = time.time() - startload
+    keylist = completestrengthmap.keys()
+    loadkeylist = time.time() - startload
+    import random
+    keylistlength = len(keylist)
+
+    startloopup = time.time()
+    lookupquantity = 100
+    for idx in xrange(lookupquantity):
+        keyidx = random.randint(0,keylistlength - 1)
+        key = keylist[keyidx]
+        time.sleep(1)
+        handsinfocommon.pp.pprint(completestrengthmap[key])
+    print "endload:",endload
+    print "loadkeylist:",loadkeylist
+    print "avgtime:", (time.time() - startloopup)/lookupquantity
+
+    completestrengthmap.close()
 
 if __name__ == "__main__":
-    test()
+    # test()
     # calsingleturncardstrength()
     # calprivatecardstrength
     # calavgstrength(3)
-    # testcalcompletestrengthmap()
+    testcalcompletestrengthmap()
     # test()
     # calavgstrength(3)
 
