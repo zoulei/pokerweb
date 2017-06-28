@@ -24,6 +24,15 @@ CUMUCLT = "cumuclt"
 PREFLOPRANGEDOC = "prefloprange"
 FTDATA = "ftdata"
 
+FT3BETDATA = "ft3betdata"
+FT4BETDATA = "ft4betdata"
+FT5BETDATA = "ft5betdata"
+
+STDATA = "stdata"
+ST3BETDATA = "st3betdata"
+ST4BETDATA = "st4betdata"
+ST5BETDATA = "st5betdata"
+
 JOINRATEDATA = "joinratedata"
 REPAIRJOINRATE = "repairjoinrate"
 

@@ -4,6 +4,7 @@ import handsinfocommon
 import copy
 import believeinterval
 import math
+import tongjihandsinfo
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -242,6 +243,7 @@ class JoinrateRepairer:
 
 # key order,{pos, how many bb, payoffrate}
 def tongjifirstturnstate(handsinfo,anti):
+    handsdata = handsinfo
     if "showcard" not in handsinfo:
         print handsinfo["_id"]
     # if len(handsinfo["data"])
@@ -251,11 +253,28 @@ def tongjifirstturnstate(handsinfo,anti):
 
     result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
     if result.count() == 0:
-        prefloprange = {"_id":Constant.PREFLOPRANGEDOC,"ftdata":{}}
+        prefloprange = {
+            "_id":Constant.PREFLOPRANGEDOC,
+            "ftdata":{},
+            Constant.FT3BETDATA:{},
+            Constant.FT4BETDATA:{},
+            Constant.FT5BETDATA:{},
+
+            Constant.STDATA:{},
+            Constant.ST3BETDATA:{},
+            Constant.ST4BETDATA:{},
+            Constant.ST5BETDATA:{}
+        }
     else:
         prefloprange = result.next()
-        if "ftdata" not in prefloprange:
-            prefloprange["ftdata"] = {}
+        # if "ftdata" not in prefloprange:
+        #     prefloprange["ftdata"] = {}
+        # if Constant.FT3BETDATA not in prefloprange:
+        #     prefloprange[Constant.FT3BETDATA] = {}
+        # if Constant.FT4BETDATA not in prefloprange:
+        #     prefloprange[Constant.FT4BETDATA] = {}
+        # if Constant.FT5BETDATA not in prefloprange:
+        #     prefloprange[Constant.FT5BETDATA] = {}
 
     playerquantitiy = len(handsinfo["data"][0][2])
     if playerquantitiy < 6:
@@ -269,14 +288,43 @@ def tongjifirstturnstate(handsinfo,anti):
     betvalue = bb
     total = anti * playerquantitiy + bb + bb / 2
 
+    # poslist uses virtual pos, not the real pos on screen
     poslist = range(playerquantitiy - 2,0, -1)
     poslist.extend([9,8])
     # print ftaction
-    bethis = {}
-    for idx,pos in enumerate(poslist):
-        if idx  == len(ftaction):
+
+    # this is used to calculate payoffrate for those player call in,
+    # since which generates separate pot.
+    bethis = {9:bb/2,8:bb}
+
+    betlevel = 1
+
+    # inpool = handsdata[0][2]
+
+    # start from index 1, value 0 means fold, value 1 means in pool, value 2 means all in
+    # this is different from the code in tongjihandsinfo.
+    inpoolstate = [0]*10
+    for pos in poslist:
+        inpoolstate[pos] = 1
+    # curplayer = poslist[0]
+    jumpplayerquantity = 0
+    raiser = 0
+    raisevalue = bb
+
+    for idx,pos in enumerate(poslist*2):
+        if inpoolstate[pos] != 1:
+            # this one has folded his hands or all in.
+            jumpplayerquantity += 1
             continue
-        action ,value = ftaction[idx]
+        if idx - jumpplayerquantity == len(ftaction):
+            break
+
+        if idx < len(poslist):
+            curturn = 1
+        else:
+            curturn = 2
+
+        action ,value = ftaction[idx - jumpplayerquantity]
         bethis[pos] = value
 
         if value != 0 and value < betvalue:
@@ -284,10 +332,9 @@ def tongjifirstturnstate(handsinfo,anti):
             needtobet = value
             if needtobet < bb:
                 needtobet = bb
-            if pos == 9:
-                needtobet -= bb /2
-            elif pos == 8:
-                needtobet -= bb
+
+            if pos in bethis:
+                needtobet -= bethis[pos]
             if needtobet != 0:
                 seppot = anti * playerquantitiy + bb + bb / 2
                 for hispos,hisbetvalue in bethis.items():
@@ -300,71 +347,53 @@ def tongjifirstturnstate(handsinfo,anti):
                 payoffrate = seppot * 1.0 / needtobet
             else:
                 payoffrate = 10000
-            haveinvested = 0
-            if pos == 9:
-                haveinvested = bb/2
-            elif pos == 8:
-                haveinvested = bb
-            ftdata = prefloprange["ftdata"]
-            if str(pos) not in ftdata:
-                ftdata[str(pos)] = {}
-            ftdata_pos = ftdata[str(pos)]
 
-            if betvalue / bb == 0:
-                print handsinfo["_id"]
-                print betvalue,bb,idx,action,value
-
+            # since call all in, betbb depends on his remaining stack, NOT the real betbb
             if value < bb:
                 betbb = int((bb + 0.5 * bb) / bb)
             else:
                 betbb = int((value + 0.5 * bb) / bb)
 
-            if str(betbb) not in ftdata_pos:
-                ftdata_pos[str(betbb)] = {}
-            ftdata_pos_bet = ftdata_pos[str(betbb)]
-            normalpayoff = int(round(payoffrate * 2)) * 5
-            # print pos,betvalue,bb,normalpayoff
-            # if pos == 9 and betbb == 1 and normalpayoff < 55:
-            #     print "info: ",total, needtobet,payoffrate,normalpayoff,handsinfo["_id"],betvalue,int((betvalue + 0.5) / bb),bb,betbb
-
-            if str(normalpayoff) not in ftdata_pos_bet:
-                ftdata_pos_bet[str(normalpayoff)] = {"call":0,"raise":0,"fold":0}
-            curstate = ftdata_pos_bet[str(normalpayoff)]
         else:
             needtobet = betvalue
-            if pos == 9:
-                needtobet -= bb/2
-            elif pos == 8:
-                needtobet -= bb
-
+            if pos in bethis:
+                needtobet -= bethis[pos]
             if needtobet != 0:
                 payoffrate = total * 1.0 / needtobet
             else:
                 payoffrate = 10000
 
-            haveinvested = 0
-            if pos == 9:
-                haveinvested = bb/2
-            elif pos == 8:
-                haveinvested = bb
+            betbb = int((betvalue + 0.5 * bb) / bb)
 
-            # betvalue / bb , pos ,round(payoffrate * 2) * 0.5
-            # action just think about raise and call and fold
-            ftdata = prefloprange["ftdata"]
+        normalpayoff = int(round(payoffrate * 2)) * 5
+        haveinvested = 0
+        if pos == 9:
+            haveinvested = bb/2
+        elif pos == 8:
+            haveinvested = bb
+
+        if betvalue / bb == 0:
+            print handsinfo["_id"]
+            print betvalue,bb,idx,action,value
+
+        if curturn == 1:
+            if betlevel < 3:
+                ftdata = prefloprange["ftdata"]
+            elif betlevel == 3:
+                ftdata = prefloprange[Constant.FT3BETDATA]
+            elif betlevel == 4:
+                ftdata = prefloprange[Constant.FT4BETDATA]
+            elif betlevel >= 5:
+                ftdata = prefloprange[Constant.FT5BETDATA]
+
             if str(pos) not in ftdata:
                 ftdata[str(pos)] = {}
             ftdata_pos = ftdata[str(pos)]
 
-            if betvalue / bb == 0:
-                print handsinfo["_id"]
-                print betvalue,bb,idx,action,value
-
-            betbb = int((betvalue + 0.5 * bb) / bb)
-
             if str(betbb) not in ftdata_pos:
                 ftdata_pos[str(betbb)] = {}
             ftdata_pos_bet = ftdata_pos[str(betbb)]
-            normalpayoff = int(round(payoffrate * 2)) * 5
+
             # print pos,betvalue,bb,normalpayoff
             # if pos == 9 and betbb == 1 and normalpayoff < 55:
             #     print "info: ",total, needtobet,payoffrate,normalpayoff,handsinfo["_id"],betvalue,int((betvalue + 0.5) / bb),bb,betbb
@@ -373,16 +402,57 @@ def tongjifirstturnstate(handsinfo,anti):
                 ftdata_pos_bet[str(normalpayoff)] = {"call":0,"raise":0,"fold":0}
             curstate = ftdata_pos_bet[str(normalpayoff)]
 
+        else:
+            # second turn related
+            if betlevel < 3:
+                ftdata = prefloprange[Constant.STDATA]
+            elif betlevel == 3:
+                ftdata = prefloprange[Constant.ST3BETDATA]
+            elif betlevel == 4:
+                ftdata = prefloprange[Constant.ST4BETDATA]
+            elif betlevel >= 5:
+                ftdata = prefloprange[Constant.ST5BETDATA]
+
+            if pos > raiser:
+                # bad position
+                relativepos = 0
+            elif pos < raiser:
+                # good position
+                relativepos = 1
+            else:
+                # call invalid raise.
+                # when this happen, the raiser call and end the round.
+                # so we can just end the for loop.
+                break
+
+            if str(relativepos) not in ftdata:
+                ftdata[relativepos] = {}
+            ftdata_pos = ftdata[str(relativepos)]
+
+            normalneedtobet = int( (needtobet + 0.5 * bb) / bb )
+            if str(normalneedtobet) not in ftdata_pos:
+                ftdata_pos[str(normalneedtobet)] = {}
+            ftdata_pos_bet = ftdata_pos[str(normalneedtobet)]
+
+            if str(normalpayoff) not in ftdata_pos_bet:
+                ftdata_pos_bet[str(normalneedtobet)] = {"call":0,"raise":0,"fold":0}
+            curstate = ftdata_pos_bet[str(normalpayoff)]
+
+
         if action == 1 or action == -1:
             curstate["fold"] += 1
+            inpoolstate[pos] = 0
         elif action == 2:
             curstate["raise"] += 1
-
+            betlevel += 1
+            raisevalue = value - betvalue
             if (betvalue >= value):
                 break
 
             betvalue = value
             total += value -haveinvested
+            raiser = pos
+
         elif action == 3 or action == 6:
             curstate["call"] += 1
             bethis[pos] = betvalue
@@ -392,10 +462,19 @@ def tongjifirstturnstate(handsinfo,anti):
             if value <= betvalue:
                  curstate["call"] += 1
             else:
+                if value - betvalue < raisevalue:
+                    # invalid raise
+                    pass
+                else:
+                    # valid raise
+                    raiser = -1
+                    raisevalue = value - betvalue
+
                 givepayoff = (value + total) * 1.0 / ( value - betvalue)
                 givepayoff = handsinfocommon.roundhalf(givepayoff)
-                if givepayoff <= 2.5:
+                if givepayoff <= 3:
                     curstate["raise"] += 1
+                    betlevel += 1
                 else:
                     curstate["call"] += 1
                 betvalue = value
@@ -464,8 +543,8 @@ def tongjiftmain():
         tongjifirstturnstate(handsinfo, Constant.ANTI)
 
 if __name__ == "__main__":
-    # removepreflopdoc()
-    #
-    # tongjiftmain()
-    # tongjijoinrate()
+    removepreflopdoc()
+
+    tongjiftmain()
+    tongjijoinrate()
     repairjoinrate()
