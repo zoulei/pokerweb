@@ -1,6 +1,7 @@
 import DBOperater
 import Constant
 import pprint
+import handsinfocommon
 
 def totalplayer():
     result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":"player"})
@@ -56,6 +57,13 @@ def payoffdis():
         key = handsnumlist[idx]
         print key," : ",handsdis[key]
 
+def printcombinationinfo():
+    print "possible hands:",handsinfocommon.combination(52,2)
+    print "possible hands after removing symmetry:",13 * 12 * 2 + 13
+    print "possible flop:",handsinfocommon.combination(52,3)
+    print "possible turn:",handsinfocommon.combination(52,4)
+    print "possible river:",handsinfocommon.combination(52,5)
+
 def preflopftdata():
     result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
     rawdata = result.next()
@@ -94,5 +102,6 @@ if __name__ == "__main__":
     # totalplayer()
     # playerhandsdis()
     # payoffdis()
-    preflopftdata()
+    # preflopftdata()
     # prefloprepaireddata()
+     printcombinationinfo()
