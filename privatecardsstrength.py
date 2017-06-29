@@ -111,6 +111,91 @@ def calavgstrength( boardlen):
     # file.close()
     return strengthmap
 
+# def calavgstrength( boardlen):
+#     rangeobj = hunlgame.HandsRange()
+#
+#     rangeobj.addFullRange()
+#     fullhandslist = rangeobj.get()
+#     handsstrlist = [str(v) for v in fullhandslist]
+#
+#     strengthmap = {}
+#     for handsstr in handsstrlist:
+#         strengthmap[handsstr] = 0
+#
+#     allcards = rangeobj._generateallcard()
+#     allboards = itertools.combinations(allcards,boardlen)
+#     boardidx = 0
+#
+#     # completestrengthmap = {}
+#     # reversecompletestrengthmap = {}
+#
+#     if os.path.exists(Constant.COMPLETESTRENGTHMAPPREFIX + str(boardlen)):
+#         completestrengthmap = shelve.open(Constant.COMPLETESTRENGTHMAPPREFIX + str(boardlen))
+#         usecache = True
+#     else:
+#         completestrengthmap = shelve.open(Constant.COMPLETESTRENGTHMAPPREFIX + str(boardlen), 'c')
+#         usecache = False
+#     if os.path.exists(Constant.REVERSECOMPLETESTRENGTHMAPPREFIX + str(boardlen)):
+#         # reversecompletestrengthmap = shelve.open(Constant.REVERSECOMPLETESTRENGTHMAPPREFIX + str(boardlen))
+#         pass
+#     else:
+#         reversecompletestrengthmap = shelve.open(Constant.REVERSECOMPLETESTRENGTHMAPPREFIX + str(boardlen), 'c')
+#
+#     for board in allboards:
+#         boardidx += 1
+#         if boardidx % 1000 == 0:
+#             print "boardidx:",boardidx
+#
+#         tmpallcards= copy.deepcopy(allcards)
+#         for card in board:
+#             tmpallcards.remove(card)
+#         allhands = itertools.combinations(tmpallcards,2)
+#         allhandslist = []
+#         for hands in allhands:
+#             allhandslist.append(list(hands))
+#
+#         if usecache:
+#             strengthorder = completestrengthmap[hunlgame.board2str(board)]
+#             # reversestrengthorder = reversecompletestrengthmap[hunlgame.board2str(board)]
+#         else:
+#
+#             tmpallhandslist = copy.deepcopy(allhandslist)
+#             strengthorder = hunlgame.sorthands_(board, tmpallhandslist)
+#
+#             reversestrengthorder = {}
+#             for key in strengthorder.keys():
+#                 handsidxlist = strengthorder[key]
+#                 handslist = [str(hunlgame.Hands(allhandslist[v])) for v in handsidxlist]
+#                 strengthorder[key] = handslist
+#                 for handsstr in handslist:
+#                     reversestrengthorder[handsstr] = key
+#
+#             completestrengthmap[hunlgame.board2str(board)] = strengthorder
+#             reversecompletestrengthmap[hunlgame.board2str(board)] = reversestrengthorder
+#
+#         for rank, handsidxlist in strengthorder.items():
+#             for handsidx in handsidxlist:
+#                 handsstr = str(hunlgame.Hands(allhandslist[handsidx]))
+#                 strengthmap[handsstr] += f(rank)
+#
+#         # pp.pprint(strengthmap)
+#         # raw_input()
+#
+#     for key in strengthmap.keys():
+#         strengthmap[key] /= (boardidx * 1.0)
+#     completestrengthmap.close()
+#     reversecompletestrengthmap.close()
+#     # completemapstr = pickle.dumps(completestrengthmap)
+#     # reversecompletemapstr = pickle.dumps(reversecompletestrengthmap)
+#     # file = open(Constant.COMPLETESTRENGTHMAPPREFIX + str(boardlen),"w")
+#     # file.write(completemapstr)
+#     # pickle.loads(completemapstr)
+#     # file.close()
+#     # file = open(Constant.REVERSECOMPLETESTRENGTHMAPPREFIX + str(boardlen),"w")
+#     # file.write(reversecompletemapstr)
+#     # file.close()
+#     return strengthmap
+
 def calsingleturncardstrength():
     print "cal flop"
     flopstrengthmap = calavgstrength(3)
@@ -140,7 +225,7 @@ def calprivatecardstrength():
     strenglist.sort(key = lambda v:v[1],reverse = True)
     # for key, value in strenglist:
     #     print key," : ",value
-    return flopstrengthmap
+    # return flopstrengthmap
 
     turnstr = file.readline()
     turnstr = turnstr.strip()
@@ -158,26 +243,50 @@ def calprivatecardstrength():
 def removesymmetry(avgstrengthmap):
     newmap = {}
     for key,value in avgstrengthmap.items():
-        if key[1] == key[4]:
-            newkey = key[0] + key[3] + "s"
+        cardsstr = key.split(" ")
+        if cardsstr[0][-1] == cardsstr[1][-1]:
+            newkey = cardsstr[0][:-1] + cardsstr[1][:-1] + "s"
         else:
-            newkey = key[0] + key[3] + "o"
+            newkey = cardsstr[0][:-1] + cardsstr[1][:-1] + "o"
+
+        # if key[1] == key[4]:
+        #     newkey = key[0] + key[3] + "s"
+        # else:
+        #     newkey = key[0] + key[3] + "o"
         newmap[newkey] = value
     return newmap
 
 def test():
-    calsingleturncardstrength()
+    # calsingleturncardstrength()
+    print "calprivatecardstrength"
     avgstrengthmap = calprivatecardstrength()
+    print "removesymmetry"
     avgstrengthmap = removesymmetry(avgstrengthmap)
     strengthlist = avgstrengthmap.items()
     strengthlist.sort(key = lambda v:v[1],reverse=True)
+
+    handsnum = 0
     for handsstr ,strength in strengthlist:
-        print handsstr, " : ", strength
+        if len(handsstr) == 5:
+            handsnum += 6
+        elif len(handsstr) == 4:
+            if handsstr[-1] == "s":
+                handsnum += 4
+            else:
+                handsnum += 12
+        else:
+            if handsstr[0] == handsstr[1]:
+                handsnum += 6
+            elif handsstr[-1] == "s":
+                handsnum += 4
+            else:
+                handsnum += 12
+        print handsstr, " : ", strength, handsnum * 1.0 / 1326 * 100
 
 def testcalcompletestrengthmap():
     import time
     startload = time.time()
-    completestrengthmap = shelve.open(Constant.COMPLETESTRENGTHMAPPREFIX + str(4))
+    completestrengthmap = shelve.open(Constant.COMPLETESTRENGTHMAPPREFIX + str(5))
     endload = time.time() - startload
     keylist = completestrengthmap.keys()
     loadkeylist = time.time() - startload
@@ -198,11 +307,11 @@ def testcalcompletestrengthmap():
     completestrengthmap.close()
 
 if __name__ == "__main__":
-    # test()
+    test()
     # calsingleturncardstrength()
     # calprivatecardstrength
     # calavgstrength(3)
-    testcalcompletestrengthmap()
+    # testcalcompletestrengthmap()
     # test()
     # calavgstrength(3)
 

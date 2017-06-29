@@ -1,5 +1,6 @@
 import pprint
 import math
+import hunlgame
 # change the raw data format collected to hunlgame format
 def getboard(handsdata):
     infolen = len(handsdata)
