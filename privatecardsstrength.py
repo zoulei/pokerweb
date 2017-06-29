@@ -13,7 +13,7 @@ import pickle
 
 from contextlib import closing
 import shelve
-
+import os
 
 # print math.factorial(52) / math.factorial(2) / math.factorial(52 - 2)
 # print math.factorial(52) / math.factorial(3) / math.factorial(52 - 3)
@@ -42,75 +42,6 @@ def readreversecompletestrengthmap(boardlen):
 # with the difference that the data is organised in different structure.
 # The first level key is string of board, the second level key is
 # string of hands, and the value is the rank of specific hands.
-def calavgstrength( boardlen):
-    rangeobj = hunlgame.HandsRange()
-
-    rangeobj.addFullRange()
-    fullhandslist = rangeobj.get()
-    handsstrlist = [str(v) for v in fullhandslist]
-
-    strengthmap = {}
-    for handsstr in handsstrlist:
-        strengthmap[handsstr] = 0
-
-    allcards = rangeobj._generateallcard()
-    allboards = itertools.combinations(allcards,boardlen)
-    boardidx = 0
-
-    # completestrengthmap = {}
-    # reversecompletestrengthmap = {}
-
-    completestrengthmap = shelve.open(Constant.COMPLETESTRENGTHMAPPREFIX + str(boardlen), 'c')
-    reversecompletestrengthmap = shelve.open(Constant.REVERSECOMPLETESTRENGTHMAPPREFIX + str(boardlen), 'c')
-
-
-    for board in allboards:
-        boardidx += 1
-        if boardidx % 1000 == 0:
-            print "boardidx:",boardidx
-        tmpallcards= copy.deepcopy(allcards)
-        for card in board:
-            tmpallcards.remove(card)
-        allhands = itertools.combinations(tmpallcards,2)
-        allhandslist = []
-        for hands in allhands:
-            allhandslist.append(list(hands))
-        tmpallhandslist = copy.deepcopy(allhandslist)
-        strengthorder = hunlgame.sorthands_(board, tmpallhandslist)
-
-        for rank, handsidxlist in strengthorder.items():
-            for handsidx in handsidxlist:
-                handsstr = str(hunlgame.Hands(allhandslist[handsidx]))
-                strengthmap[handsstr] += f(rank)
-
-        reversestrengthorder = {}
-        for key in strengthorder.keys():
-            handsidxlist = strengthorder[key]
-            handslist = [str(hunlgame.Hands(allhandslist[v])) for v in handsidxlist]
-            strengthorder[key] = handslist
-            for handsstr in handslist:
-                reversestrengthorder[handsstr] = key
-
-        completestrengthmap[hunlgame.board2str(board)] = strengthorder
-        reversecompletestrengthmap[hunlgame.board2str(board)] = reversestrengthorder
-        # pp.pprint(strengthmap)
-        # raw_input()
-
-    for key in strengthmap.keys():
-        strengthmap[key] /= (boardidx * 1.0)
-    completestrengthmap.close()
-    reversecompletestrengthmap.close()
-    # completemapstr = pickle.dumps(completestrengthmap)
-    # reversecompletemapstr = pickle.dumps(reversecompletestrengthmap)
-    # file = open(Constant.COMPLETESTRENGTHMAPPREFIX + str(boardlen),"w")
-    # file.write(completemapstr)
-    # pickle.loads(completemapstr)
-    # file.close()
-    # file = open(Constant.REVERSECOMPLETESTRENGTHMAPPREFIX + str(boardlen),"w")
-    # file.write(reversecompletemapstr)
-    # file.close()
-    return strengthmap
-
 # def calavgstrength( boardlen):
 #     rangeobj = hunlgame.HandsRange()
 #
@@ -129,23 +60,14 @@ def calavgstrength( boardlen):
 #     # completestrengthmap = {}
 #     # reversecompletestrengthmap = {}
 #
-#     if os.path.exists(Constant.COMPLETESTRENGTHMAPPREFIX + str(boardlen)):
-#         completestrengthmap = shelve.open(Constant.COMPLETESTRENGTHMAPPREFIX + str(boardlen))
-#         usecache = True
-#     else:
-#         completestrengthmap = shelve.open(Constant.COMPLETESTRENGTHMAPPREFIX + str(boardlen), 'c')
-#         usecache = False
-#     if os.path.exists(Constant.REVERSECOMPLETESTRENGTHMAPPREFIX + str(boardlen)):
-#         # reversecompletestrengthmap = shelve.open(Constant.REVERSECOMPLETESTRENGTHMAPPREFIX + str(boardlen))
-#         pass
-#     else:
-#         reversecompletestrengthmap = shelve.open(Constant.REVERSECOMPLETESTRENGTHMAPPREFIX + str(boardlen), 'c')
+#     completestrengthmap = shelve.open(Constant.COMPLETESTRENGTHMAPPREFIX + str(boardlen), 'c')
+#     reversecompletestrengthmap = shelve.open(Constant.REVERSECOMPLETESTRENGTHMAPPREFIX + str(boardlen), 'c')
+#
 #
 #     for board in allboards:
 #         boardidx += 1
 #         if boardidx % 1000 == 0:
 #             print "boardidx:",boardidx
-#
 #         tmpallcards= copy.deepcopy(allcards)
 #         for card in board:
 #             tmpallcards.remove(card)
@@ -153,31 +75,24 @@ def calavgstrength( boardlen):
 #         allhandslist = []
 #         for hands in allhands:
 #             allhandslist.append(list(hands))
-#
-#         if usecache:
-#             strengthorder = completestrengthmap[hunlgame.board2str(board)]
-#             # reversestrengthorder = reversecompletestrengthmap[hunlgame.board2str(board)]
-#         else:
-#
-#             tmpallhandslist = copy.deepcopy(allhandslist)
-#             strengthorder = hunlgame.sorthands_(board, tmpallhandslist)
-#
-#             reversestrengthorder = {}
-#             for key in strengthorder.keys():
-#                 handsidxlist = strengthorder[key]
-#                 handslist = [str(hunlgame.Hands(allhandslist[v])) for v in handsidxlist]
-#                 strengthorder[key] = handslist
-#                 for handsstr in handslist:
-#                     reversestrengthorder[handsstr] = key
-#
-#             completestrengthmap[hunlgame.board2str(board)] = strengthorder
-#             reversecompletestrengthmap[hunlgame.board2str(board)] = reversestrengthorder
+#         tmpallhandslist = copy.deepcopy(allhandslist)
+#         strengthorder = hunlgame.sorthands_(board, tmpallhandslist)
 #
 #         for rank, handsidxlist in strengthorder.items():
 #             for handsidx in handsidxlist:
 #                 handsstr = str(hunlgame.Hands(allhandslist[handsidx]))
 #                 strengthmap[handsstr] += f(rank)
 #
+#         reversestrengthorder = {}
+#         for key in strengthorder.keys():
+#             handsidxlist = strengthorder[key]
+#             handslist = [str(hunlgame.Hands(allhandslist[v])) for v in handsidxlist]
+#             strengthorder[key] = handslist
+#             for handsstr in handslist:
+#                 reversestrengthorder[handsstr] = key
+#
+#         completestrengthmap[hunlgame.board2str(board)] = strengthorder
+#         reversecompletestrengthmap[hunlgame.board2str(board)] = reversestrengthorder
 #         # pp.pprint(strengthmap)
 #         # raw_input()
 #
@@ -195,6 +110,92 @@ def calavgstrength( boardlen):
 #     # file.write(reversecompletemapstr)
 #     # file.close()
 #     return strengthmap
+
+def calavgstrength( boardlen):
+    rangeobj = hunlgame.HandsRange()
+
+    rangeobj.addFullRange()
+    fullhandslist = rangeobj.get()
+    handsstrlist = [str(v) for v in fullhandslist]
+
+    strengthmap = {}
+    for handsstr in handsstrlist:
+        strengthmap[handsstr] = 0
+
+    allcards = rangeobj._generateallcard()
+    allboards = itertools.combinations(allcards,boardlen)
+    boardidx = 0
+
+    # completestrengthmap = {}
+    # reversecompletestrengthmap = {}
+
+    if os.path.exists(Constant.COMPLETESTRENGTHMAPPREFIX + str(boardlen)):
+        completestrengthmap = shelve.open(Constant.COMPLETESTRENGTHMAPPREFIX + str(boardlen))
+        usecache = True
+    else:
+        completestrengthmap = shelve.open(Constant.COMPLETESTRENGTHMAPPREFIX + str(boardlen), 'c')
+        usecache = False
+    if os.path.exists(Constant.REVERSECOMPLETESTRENGTHMAPPREFIX + str(boardlen)):
+        # reversecompletestrengthmap = shelve.open(Constant.REVERSECOMPLETESTRENGTHMAPPREFIX + str(boardlen))
+        pass
+    else:
+        reversecompletestrengthmap = shelve.open(Constant.REVERSECOMPLETESTRENGTHMAPPREFIX + str(boardlen), 'c')
+
+    for board in allboards:
+        boardidx += 1
+        if boardidx % 1000 == 0:
+            print "boardidx:",boardidx
+
+        tmpallcards= copy.deepcopy(allcards)
+        for card in board:
+            tmpallcards.remove(card)
+        allhands = itertools.combinations(tmpallcards,2)
+        allhandslist = []
+        possiblehandsnumer = len(allhandslist)
+        for hands in allhands:
+            allhandslist.append(list(hands))
+
+        if usecache:
+            strengthorder = completestrengthmap[hunlgame.board2str(board)]
+            # reversestrengthorder = reversecompletestrengthmap[hunlgame.board2str(board)]
+        else:
+
+            tmpallhandslist = copy.deepcopy(allhandslist)
+            strengthorder = hunlgame.sorthands_(board, tmpallhandslist)
+
+            reversestrengthorder = {}
+            for key in strengthorder.keys():
+                handsidxlist = strengthorder[key]
+                handslist = [str(hunlgame.Hands(allhandslist[v])) for v in handsidxlist]
+                strengthorder[key] = handslist
+                for handsstr in handslist:
+                    reversestrengthorder[handsstr] = key
+
+            completestrengthmap[hunlgame.board2str(board)] = strengthorder
+            reversecompletestrengthmap[hunlgame.board2str(board)] = reversestrengthorder
+
+        for rank, handsidxlist in strengthorder.items():
+            for handsidx in handsidxlist:
+                handsstr = str(hunlgame.Hands(allhandslist[handsidx]))
+                strengthmap[handsstr] += f(rank)
+
+        # pp.pprint(strengthmap)
+        # raw_input()
+
+    for key in strengthmap.keys():
+        strengthmap[key] /= (boardidx * 1.0)
+    completestrengthmap.close()
+    reversecompletestrengthmap.close()
+    # completemapstr = pickle.dumps(completestrengthmap)
+    # reversecompletemapstr = pickle.dumps(reversecompletestrengthmap)
+    # file = open(Constant.COMPLETESTRENGTHMAPPREFIX + str(boardlen),"w")
+    # file.write(completemapstr)
+    # pickle.loads(completemapstr)
+    # file.close()
+    # file = open(Constant.REVERSECOMPLETESTRENGTHMAPPREFIX + str(boardlen),"w")
+    # file.write(reversecompletemapstr)
+    # file.close()
+    return strengthmap
 
 def calsingleturncardstrength():
     print "cal flop"

@@ -63,6 +63,8 @@ REVERSECOMPLETESTRENGTHMAPPREFIX = CACHEDIR + "reversestrengthmap"
 
 PRIVATECARDSSTRENGTH = CACHEDIR + "privatecardsstrength"
 
+SCORERANGE = 100
+
 # ========================symbol======================================
 TAB = "\t"
 SPACE = " "
