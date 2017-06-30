@@ -325,7 +325,7 @@ def tongjifirstturnstate(handsinfo,anti):
             curturn = 2
 
         action ,value = ftaction[idx - jumpplayerquantity]
-        bethis[pos] = value
+
 
         if value != 0 and value < betvalue:
             # call all in
@@ -365,6 +365,9 @@ def tongjifirstturnstate(handsinfo,anti):
 
             betbb = int((betvalue + 0.5 * bb) / bb)
 
+        if payoffrate < 0:
+            print handsinfo["_id"], payoffrate, idx, pos, curturn
+
         normalpayoff = int(round(payoffrate * 2)) * 5
         haveinvested = 0
         if pos == 9:
@@ -402,6 +405,9 @@ def tongjifirstturnstate(handsinfo,anti):
                 ftdata_pos_bet[str(normalpayoff)] = {"call":0,"raise":0,"fold":0}
             curstate = ftdata_pos_bet[str(normalpayoff)]
 
+            if betlevel < 3 and betbb > 10:
+                print handsinfo["_id"], betbb
+
         else:
             # second turn related
             if betlevel < 3:
@@ -437,7 +443,6 @@ def tongjifirstturnstate(handsinfo,anti):
             if str(normalpayoff) not in ftdata_pos_bet:
                 ftdata_pos_bet[str(normalneedtobet)] = {"call":0,"raise":0,"fold":0}
             curstate = ftdata_pos_bet[str(normalpayoff)]
-
 
         if action == 1 or action == -1:
             curstate["fold"] += 1
@@ -482,6 +487,8 @@ def tongjifirstturnstate(handsinfo,anti):
         elif action == 12:
             break
 
+        bethis[pos] = value
+
     # if "9" in prefloprange["ftdata"] and "1" in prefloprange["ftdata"]["9"] and "45" in prefloprange["ftdata"]["9"]["1"]:
     #     print handsinfo["_id"]
     #     asbc
@@ -489,12 +496,16 @@ def tongjifirstturnstate(handsinfo,anti):
     DBOperater.ReplaceOne(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC},prefloprange,True)
 
 def tongjijoinrate():
+    tongjijoinrate_(Constant.JOINRATEDATA)
+
+
+def tongjijoinrate_(datafield):
     result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
     if result.count() == 0:
         return
     preflopdoc = result.next()
     joinratedoc = {}
-    preflopdoc[Constant.JOINRATEDATA] = joinratedoc
+    preflopdoc[datafield] = joinratedoc
 
     ftdata = preflopdoc[Constant.FTDATA]
     for pos, posdata in ftdata.items():

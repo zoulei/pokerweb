@@ -21,9 +21,9 @@ GAMESEQCLT = "gameseqclt"
 CUMUCLT = "cumuclt"
 
 # =====================preflop state related=============================
-PREFLOPRANGEDOC = "prefloprange"
-FTDATA = "ftdata"
+PREFLOPRANGEDOC = "prefloprange"\
 
+FTDATA = "ftdata"
 FT3BETDATA = "ft3betdata"
 FT4BETDATA = "ft4betdata"
 FT5BETDATA = "ft5betdata"
@@ -34,7 +34,13 @@ ST4BETDATA = "st4betdata"
 ST5BETDATA = "st5betdata"
 
 JOINRATEDATA = "joinratedata"
+FT3BETJOINRATEDATA = "ft3betjoinratedata"
+FT4BETJOINRATEDATA = "ft4betjoinratedata"
+FT5BETJOINRATEDATA = "ft5betjoinratedata"
+
+
 REPAIRJOINRATE = "repairjoinrate"
+FT3BETREPAIRJOINRATE = "ft3betrepairjoinrate"
 
 UPLOAD_FOLDER = '/mnt/mfs/users/zoul15/pmimg/'
 OCR_ERROR_FOLDER = "/mnt/mfs/users/zoul15/errorimg/"
@@ -63,7 +69,7 @@ REVERSECOMPLETESTRENGTHMAPPREFIX = CACHEDIR + "reversestrengthmap"
 
 PRIVATECARDSSTRENGTH = CACHEDIR + "privatecardsstrength"
 
-SCORERANGE = 100
+SCORERANGE = 50
 
 # ========================symbol======================================
 TAB = "\t"

@@ -64,10 +64,11 @@ def printcombinationinfo():
     print "possible turn:",handsinfocommon.combination(52,4)
     print "possible river:",handsinfocommon.combination(52,5)
 
+
 def preflopftdata():
     result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
     rawdata = result.next()
-    rawdata = rawdata[Constant.JOINRATEDATA]
+    rawdata = rawdata[Constant.FT5BETDATA]
     # rawdata = rawdata[Constant.FTDATA]
     pp = pprint.PrettyPrinter(indent= 4)
     # for pos, data in rawdata.items():
@@ -102,6 +103,6 @@ if __name__ == "__main__":
     # totalplayer()
     # playerhandsdis()
     # payoffdis()
-    # preflopftdata()
+    preflopftdata()
     # prefloprepaireddata()
-     printcombinationinfo()
+    #  printcombinationinfo()
