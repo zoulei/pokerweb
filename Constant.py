@@ -69,7 +69,7 @@ REVERSECOMPLETESTRENGTHMAPPREFIX = CACHEDIR + "reversestrengthmap"
 
 PRIVATECARDSSTRENGTH = CACHEDIR + "privatecardsstrength"
 
-SCORERANGE = 50
+SCORERANGE = 50 # lower, pair gets priority
 
 # ========================symbol======================================
 TAB = "\t"

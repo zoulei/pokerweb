@@ -20,7 +20,7 @@ import os
 # print math.factorial(52) / math.factorial(4) / math.factorial(52 - 4)
 # print math.factorial(52) / math.factorial(5) / math.factorial(52 - 5)
 def f(v):
-    return v
+    return v * v
 
 def g(v1,v2,v3):
     return v1 + v2 + v3
@@ -115,10 +115,16 @@ def calavgstrength( boardlen):
             rank -= ( psbhandsquantity - Constant.SCORERANGE )
             if rank < 1:
                 rank = 1
+            if len(handsstrlist) > 100:
+                break
             for handsstr in handsstrlist:
                 strengthmap[handsstr] += f(rank)
+
             if rank == 1:
                 break
+        # handsinfocommon.pp.pprint(strengthmap)
+        # print "======================= " + hunlgame.board2str(board)
+        # raw_input()
 
         # pp.pprint(strengthmap)
         # raw_input()
@@ -138,7 +144,8 @@ def calsingleturncardstrength():
     turnstrengthmap = calavgstrength(4)
     turnstr = json.dumps(turnstrengthmap)
     print "cal river"
-    riverstrengthmap = calavgstrength(5)
+    # riverstrengthmap = calavgstrength(5)
+    riverstrengthmap = {}
     riverstr = json.dumps(riverstrengthmap)
 
     # turnstr = "{}"
@@ -171,20 +178,23 @@ def calprivatecardstrength():
     avgstremgthmap = {}
     flopstrengthmap = removesymmetry(flopstrengthmap)
     turnstrengthmap = removesymmetry(turnstrengthmap)
+
+    import printtongjiinfo
+    print "=========================================flop==============================="
+    printstrengthrank(flopstrengthmap)
+    print "=========================================turn==============================="
+    printstrengthrank(turnstrengthmap)
+
     riverstrengthmap = removesymmetry(riverstrengthmap)
 
     for key in flopstrengthmap.keys():
         avgstremgthmap[key] = g(flopstrengthmap[key],turnstrengthmap[key],riverstrengthmap[key])
 
-    import printtongjiinfo
-    print "=========================================flop==============================="
-    printbyvalue(flopstrengthmap)
-    print "=========================================turn==============================="
-    printbyvalue(turnstrengthmap)
+
     print "=========================================river==============================="
-    printbyvalue(riverstrengthmap)
+    printstrengthrank(riverstrengthmap)
     print "=========================================avg==============================="
-    printbyvalue(avgstremgthmap)
+    printstrengthrank(avgstremgthmap)
 
     return avgstremgthmap
 
@@ -204,7 +214,7 @@ def removesymmetry(avgstrengthmap):
         newmap[newkey] = value
     return newmap
 
-def printbyvalue(targmap):
+def printstrengthrank(targmap):
     tarlist = targmap.items()
     tarlist.sort(key = lambda v:v[1],reverse = True)
     handsnum = 0
@@ -227,30 +237,7 @@ def printbyvalue(targmap):
 
 def test():
     calsingleturncardstrength()
-    print "calprivatecardstrength"
     avgstrengthmap = calprivatecardstrength()
-    print "removesymmetry"
-    avgstrengthmap = removesymmetry(avgstrengthmap)
-    strengthlist = avgstrengthmap.items()
-    strengthlist.sort(key = lambda v:v[1],reverse=True)
-
-    handsnum = 0
-    for handsstr ,strength in strengthlist:
-        if len(handsstr) == 5:
-            handsnum += 6
-        elif len(handsstr) == 4:
-            if handsstr[-1] == "s":
-                handsnum += 4
-            else:
-                handsnum += 12
-        else:
-            if handsstr[0] == handsstr[1]:
-                handsnum += 6
-            elif handsstr[-1] == "s":
-                handsnum += 4
-            else:
-                handsnum += 12
-        print handsstr, " : ", strength, handsnum * 1.0 / 1326 * 100
 
 def testshelveefficient():
     import time
