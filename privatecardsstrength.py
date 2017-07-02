@@ -20,7 +20,7 @@ import os
 # print math.factorial(52) / math.factorial(4) / math.factorial(52 - 4)
 # print math.factorial(52) / math.factorial(5) / math.factorial(52 - 5)
 def f(v):
-    return v*v
+    return v * v
 
 def g(v1,v2,v3):
     return v1 + v2 + v3
@@ -43,16 +43,7 @@ def readreversecompletestrengthmap(boardlen):
 # The first level key is string of board, the second level key is
 # string of hands, and the value is the rank of specific hands.
 
-def calavgstrength( boardlen, rankresult = ["AH AS",]):
-    # if len(rankresult) == handsinfocommon.combination(52,2):
-    if len(rankresult) > 10:
-        tmp = removesymmetrylist(rankresult)
-        print "=========================="+str(boardlen)+"==============="
-        printhandslist(tmp)
-        return rankresult
-    rankedhands = set(rankresult)
-    totalhands = len(rankresult) + 1
-
+def calavgstrength( boardlen):
     rangeobj = hunlgame.HandsRange()
 
     rangeobj.addFullRange()
@@ -60,10 +51,8 @@ def calavgstrength( boardlen, rankresult = ["AH AS",]):
     handsstrlist = [str(v) for v in fullhandslist]
 
     strengthmap = {}
-    supportstrengthmap = {}
     for handsstr in handsstrlist:
         strengthmap[handsstr] = 0
-        supportstrengthmap[handsstr] = 0
     # handsinfocommon.pp.pprint(strengthmap)
 
     allcards = rangeobj._generateallcard()
@@ -90,8 +79,7 @@ def calavgstrength( boardlen, rankresult = ["AH AS",]):
     for board in allboards:
         boardidx += 1
         if boardidx % 1000 == 0:
-            # print "boardidx:",boardidx
-            pass
+            print "boardidx:",boardidx
 
         if usecache:
             strengthorder = completestrengthmap[hunlgame.board2str(board)]
@@ -122,35 +110,18 @@ def calavgstrength( boardlen, rankresult = ["AH AS",]):
 
         ranklist = strengthorder.keys()
         ranklist.sort(reverse=True)
-
-        realrank = totalhands
         for rank in ranklist:
             handsstrlist = strengthorder[rank]
-            # rank -= ( psbhandsquantity - Constant.SCORERANGE )
-            # if rank < 1:
-            #     rank = 1
+            rank -= ( psbhandsquantity - Constant.SCORERANGE )
+            if rank < 1:
+                rank = 1
             if len(handsstrlist) > 100:
-                # single card be sequence or flush
                 break
-            if realrank == 1:
-                for handsstr in handsstrlist:
-                    strengthmap[handsstr] += f(realrank)
-                    supportstrengthmap[handsstr] += f(rank)
-            else:
-                tie = 0
-                for handsstr in handsstrlist:
-                    if handsstr in rankedhands:
-                        tie += 1
-                        # realrank -= 1
-                # realrank = 1
-                for handsstr in handsstrlist:
-                    if handsstr not in rankedhands:
-                        strengthmap[handsstr] += f(realrank - tie * 1.0 / 2 )
-                        supportstrengthmap[handsstr] += f(rank)
-                realrank -= tie
+            for handsstr in handsstrlist:
+                strengthmap[handsstr] += f(rank)
 
-            # if rank == 1:
-            #     break
+            if rank == 1:
+                break
         # handsinfocommon.pp.pprint(strengthmap)
         # print "======================= " + hunlgame.board2str(board)
         # raw_input()
@@ -158,58 +129,23 @@ def calavgstrength( boardlen, rankresult = ["AH AS",]):
         # pp.pprint(strengthmap)
         # raw_input()
 
-    # for key in strengthmap.keys():
-    #     strengthmap[key] /= (boardidx * 1.0)
+    for key in strengthmap.keys():
+        strengthmap[key] /= (boardidx * 1.0)
     completestrengthmap.close()
     if not usecache:
         reversecompletestrengthmap.close()
-
-    strengthinfo = strengthmap.items()
-    strengthinfo.sort(key = lambda v:v[1],reverse = True)
-    maxstrength = strengthinfo[0][1]
-    suspect = []
-    for handsstr, strength in strengthinfo:
-        if strength == maxstrength:
-            suspect.append(handsstr)
-            # rankresult.append(handsstr)
-        else:
-            break
-
-    maxsupportstrength = 0
-    targethands = []
-    for handsstr in suspect:
-        cursupportstrength = supportstrengthmap[handsstr]
-        if cursupportstrength == maxsupportstrength:
-            targethands.append(handsstr)
-        elif cursupportstrength > maxsupportstrength:
-            targethands = [handsstr,]
-            maxsupportstrength = cursupportstrength
-
-    for handsstr in targethands:
-        rankresult.append(handsstr)
-
-    # handsinfocommon.pp.pprint(strengthmap)
-    # printstrengthrank(strengthmap)
-    # handsinfocommon.pp.pprint(rankresult)
-    print "-----------------------------"+str(boardlen)+"-------"
-    printhandslist(removesymmetrylist(rankresult))
-    # print strengthmap["AC AS"]
-    # raw_input()
-    return calavgstrength(boardlen, rankresult)
+    return strengthmap
 
 def calsingleturncardstrength():
     print "cal flop"
-    flopstrengthmap = ["AH AS",]
-    flopstrengthmap = calavgstrength(3,flopstrengthmap)
+    flopstrengthmap = calavgstrength(3)
     flopstr = json.dumps(flopstrengthmap)
     print "cal turn"
-    turnstrengthmap = ["AH AS",]
-    turnstrengthmap = calavgstrength(4,turnstrengthmap)
+    turnstrengthmap = calavgstrength(4)
     turnstr = json.dumps(turnstrengthmap)
     print "cal river"
-    riverstrengthmap = ["AH AS",]
-    riverstrengthmap = calavgstrength(5,riverstrengthmap)
-    # riverstrengthmap = {}
+    # riverstrengthmap = calavgstrength(5)
+    riverstrengthmap = {}
     riverstr = json.dumps(riverstrengthmap)
 
     # turnstr = "{}"
@@ -278,45 +214,9 @@ def removesymmetry(avgstrengthmap):
         newmap[newkey] = value
     return newmap
 
-def removesymmetrylist(avgstrengthlist):
-    newlist = []
-    lastkey = ""
-    for key in avgstrengthlist:
-        cardsstr = key.split(" ")
-        if cardsstr[0][-1] == cardsstr[1][-1]:
-            newkey = cardsstr[0][:-1] + cardsstr[1][:-1] + "s"
-        else:
-            newkey = cardsstr[0][:-1] + cardsstr[1][:-1] + "o"
-
-        newlist.append(newkey)
-
-    seen = set()
-    seen_add = seen.add
-    return [x for x in newlist if not (x in seen or seen_add(x))]
-
-def printhandslist(tarlist):
-    handsnum = 0
-    for handsstr in tarlist:
-        if len(handsstr) == 5:
-            handsnum += 6
-        elif len(handsstr) == 4:
-            if handsstr[-1] == "s":
-                handsnum += 4
-            else:
-                handsnum += 12
-        else:
-            if handsstr[0] == handsstr[1]:
-                handsnum += 6
-            elif handsstr[-1] == "s":
-                handsnum += 4
-            else:
-                handsnum += 12
-        print handsstr, " : ", handsnum * 1.0 / 1326 * 100
-
-
 def printstrengthrank(targmap):
     tarlist = targmap.items()
-    tarlist.sort(key = lambda v:v[1])
+    tarlist.sort(key = lambda v:v[1],reverse = True)
     handsnum = 0
     for handsstr ,strength in tarlist:
         if len(handsstr) == 5:
@@ -409,12 +309,12 @@ def testshelveefficient2():
 
 
 if __name__ == "__main__":
-    # test()
+    test()
     # calsingleturncardstrength()
     # calprivatecardstrength
     # calavgstrength(3)
     # testshelveefficient2()
     # testshelveefficient1()
-    test()
+    # test()
     # calavgstrength(4)
 
