@@ -239,6 +239,16 @@ def test():
     calsingleturncardstrength()
     avgstrengthmap = calprivatecardstrength()
 
+def testprintboardstr():
+    completestrengthmap = shelve.open(Constant.COMPLETESTRENGTHMAPPREFIX + str(3))
+    idx = 0
+    for key in completestrengthmap:
+        print key
+        idx += 1
+        if idx % 100 == 0:
+            raw_input()
+
+
 def testshelveefficient():
     import time
     startload = time.time()
@@ -309,7 +319,7 @@ def testshelveefficient2():
 
 
 if __name__ == "__main__":
-    test()
+    # test()
     # calsingleturncardstrength()
     # calprivatecardstrength
     # calavgstrength(3)
@@ -317,4 +327,4 @@ if __name__ == "__main__":
     # testshelveefficient1()
     # test()
     # calavgstrength(4)
-
+    testprintboardstr()

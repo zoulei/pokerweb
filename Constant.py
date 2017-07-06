@@ -71,6 +71,9 @@ PRIVATECARDSSTRENGTH = CACHEDIR + "privatecardsstrength"
 
 SCORERANGE = 50 # lower, pair gets priority
 
+# ========================board value related================================
+BOARDVALUE = CACHEDIR + "boardvalue"
+
 # ========================symbol======================================
 TAB = "\t"
 SPACE = " "
