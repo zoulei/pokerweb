@@ -4,6 +4,7 @@ import copy
 import itertools
 import shelve
 import Constant
+import earthmover
 
 # return a dict, avg change for each hands
 def getboardvalue(board, fullstrengthmap, reversefullstrengthmap, reversenextfullstrengthmap):
@@ -72,6 +73,11 @@ def test():
 def testprinthistomgranfile():
     boardvaluedict = shelve.open(Constant.BOARDVALUE+str(3))
     targetlist = ["2C7HAS","3C7HAS","6C7HAS","2H7HAS","2C7HKS"]
+    for idx in xrange(len(targetlist)):
+        for cdx in xrange(idx+1, len(targetlist)):
+            key1 = boardvaluedict[idx]
+            key2 = boardvaluedict[cdx]
+            print  key1, key2,earthmover.simplediff(boardvaluedict(targetlist[idx]),boardvaluedict(targetlist[cdx]) )
 
 if __name__ == "__main__":
     test()
