@@ -240,7 +240,7 @@ def test():
     avgstrengthmap = calprivatecardstrength()
 
 def testprintboardstr():
-    completestrengthmap = shelve.open(Constant.COMPLETESTRENGTHMAPPREFIX + str(3))
+    completestrengthmap = shelve.open(Constant.COMPLETESTRENGTHMAPPREFIX + str(4))
     idx = 0
     for key in completestrengthmap:
         print key

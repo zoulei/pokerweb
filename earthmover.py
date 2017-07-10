@@ -45,5 +45,14 @@ def EMD():
 def simplediff(histogram1, histogram2):
     totaldif = 0
     for key in histogram1:
-        totaldif += math.abs(histogram1[key] - histogram2[key])
+        if histogram1[key] == 0 or histogram2[key] == 0:
+            continue
+        totaldif += abs(histogram1[key] - histogram2[key])
     return totaldif
+
+def compare(histogram1,histogram2):
+    for key in histogram1:
+        if abs(histogram1[key] - histogram2[key]) < 100:
+            continue
+        if histogram1[key] != histogram2[key]:
+            print key," : ",histogram1[key],histogram2[key]
