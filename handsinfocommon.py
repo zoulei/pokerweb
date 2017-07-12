@@ -30,5 +30,12 @@ def combination(n,r):
 def permutation(n,r):
     return math.factorial(n) / math.factorial(n - r)
 
+def getnearestkey(querykey,keylist):
+    keylist = [int(v) for v in keylist]
+    querykey = int(querykey)
+    difflist = [abs(v - querykey) for v in keylist]
+    targetkey = keylist[difflist.index(min(difflist))]
+    return targetkey
+
 # ==================debug related===========================
 pp = pprint.PrettyPrinter(indent= 4)

@@ -12,10 +12,35 @@ HEADER = Constant.TAB.join(["range","relativepos","playernumber",
                             "boardvalue","handsstrength","buystrength",
                             "action"])
 
-def writeheader():
-    file = open(Constant.AFTERFLOPSTATEHEADER,"w")
-    file.write(HEADER)
-    file.close()
+class afterflopstate:
+    def __init__(self, handsdata, anti, bbvalue):
+        self.m_handsdata = handsdata
+        self.m_anti = anti
+        self.m_bbvalue = bbvalue
+
+        self.m_playerquantitiy = 0
+
+        self.checkvalid()
+
+    def checkvalid(self):
+        showcard = self.m_handsdata["showcard"]
+        if not (showcard >= 0 or showcard == -3):
+            return False
+        else:
+            return True
+
+    def calplayerquantity(self):
+        self.m_playerquantitiy = len(self.m_handsinfo["data"][0][2])
+
+    def writeheader(self):
+        file = open(Constant.AFTERFLOPSTATEHEADER,"w")
+        file.write(HEADER)
+        file.close()
+
+    def calpreflopstate(self):
+        preflopaction = self.m_handsdata["data"][1]
+
+
 
 def tjafterflopstate(handsdata, anti, bbvalue):
 # def calinvest(invest,actiondict,inpool,anti,bbvalue,handsdata,inpoolstate):

@@ -21,7 +21,7 @@ GAMESEQCLT = "gameseqclt"
 CUMUCLT = "cumuclt"
 
 # =====================preflop state related=============================
-PREFLOPRANGEDOC = "prefloprange"\
+PREFLOPRANGEDOC = "prefloprange"
 
 FTDATA = "ftdata"
 FT3BETDATA = "ft3betdata"
@@ -33,14 +33,25 @@ ST3BETDATA = "st3betdata"
 ST4BETDATA = "st4betdata"
 ST5BETDATA = "st5betdata"
 
-JOINRATEDATA = "joinratedata"
+FTJOINRATEDATA = "ftjoinratedata"
 FT3BETJOINRATEDATA = "ft3betjoinratedata"
 FT4BETJOINRATEDATA = "ft4betjoinratedata"
 FT5BETJOINRATEDATA = "ft5betjoinratedata"
 
+STJOINRATEDATA = "stjoinratedata"
+ST3BETJOINRATEDATA = "st3betjoinratedata"
+ST4BETJOINRATEDATA = "st4betjoinratedata"
+ST5BETJOINRATEDATA = "st5betjoinratedata"
 
-REPAIRJOINRATE = "repairjoinrate"
-FT3BETREPAIRJOINRATE = "ft3betrepairjoinrate"
+FTREPAIRJOINRATEDATA = "ftrepairjoinratedata"
+FT3BETREPAIRJOINRATEDATA = "ft3betrepairjoinratedata"
+FT4BETREPAIRJOINRATEDATA = "ft4betrepairjoinratedata"
+FT5BETREPAIRJOINRATEDATA = "ft5betrepairjoinratedata"
+
+STREPAIRJOINRATEDATA = "strepairjoinratedata"
+ST3BETREPAIRJOINRATEDATA = "st3betrepairjoinratedata"
+ST4BETREPAIRJOINRATEDATA = "st4betrepairjoinratedata"
+ST5BETREPAIRJOINRATEDATA = "st5betrepairjoinratedata"
 
 UPLOAD_FOLDER = '/mnt/mfs/users/zoul15/pmimg/'
 OCR_ERROR_FOLDER = "/mnt/mfs/users/zoul15/errorimg/"
@@ -53,6 +64,26 @@ STATETHRE = 1
 
 BELIEVERATE = 60
 FILTERHANDS = 20
+
+def getpreflopjoinratefield(curturn,betlevel):
+    if curturn == 1:
+        if betlevel <= 2:
+            return FTREPAIRJOINRATEDATA
+        elif betlevel == 3:
+            return FT3BETREPAIRJOINRATEDATA
+        elif betlevel == 4:
+            return FT4BETREPAIRJOINRATEDATA
+        else:
+            return FT5BETREPAIRJOINRATEDATA
+    else:
+        if betlevel <= 2:
+            return STREPAIRJOINRATEDATA
+        elif betlevel == 3:
+            return ST3BETREPAIRJOINRATEDATA
+        elif betlevel == 4:
+            return ST4BETREPAIRJOINRATEDATA
+        else:
+            return ST5BETREPAIRJOINRATEDATA
 
 # ========================game level related=============================
 BB = 10

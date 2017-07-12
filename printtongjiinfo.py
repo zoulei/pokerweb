@@ -68,11 +68,14 @@ def printcombinationinfo():
 def preflopftdata():
     result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
     rawdata = result.next()
-    rawdata = rawdata[Constant.FT5BETDATA]
+    print "rawkey: ",rawdata.keys()
+    rawdata = rawdata[Constant.STDATA]
     # rawdata = rawdata[Constant.FTDATA]
     pp = pprint.PrettyPrinter(indent= 4)
     # for pos, data in rawdata.items():
-    pos = "9"
+    print "rawdata"
+    print rawdata.keys()
+    pos = "0"
     data = rawdata[pos]
     print "====================="*2,pos,"==========================="*2
     betbblist = data.keys()

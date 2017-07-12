@@ -8,6 +8,22 @@ import tongjihandsinfo
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
+class prefloprangge:
+    def __init__(self):
+        result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
+        self.m_rawdata = result.next()
+
+    def getrange(self,curturn,betlevel,ftlevelkey,stlevelkey,thlevelkey,action):
+        targetfield = Constant.getpreflopjoinratefield(curturn,betlevel)
+        targetdoc = self.m_rawdata[targetfield]
+
+        for key in [ftlevelkey,stlevelkey,thlevelkey]:
+            nearestftlevelkey = handsinfocommon.getnearestkey(key,targetdoc.keys())
+            targetdoc = targetdoc[nearestftlevelkey]
+
+        return targetdoc[action]
+
+
 class JoinrateRepairer:
     def __init__(self, ftdata):
         self.ftdata  =ftdata
@@ -280,8 +296,8 @@ def tongjifirstturnstate(handsinfo,anti):
     if playerquantitiy < 6:
         return
     preflopaction = handsinfo["data"][1]
-    ftaction = preflopaction[:playerquantitiy]
-
+    # ftaction = preflopaction[:playerquantitiy]
+    ftaction = preflopaction
     bb = handsinfocommon.readbb(handsinfo)
     #anti = handsinfocommon.readanti(handsinfo)
 
@@ -312,20 +328,23 @@ def tongjifirstturnstate(handsinfo,anti):
     raisevalue = bb
 
     for idx,pos in enumerate(poslist*2):
+        curturn = idx / len(poslist) + 1
+        # if curturn == 3:
+        #     break
+        # print "=====================:",idx,pos,inpoolstate[pos],jumpplayerquantity
         if inpoolstate[pos] != 1:
             # this one has folded his hands or all in.
             jumpplayerquantity += 1
+            # print "continue"
             continue
         if idx - jumpplayerquantity == len(ftaction):
+            # print "break"
+            # print idx - jumpplayerquantity,len(ftaction)
             break
 
-        if idx < len(poslist):
-            curturn = 1
-        else:
-            curturn = 2
+        # print "-------------------------------:",idx,pos,curturn,inpoolstate
 
         action ,value = ftaction[idx - jumpplayerquantity]
-
 
         if value != 0 and value < betvalue:
             # call all in
@@ -381,7 +400,7 @@ def tongjifirstturnstate(handsinfo,anti):
 
         if curturn == 1:
             if betlevel < 3:
-                ftdata = prefloprange["ftdata"]
+                ftdata = prefloprange[Constant.FTDATA]
             elif betlevel == 3:
                 ftdata = prefloprange[Constant.FT3BETDATA]
             elif betlevel == 4:
@@ -432,7 +451,7 @@ def tongjifirstturnstate(handsinfo,anti):
                 break
 
             if str(relativepos) not in ftdata:
-                ftdata[relativepos] = {}
+                ftdata[str(relativepos)] = {}
             ftdata_pos = ftdata[str(relativepos)]
 
             normalneedtobet = int( (needtobet + 0.5 * bb) / bb )
@@ -441,7 +460,7 @@ def tongjifirstturnstate(handsinfo,anti):
             ftdata_pos_bet = ftdata_pos[str(normalneedtobet)]
 
             if str(normalpayoff) not in ftdata_pos_bet:
-                ftdata_pos_bet[str(normalneedtobet)] = {"call":0,"raise":0,"fold":0}
+                ftdata_pos_bet[str(normalpayoff)] = {"call":0,"raise":0,"fold":0}
             curstate = ftdata_pos_bet[str(normalpayoff)]
 
         if action == 1 or action == -1:
@@ -545,6 +564,8 @@ def removepreflopdoc():
 
 def tongjiftmain():
     result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,{})
+    # result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,
+    #                         {"_id":"35357006093039820170308111711"})
     idx = 0
     for handsinfo in result:
         # if handsinfo["_id"] == "35357006093039820170526040210":
@@ -557,5 +578,5 @@ if __name__ == "__main__":
     removepreflopdoc()
 
     tongjiftmain()
-    tongjijoinrate()
-    repairjoinrate()
+    # tongjijoinrate()
+    # repairjoinrate()
