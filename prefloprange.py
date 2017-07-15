@@ -494,7 +494,7 @@ def tongjifirstturnstate(handsinfo,anti):
                     raiser = -1
                     raisevalue = value - betvalue
 
-                givepayoff = (value + total) * 1.0 / ( value - betvalue)
+                givepayoff = (value + total - bethis.get(pos,0)) * 1.0 / ( value - betvalue)
                 givepayoff = handsinfocommon.roundhalf(givepayoff)
                 if givepayoff <= 3:
                     curstate["raise"] += 1
