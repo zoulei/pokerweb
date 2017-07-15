@@ -14,6 +14,8 @@ class prefloprangge:
         self.m_rawdata = result.next()
 
     def getrange(self,curturn,betlevel,ftlevelkey,stlevelkey,thlevelkey,action):
+        if not action:
+            return
         targetfield = Constant.getpreflopjoinratefield(curturn,betlevel)
         targetdoc = self.m_rawdata[targetfield]
 

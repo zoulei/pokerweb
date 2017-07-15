@@ -40,8 +40,6 @@ class afterflopstate:
     def calpreflopstate(self):
         preflopaction = self.m_handsdata["data"][1]
 
-
-
 def tjafterflopstate(handsdata, anti, bbvalue):
 # def calinvest(invest,actiondict,inpool,anti,bbvalue,handsdata,inpoolstate):
     showcard  = handsdata["showcard"]

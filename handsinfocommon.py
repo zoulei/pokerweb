@@ -5,12 +5,24 @@ import hunlgame
 def getboard(handsdata):
     infolen = len(handsdata)
     if infolen < 6:
+        # over before river
         return handsdata[-1]
-    if infolen == 7:
+    elif infolen == 7:
+        # play to river or all in at turn
         return handsdata[-1]
-    for idx in xrange(4,0,-1):
-        if handsdata[idx]!= None:
-            return handsdata[idx]
+
+    else:
+        # infolen == 6
+        # may be play to river and not show card
+        # may be all in before river
+        if not isinstance(handsdata[5][0][0],list):
+            # play to river and not show card
+            return handsdata[-1]
+
+        for idx in xrange(4,0,-1):
+            # all in before river
+            if handsdata[idx]!= None:
+                return handsdata[idx]
 
 def readinpool(handsinfo):
     return handsinfo["data"][0][2]

@@ -1,6 +1,7 @@
 import Constant
 import handsinfocommon
 import copy
+import prefloprange
 
 # this class do not consider the real seat number
 class CumuInfo:
@@ -10,6 +11,33 @@ class CumuInfo:
         self.m_anti = anti
         self.m_stacksize = stacksize
         self.reset()
+
+        self.m_handsrangeobj = prefloprange.prefloprangge()
+
+    # this function is called after the preflop is over
+    def getpreflopinfomation(self):
+        return {
+            "range" :   self.m_prefloprange,
+            "raiser"    :   self.m_preflopraiser,
+            "betlevel"  :   self.m_preflopbetlevel
+        }
+
+    # this function is called after the action is updated
+    def getlastaction(self):
+        return [self.m_lastaction,self.m_lastattack]
+
+    # this fucntion is called after the action is updated to get the state before the last action is updated
+    def getlaststate(self):
+        return self.m_laststate
+    #           {
+    #             "pos":pos,
+    #             "relativepos":relativepos,
+    #             "remain":self.m_remainplayer-self.m_allinplayer,
+    #             "normalneedtobet":normalneedtobet,
+    #             "normalpayoff":normalpayoff,
+    #             "betbb":betbb,
+    #             "circle":self.m_circle
+    #             }
 
     def reset(self):
         # pot size
@@ -64,10 +92,10 @@ class CumuInfo:
         self.initinpoolstate()
 
         # 0 means preflop
-        self.m_curturn = -1
+        self.m_curturn = 0
 
         # if current turn has finished
-        self.m_curturnover = True
+        self.m_curturnover = False
 
         # remaining player, including those all in
         self.m_remainplayer = self.m_playerquantity
@@ -81,6 +109,11 @@ class CumuInfo:
 
         self.m_lastaction = 0
         self.m_lastattack = 0
+
+        self.m_laststate = {}
+
+        # 1. player's range. 2. betlevel. 3. player number and relative pos. 4. raiser. 5. pot. 6. how many player all in.
+        self.m_prefloprange = [-1] * 10
 
 
     def initinpoolstate(self):
@@ -141,7 +174,7 @@ class CumuInfo:
                 # every one all in or fold
                 return -1
 
-
+    # the last player to action in the current turn and the current round
     def getlastactioner(self):
         if self.m_curturn == 0:
             poslist = self.m_preflopposlist
@@ -191,28 +224,21 @@ class CumuInfo:
         if self.isgameover():
             print "game has over"
             raise
-
         if self.m_curturnover:
             self.newturn()
-
+        self.m_laststate = self.calstatistics()
         self.updatestate(action,value)
-
-
         self.updatecircle()
-
-
         self.m_lastplayer = self.m_nextplayer
-        # self.m_nextplayer = self.getnextplayer()
-
         self.updatecurturnstate()
         self.m_nextplayer = self.getnextplayer()
-        if not self.isgameover() and self.m_curturnover:
-            self.newturn()
+        self.updateprefloprange()
+        # if not self.isgameover() and self.m_curturnover:
+        #     self.newturn()
 
     def updatecircle(self):
         if self.m_lastplayer == 0:
             self.m_circle = 1
-
         if self.m_curturn == 0:
             poslist = self.m_preflopposlist
         else:
@@ -256,7 +282,8 @@ class CumuInfo:
             givepayoff = (value + self.m_pot - self.m_bethistory.get(pos,0)) * 1.0 / ( value - self.m_betvalue)
             givepayoff = handsinfocommon.roundhalf(givepayoff)
             self.m_lastattack = self.m_betlevel + 1 + givepayoff * 0.1
-
+        else:
+            self.m_lastattack = 0
 
         if action == 1 or action == -1:
             # curstate["fold"] += 1
@@ -281,7 +308,7 @@ class CumuInfo:
             self.m_bethistory[pos] = value
 
         elif action == 3 or action == 6:
-            self.m_lastaction = 3
+            self.m_lastaction = action
             # curstate["call"] += 1
             self.m_pot += self.m_betvalue-self.m_bethistory.get(pos,0)
             self.m_tmpstacksize -= self.m_betvalue-self.m_bethistory.get(pos,0)
@@ -325,10 +352,6 @@ class CumuInfo:
             self.m_remainplayer = 1
             self.m_allinplayer = 0
             self.m_curturnover = True
-
-    # this function is called after the action is updated
-    def getlastaction(self):
-        return [self.m_lastaction,self.m_lastattack]
 
     # this function is called before the action is updated
     def calstatistics(self):
@@ -397,11 +420,71 @@ class CumuInfo:
                 "pos":pos,
                 "relativepos":relativepos,
                 "remain":self.m_remainplayer-self.m_allinplayer,
+                "allin":self.m_allinplayer,
                 "normalneedtobet":normalneedtobet,
                 "normalpayoff":normalpayoff,
                 "betbb":betbb,
-                "circle":self.m_circle
+                "circle":self.m_circle,
+                "betlevel":self.m_betlevel,
+                "round":self.m_curturn,
+                "raiser":self.m_raiser,
                 }
+
+    # update preflop state
+    # preflop state include :
+    # 1. player's range. 2. betlevel. 3. player number and relative pos. 4. raiser. 5. pot. 6. how many player all in.
+    def updateprefloprange(self):
+        if self.m_laststate["round"] != 1:
+            return
+        if self.m_laststate["circle"] == 1:
+            newrange = self.m_handsrangeobj.getrange(self.m_laststate["circle"],self.m_laststate["betlevel"],
+                                          self.m_laststate["pos"],self.m_laststate["betbb"],self.m_laststate["normalpayoff"],
+                                          self.actiontransfer(self.m_lastaction) )
+        elif self.m_laststate["circle"] > 1:
+            newrange = self.m_handsrangeobj.getrange(self.m_laststate["circle"],self.m_laststate["betlevel"],
+                                          self.m_laststate["relativepos"],self.m_laststate["normalneedtobet"],self.m_laststate["normalpayoff"],
+                                          self.actiontransfer(self.m_lastaction) )
+
+        if newrange:
+            self.m_prefloprange[self.m_laststate["pos"]] = newrange
+
+    # self.m_preflopstate = {
+    #         "range" :   [-1]*10,
+    #         "betlevel"  :   1,
+    #         "playernum"    :   self.m_playerquantity,
+    #         "relativepos"   :   2,  # 2 means no raiser,
+    #         "raiser"    :   0,
+    #         "pot"   :   self.m_pot,
+    #         "allin"    :   0,
+    #     }
+
+    def actiontransfer(self,action):
+        if action == 1:
+            return "fold"
+        elif action == 12:
+            return
+        elif action in [2,4.2]:
+            return "raise"
+        elif action in [3,6,4.3]:
+            return "call"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class HandsInfo:
     def __init__(self, handsinfo):
@@ -414,7 +497,6 @@ class HandsInfo:
 
     def init(self):
         self.m_playerquantitiy = len(self.m_handsinfo["data"][0][2])
-
 
         # -3 means fail to record showcard
         # -1 or -2 means record error, this hands is not usefull
@@ -429,6 +511,35 @@ class HandsInfo:
         if not (self.m_showcard >= 0 or self.m_showcard == -3):
             return False
         return True
+
+    # return how far does this game go for
+    # 1 - 4 means preflop to river
+    def getturncount(self):
+        handsdata = self.m_handsinfo["data"]
+        infolen = len(handsdata)
+        if infolen < 6:
+            # over before river
+            return infolen - 2
+        elif infolen == 7:
+            # play to river or all in at turn
+            if handsdata[4]==None:
+                # all in at turn
+                return 3
+            else:
+                # play to river
+                return 4
+        else:
+            # infolen == 6
+            # may be play to river and not show card
+            # may be all in before river
+            if not isinstance(handsdata[5][0][0],list):
+                # play to river and not show card
+                return 4
+
+            for idx in xrange(4,0,-1):
+                # all in before river
+                if handsdata[idx]!= None:
+                    return idx - 1
 
     def getpreflopbetdata(self):
         return self.m_handsinfo["data"][1]
@@ -449,18 +560,32 @@ class HandsInfo:
         handsdata = self.m_handsinfo["data"]
         infolen = len(handsdata)
         if infolen < 6:
+            # over before river
             return handsdata[-1]
-        if infolen == 7:
+        elif infolen == 7:
+            # play to river or all in at turn
             return handsdata[-1]
-        for idx in xrange(4,0,-1):
-            if handsdata[idx]!= None:
-                return handsdata[idx]
+
+        else:
+            # infolen == 6
+            # may be play to river and not show card
+            # may be all in before river
+            if not isinstance(handsdata[5][0][0],list):
+                # play to river and not show card
+                return handsdata[-1]
+
+            for idx in xrange(4,0,-1):
+                # all in before river
+                if handsdata[idx]!= None:
+                    return handsdata[idx]
 
     def getprivatecard(self):
         if self.m_showcard > 0 or self.m_showcard == -3:
             return self.m_handsinfo["data"][5]
         else:
             return None
+
+
 
     # round starts from 0, which means preflop
     # actionidx starts from 0, which means the first action
@@ -471,3 +596,4 @@ class HandsInfo:
         action, value = self.getrounddata(round)[actionidx]
         self.m_cumuinfo.update(action, value)
         return self.m_cumuinfo
+
