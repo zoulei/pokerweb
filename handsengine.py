@@ -91,8 +91,8 @@ class CumuInfo:
 
         self.initinpoolstate()
 
-        # 0 means preflop
-        self.m_curturn = 0
+        # 1 means preflop
+        self.m_curturn = 1
 
         # if current turn has finished
         self.m_curturnover = False
@@ -125,10 +125,8 @@ class CumuInfo:
             self.m_inpoolstate[pos] = 1
 
     def newturn(self):
-        if self.m_curturn == -1:
-            return
 
-        if self.m_curturn == 0:
+        if self.m_curturn == 1:
             self.m_preflopraiser = self.m_raiser
             self.m_preflopbetlevel = self.m_betlevel
 
@@ -148,7 +146,7 @@ class CumuInfo:
 
     def getnextplayer(self):
         if self.m_curturnover:
-            if self.m_curturn + 1 > 0:
+            if self.m_curturn + 1 > 1:
                 poslist = self.m_afterflopposlist
             else:
                 poslist = self.m_preflopposlist
@@ -176,7 +174,7 @@ class CumuInfo:
 
     # the last player to action in the current turn and the current round
     def getlastactioner(self):
-        if self.m_curturn == 0:
+        if self.m_curturn == 1:
             poslist = self.m_preflopposlist
         else:
             poslist = self.m_afterflopposlist
@@ -239,7 +237,7 @@ class CumuInfo:
     def updatecircle(self):
         if self.m_lastplayer == 0:
             self.m_circle = 1
-        if self.m_curturn == 0:
+        if self.m_curturn == 1:
             poslist = self.m_preflopposlist
         else:
             poslist = self.m_afterflopposlist
@@ -395,7 +393,7 @@ class CumuInfo:
         normalpayoff = int(round(payoffrate * 2)) * 5
         normalneedtobet = int( (needtobet + 0.5 * bb) / bb )
 
-        if self.m_curturn == 0:
+        if self.m_curturn == 1:
             if pos > self.m_raiser:
                 relativepos = 0
             else:
@@ -489,13 +487,6 @@ class CumuInfo:
 class HandsInfo:
     def __init__(self, handsinfo):
         self.m_handsinfo = handsinfo
-        self.m_playerquantitiy = 0
-        self.m_showcard = 0
-
-        self.m_cumuinfo = CumuInfo()
-        self.init()
-
-    def init(self):
         self.m_playerquantitiy = len(self.m_handsinfo["data"][0][2])
 
         # -3 means fail to record showcard
@@ -503,6 +494,14 @@ class HandsInfo:
         # 0 means game over in advance
         # 1 means game over with showcard
         self.m_showcard = self.m_handsinfo["showcard"]
+
+        self.reset()
+
+    def reset(self):
+        self.m_cumuinfo = CumuInfo()
+
+        self.m_lastupdateturn = 1
+        self.m_lastupdateidx = -1
 
     def getplayerquantity(self):
         return self.m_playerquantitiy
@@ -540,6 +539,9 @@ class HandsInfo:
                 # all in before river
                 if handsdata[idx]!= None:
                     return idx - 1
+
+    def getspecificturnbetdata(self,turn):
+        return self.m_handsinfo["data"][turn]
 
     def getpreflopbetdata(self):
         return self.m_handsinfo["data"][1]
@@ -585,15 +587,41 @@ class HandsInfo:
         else:
             return None
 
+    def getpreflopinformation(self):
+        self.traversepreflop()
+        return self.m_cumuinfo.getpreflopinfomation()
 
+    # traverse preflop data if preflop data has not been traversed
+    def traversepreflop(self):
+        self.traversespecificturn(1)
+
+    def traversespecificturn(self,turn):
+        if self.m_lastupdateturn == turn:
+            preflopdata = self.getspecificturnbetdata(turn)
+            if self.m_lastupdateidx + 1 == len(preflopdata):
+                # now is at the end of preflop
+                return
+            for idx in xrange(self.m_lastupdateidx + 1, len(preflopdata)):
+                # self.m_cumuinfo.update(*preflopdata[idx])
+                self.updatecumuinfo(turn, idx)
+        elif self.m_lastupdateturn > turn:
+            # now is after the turn
+            return
+        elif self.m_lastupdateturn == turn - 1 and self.m_lastupdateidx + 1 == len(self.getspecificturnbetdata(turn - 1)):
+            return
+        elif self.m_lastupdateturn < turn:
+            for idx in xrange(self.m_lastupdateturn,turn + 1):
+                self.traversespecificturn(idx)
+            return
+
+    def updatecumuinfo(self,round,actionidx):
+        self.m_cumuinfo.update(*self.getspecificturnbetdata(round)[actionidx])
+        self.m_lastupdateturn = round
+        self.m_lastupdateidx = actionidx
 
     # round starts from 0, which means preflop
     # actionidx starts from 0, which means the first action
-    def getcumuinfo(self,round, actionidx):
-        if round == 0 and actionidx == 0:
-            self.m_cumuinfo.reset()
-
-        action, value = self.getrounddata(round)[actionidx]
-        self.m_cumuinfo.update(action, value)
+    def getcumuinfo(self):
         return self.m_cumuinfo
+
 
