@@ -103,44 +103,26 @@ def prefloprepaireddata():
         pp.pprint(data[key])
 
 def printdatalen6():
-    result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
-    null2 = 0
-    null3 = 0 # preflop all in
-    null4 = 0 # flop all in
-    yes7 = 0 # play to river
-    total = 0 # show card
+    result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,{})
+    showcardinfo = {}
     for rawdata in result:
-        if len(rawdata["data"]) >= 6:
-            # total += 1
-            if isinstance(rawdata["data"][5][0][0],list):
-                total += 1
-            if isinstance(rawdata["data"][5][0][0],list) and rawdata["data"][2] == None:
-                null2 += 1
-            elif isinstance(rawdata["data"][5][0][0],list) and rawdata["data"][3] == None:
-                # preflop all in
-                null3 += 1
-            elif isinstance(rawdata["data"][5][0][0],list) and rawdata["data"][4] == None:
-                # flop all in
-                null4 += 1
-            if isinstance(rawdata["data"][5][0][0],list) and len(rawdata["data"]) == 7 and  rawdata["data"][4] == None:
-                # play to river
-                yes7 += 1
-                # print rawdata["_id"]
-        if len(rawdata["data"]) == 6:
-            if not isinstance(rawdata["data"][5][0][0],list):
-                print rawdata["_id"]
-    print null2
-    print null3
-    print null4
-    print yes7
-    print total
-                # print rawdata["_id"]
+        showcard = rawdata["showcard"]
+        if showcard not in showcardinfo:
+            showcardinfo[showcard] = 0
+        showcardinfo[showcard] += 1
+    handsinfocommon.pp.pprint(showcardinfo)
+    sumhands = sum(showcardinfo.values())
+    for key in showcardinfo.keys():
+        showcardinfo[key] /= sumhands * 1.0
+    print "============================="
+    handsinfocommon.pp.pprint(showcardinfo)
+    print "sumhands :   ",sumhands
 
 if __name__ == "__main__":
     # totalplayer()
     # playerhandsdis()
     # payoffdis()
-    # printdatalen6()
+    printdatalen6()
     # prefloprepaireddata()
     #  printcombinationinfo()
-    preflopftdata()
+    # preflopftdata()

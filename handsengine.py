@@ -39,6 +39,15 @@ class CumuInfo:
     #             "circle":self.m_circle
     #             }
 
+    # the relative pos of specific pos when all-iner and folder is ignored
+    def getrelativepos(self,pos):
+        relativepos = 0
+        for idx in self.m_afterflopposlist[::-1]:
+            if idx == relativepos:
+                return relativepos + 1
+            if self.m_inpoolstate[idx] == 1:
+                relativepos += 1
+
     def reset(self):
         # pot size
         self.m_pot = self.m_bb + self.m_bb/2 + self.m_anti * self.m_playerquantity
@@ -595,6 +604,9 @@ class HandsInfo:
     def traversepreflop(self):
         self.traversespecificturn(1)
 
+    # traverse over specific turn's data.
+    # This function make sure that after this function is called,
+    # the action update procedure stops right at the end of this turn.
     def traversespecificturn(self,turn):
         if self.m_lastupdateturn == turn:
             preflopdata = self.getspecificturnbetdata(turn)
@@ -606,6 +618,8 @@ class HandsInfo:
                 self.updatecumuinfo(turn, idx)
         elif self.m_lastupdateturn > turn:
             # now is after the turn
+            self.reset()
+            self.traversespecificturn(turn)
             return
         elif self.m_lastupdateturn == turn - 1 and self.m_lastupdateidx + 1 == len(self.getspecificturnbetdata(turn - 1)):
             return

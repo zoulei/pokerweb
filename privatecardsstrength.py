@@ -19,6 +19,14 @@ import os
 # print math.factorial(52) / math.factorial(3) / math.factorial(52 - 3)
 # print math.factorial(52) / math.factorial(4) / math.factorial(52 - 4)
 # print math.factorial(52) / math.factorial(5) / math.factorial(52 - 5)
+
+class Privatehandsrange:
+    def __init__(self):
+        pass
+
+    def gethands(self,rangevalue):
+        pass
+
 def f(v):
     return v * v
 

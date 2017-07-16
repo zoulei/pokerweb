@@ -6,31 +6,16 @@ import Constant
 import handsinfocommon
 
 from tongjihandsinfo import *
+from handsengine import HandsInfo
 
 HEADER = Constant.TAB.join(["range","relativepos","playernumber",
                             "flopattack","turnattack","riverattack",
                             "boardvalue","handsstrength","buystrength",
                             "action"])
 
-class afterflopstate:
-    def __init__(self, handsdata, anti, bbvalue):
-        self.m_handsdata = handsdata
-        self.m_anti = anti
-        self.m_bbvalue = bbvalue
-
-        self.m_playerquantitiy = 0
-
-        self.checkvalid()
-
-    def checkvalid(self):
-        showcard = self.m_handsdata["showcard"]
-        if not (showcard >= 0 or showcard == -3):
-            return False
-        else:
-            return True
-
-    def calplayerquantity(self):
-        self.m_playerquantitiy = len(self.m_handsinfo["data"][0][2])
+class afterflopstate(HandsInfo):
+    def __init__(self, handsdata):
+        HandsInfo.__init__(self,handsdata)
 
     def writeheader(self):
         file = open(Constant.AFTERFLOPSTATEHEADER,"w")
@@ -38,7 +23,55 @@ class afterflopstate:
         file.close()
 
     def calpreflopstate(self):
-        preflopaction = self.m_handsdata["data"][1]
+        if self.m_cumuinfo.m_curturn > 1:
+            self.reset()
+        self.traversepreflop()
+
+        preflopinfor = self.getpreflopinformation()
+        playerrange = preflopinfor["range"]
+        raiser = preflopinfor["raiser"]
+        betlevel = preflopinfor["betlevel"]
+
+        statistics = self.m_cumuinfo.calstatistics()
+        remain = statistics["remain"]
+        allin = statistics["allin"]
+        pot = statistics["pot"]
+
+        newplayerrange = [0] * 10
+        for idx,state in enumerate(self.m_cumuinfo.m_inpoolstate):
+            ownpos = self.m_cumuinfo.getrelativepos(idx)
+            newplayerrange[ownpos] = playerrange[idx]
+
+        self.m_preflopstate = {
+            "remain"    :   remain,
+            "raiser"    :   self.m_cumuinfo.getrelativepos(raiser),
+            "pot"       :   pot,
+            "allin"     :   allin,
+            "betlevel"  :   betlevel,
+            "range"     :   newplayerrange,
+            "flop"      :   self.getboard()[:3]
+        }
+
+        # for idx,state in enumerate(self.m_cumuinfo.m_inpoolstate):
+        #     if state != 1:
+        #         continue
+        #     ownpos = self.m_cumuinfo.getrelativepos(idx)
+        #     writeinformation = {
+        #         "remain"    :   remain,
+        #         "ownpos"    :   ownpos,
+        #         "raiser"     :   self.m_cumuinfo.getrelativepos(raiser),
+        #         # "israiser"  :   1,
+        #         # "relativepos"   :   1,
+        #         "pot"       :   pot,
+        #         "allin"     :   allin,
+        #         "betlevel"  :   betlevel,
+        #         "range"     :   newplayerrange,
+        #     }
+
+    def calflopstate(self):
+        if self.m_cumuinfo.m_curturn > 2:
+            self.reset()
+        self.traversespecificturn(2)
 
 def tjafterflopstate(handsdata, anti, bbvalue):
 # def calinvest(invest,actiondict,inpool,anti,bbvalue,handsdata,inpoolstate):

@@ -26,6 +26,7 @@ class prefloprangge:
         return targetdoc[action]
 
 
+
 class JoinrateRepairer:
     def __init__(self, ftdata):
         self.ftdata  =ftdata
