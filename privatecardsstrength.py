@@ -304,12 +304,12 @@ def testshelveefficient2():
 
     rangeobj.addFullRange()
     allcards = rangeobj._generateallcard()
-    allboards = itertools.combinations(allcards,5)
+    allboards = itertools.combinations(allcards,3)
 
 
     import time
     startload = time.time()
-    completestrengthmap = shelve.open(Constant.COMPLETESTRENGTHMAPPREFIX + str(5))
+    completestrengthmap = shelve.open(Constant.COMPLETESTRENGTHMAPPREFIX + str(3))
     endload = time.time() - startload
 
     startloopup = time.time()
@@ -335,4 +335,4 @@ if __name__ == "__main__":
     # testshelveefficient1()
     # test()
     # calavgstrength(4)
-    testprintboardstr()
+    testshelveefficient2()
