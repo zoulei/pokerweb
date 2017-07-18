@@ -8,12 +8,15 @@ import tongjihandsinfo
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
+# the function that calculate preflop information is problematic, need to be rectified
+
 class prefloprangge:
     def __init__(self):
         result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
         self.m_rawdata = result.next()
 
     def getrange(self,curturn,betlevel,ftlevelkey,stlevelkey,thlevelkey,action):
+        return 0.31
         if not action:
             return
         targetfield = Constant.getpreflopjoinratefield(curturn,betlevel)

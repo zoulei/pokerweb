@@ -5,11 +5,13 @@ import prefloprange
 
 # this class do not consider the real seat number
 class CumuInfo:
-    def __init__(self, playerquantity, bbvalue, anti, stacksize):
-        self.m_playerquantity = playerquantity
-        self.m_bb = bbvalue
-        self.m_anti = anti
-        self.m_stacksize = stacksize
+    # def __init__(self, playerquantity, bbvalue, anti, stacksize):
+    def __init__(self, handsinfo):
+        self.m_handsinfo = handsinfo
+        self.m_playerquantity = len(self.m_handsinfo["data"][0][2])
+        self.m_bb = Constant.BB
+        self.m_anti = Constant.ANTI
+
         self.reset()
 
         self.m_handsrangeobj = prefloprange.prefloprangge()
@@ -17,10 +19,42 @@ class CumuInfo:
     # this function is called after the preflop is over
     def getpreflopinfomation(self):
         return {
-            "range" :   self.m_prefloprange,
+            "range"     :   self.m_prefloprange,
             "raiser"    :   self.m_preflopraiser,
-            "betlevel"  :   self.m_preflopbetlevel
+            "betlevel"  :   self.m_preflopbetlevel,
         }
+
+    # this function is called after the flop is over
+    def getflopinformation(self):
+        return {
+            "raiser"    :   self.m_flopraiser,
+            "attack"    :   self.m_flopattack,
+        }
+
+    # this function is called after the turn is over
+    def getturninformation(self):
+        return {
+            "raiser"    :   self.m_turnraiser,
+            "attack"    :   self.m_turnattack,
+        }
+
+    # this function is called after the river is over
+    def getriverinformation(self):
+        return {
+            "raiser"    :   self.m_riverraiser,
+            "attack"    :   self.m_riverattack,
+        }
+
+    # this function is called after the specific round is over
+    def getspecificturninformation(self, round):
+        if round == 1:
+            return self.getpreflopinfomation()
+        elif round == 2:
+            return self.getflopinformation()
+        elif round == 3:
+            return self.getturninformation()
+        elif round == 4:
+            return self.getriverinformation()
 
     # this function is called after the action is updated
     def getlastaction(self):
@@ -41,14 +75,32 @@ class CumuInfo:
 
     # the relative pos of specific pos when all-iner and folder is ignored
     def getrelativepos(self,pos):
+        if pos == 0:
+            return 0
         relativepos = 0
+        print pos, self.m_afterflopposlist,self.m_inpoolstate
         for idx in self.m_afterflopposlist[::-1]:
-            if idx == relativepos:
+            if idx == pos:
                 return relativepos + 1
             if self.m_inpoolstate[idx] == 1:
                 relativepos += 1
+        return 0
 
     def reset(self):
+        # stack of each player
+        stacksize = self.m_handsinfo["data"][0][3]
+        realinpoolplayer = self.m_handsinfo["data"][0][2]
+
+        sbpos = realinpoolplayer[0]
+        bbpos = realinpoolplayer[1]
+
+        self.m_stacksize = [0] * 10
+        self.m_stacksize[9] = stacksize[sbpos - 1]
+        self.m_stacksize[8] = stacksize[bbpos - 1]
+        for idx, realpos in enumerate(realinpoolplayer[::-1][:-2]):
+            self.m_stacksize[idx + 1] = stacksize[realpos - 1]
+
+
         # pot size
         self.m_pot = self.m_bb + self.m_bb/2 + self.m_anti * self.m_playerquantity
 
@@ -60,12 +112,18 @@ class CumuInfo:
         # raiser of the preflop
         # 0 means no raiser
         self.m_preflopraiser = 0
+        self.m_flopraiser = 0
+        self.m_turnraiser = 0
+        self.m_riverraiser = 0
 
         # how many bets, 0 means check
         self.m_betlevel = 1
 
         # how many bet pot, records the preflop information
         self.m_preflopbetlevel = 0
+        self.m_flopattack = 0
+        self.m_turnattack = 0
+        self.m_riverattack = 0
 
         # how many stake the raiser bet
         self.m_betvalue = self.m_bb
@@ -86,9 +144,10 @@ class CumuInfo:
         self.m_inpoolstate = {}
 
         # action sequence of after flop
-        self.m_afterflopposlist = {}
+        self.m_afterflopposlist = []
         # action sequence of pre flop
-        self.m_preflopposlist = {}
+        self.m_preflopposlist = []
+        self.initinpoolstate()
 
         # the last player that have taken action
         self.m_lastplayer = 0
@@ -97,8 +156,6 @@ class CumuInfo:
         # this value doesnot necessary means anything when the game has finished
         # -1 means game over
         self.m_nextplayer = self.m_preflopposlist[0]
-
-        self.initinpoolstate()
 
         # 1 means preflop
         self.m_curturn = 1
@@ -127,17 +184,16 @@ class CumuInfo:
 
     def initinpoolstate(self):
         self.m_inpoolstate = [0]*10
-        self.m_afterflopposlist = range(self.m_playerquantity - 2,0, -1)
-        self.m_preflopposlist = [9,8] + range(self.m_playerquantity - 2,0, -1)
-        self.m_afterflopposlist.extend([9,8])
+        self.m_preflopposlist = range(self.m_playerquantity - 2,0, -1) + [9,8]
+        self.m_afterflopposlist = [9,8] + range(self.m_playerquantity - 2,0, -1)
         for pos in self.m_afterflopposlist:
             self.m_inpoolstate[pos] = 1
 
     def newturn(self):
 
-        if self.m_curturn == 1:
-            self.m_preflopraiser = self.m_raiser
-            self.m_preflopbetlevel = self.m_betlevel
+        # if self.m_curturn == 1:
+        #     self.m_preflopraiser = self.m_raiser
+        #     self.m_preflopbetlevel = self.m_betlevel
 
         self.m_curturn += 1
         self.m_curturnover = False
@@ -187,8 +243,7 @@ class CumuInfo:
             poslist = self.m_preflopposlist
         else:
             poslist = self.m_afterflopposlist
-        for idx in xrange(len(poslist), -1, -1):
-            pos = poslist[idx]
+        for pos in poslist[::-1]:
             if self.m_inpoolstate[pos] == 1:
                 return pos
 
@@ -240,12 +295,19 @@ class CumuInfo:
         self.updatecurturnstate()
         self.m_nextplayer = self.getnextplayer()
         self.updateprefloprange()
+        self.updateflopinformation()
+        self.updateturninformation()
+        self.updateriverinformation()
+        print "===========]"
+        print action,value
+        print self.m_inpoolstate
         # if not self.isgameover() and self.m_curturnover:
         #     self.newturn()
 
     def updatecircle(self):
         if self.m_lastplayer == 0:
             self.m_circle = 1
+            return
         if self.m_curturn == 1:
             poslist = self.m_preflopposlist
         else:
@@ -262,7 +324,7 @@ class CumuInfo:
             if idx == pos:
                 continue
             if self.m_inpoolstate[idx] == 1:
-                targetstack = self.m_bethistory[idx] + self.m_stacksize[idx]
+                targetstack = self.m_bethistory.get(idx,0) + self.m_stacksize[idx]
                 if targetstack >= value:
                     validraisevalue = value
                     break
@@ -308,7 +370,7 @@ class CumuInfo:
                 raise
             self.m_betvalue = value
             self.m_pot += value -self.m_bethistory.get(pos,0)
-            self.m_tmpstacksize -= value -self.m_bethistory.get(pos,0)
+            self.m_tmpstacksize[pos] -= value -self.m_bethistory.get(pos,0)
             self.m_raiser = pos
             self.m_fakeraiser = 0
 
@@ -318,7 +380,7 @@ class CumuInfo:
             self.m_lastaction = action
             # curstate["call"] += 1
             self.m_pot += self.m_betvalue-self.m_bethistory.get(pos,0)
-            self.m_tmpstacksize -= self.m_betvalue-self.m_bethistory.get(pos,0)
+            self.m_tmpstacksize[pos] -= self.m_betvalue-self.m_bethistory.get(pos,0)
             self.m_bethistory[pos] = self.m_betvalue
 
         elif action == 4:
@@ -349,7 +411,7 @@ class CumuInfo:
                     # curstate["call"] += 1
                 self.m_betvalue = value
             self.m_pot += value-self.m_bethistory.get(pos,0)
-            self.m_tmpstacksize -= value-self.m_bethistory.get(pos,0)
+            self.m_tmpstacksize[pos] -= value-self.m_bethistory.get(pos,0)
             self.m_bethistory[pos] = value
         elif action == 12:
             self.m_lastaction = 12
@@ -425,6 +487,7 @@ class CumuInfo:
 
         return {
                 "pos":pos,
+                "pot":self.m_pot,
                 "relativepos":relativepos,
                 "remain":self.m_remainplayer-self.m_allinplayer,
                 "allin":self.m_allinplayer,
@@ -454,6 +517,30 @@ class CumuInfo:
 
         if newrange:
             self.m_prefloprange[self.m_laststate["pos"]] = newrange
+
+        self.m_preflopraiser = self.m_raiser
+        self.m_preflopbetlevel = self.m_betlevel
+
+    def updateflopinformation(self):
+        if self.m_laststate["round"] != 2:
+            return
+        self.m_flopraiser = self.getrelativepos(self.m_raiser)
+        if self.m_lastattack > self.m_flopattack:
+            self.m_flopattack = self.m_lastattack
+
+    def updateturninformation(self):
+        if self.m_laststate["round"] != 3:
+            return
+        self.m_turnraiser = self.getrelativepos(self.m_raiser)
+        if self.m_lastattack > self.m_turnattack:
+            self.m_turnattack = self.m_lastattack
+
+    def updateriverinformation(self):
+        if self.m_laststate["round"] != 4:
+            return
+        self.m_riverraiser = self.getrelativepos(self.m_raiser)
+        if self.m_lastattack > self.m_riverattack:
+            self.m_riverattack = self.m_lastattack
 
     # self.m_preflopstate = {
     #         "range" :   [-1]*10,
@@ -507,7 +594,7 @@ class HandsInfo:
         self.reset()
 
     def reset(self):
-        self.m_cumuinfo = CumuInfo()
+        self.m_cumuinfo = CumuInfo(self.m_handsinfo)
 
         self.m_lastupdateturn = 1
         self.m_lastupdateidx = -1
@@ -565,7 +652,7 @@ class HandsInfo:
         return self.m_handsinfo["data"][4]
 
     def getrounddata(self, round):
-        return self.m_handsinfo["data"][round + 1]
+        return self.m_handsinfo["data"][round]
 
     def getboard(self):
         handsdata = self.m_handsinfo["data"]
@@ -608,6 +695,9 @@ class HandsInfo:
     # This function make sure that after this function is called,
     # the action update procedure stops right at the end of this turn.
     def traversespecificturn(self,turn):
+        # raw_input()
+        # print self.m_lastupdateturn,turn
+        # print self.m_lastupdateidx
         if self.m_lastupdateturn == turn:
             preflopdata = self.getspecificturnbetdata(turn)
             if self.m_lastupdateidx + 1 == len(preflopdata):
@@ -622,12 +712,24 @@ class HandsInfo:
             self.traversespecificturn(turn)
             return
         elif self.m_lastupdateturn == turn - 1 and self.m_lastupdateidx + 1 == len(self.getspecificturnbetdata(turn - 1)):
-            return
+            specificturndata = self.getspecificturnbetdata(turn)
+            for idx in xrange(len(specificturndata)):
+                self.updatecumuinfo(turn,idx)
         elif self.m_lastupdateturn < turn:
             for idx in xrange(self.m_lastupdateturn,turn + 1):
                 self.traversespecificturn(idx)
             return
 
+    # def traversespecificturn(self,turn):
+    #     if self.m_lastupdateturn == turn:
+    #         preflopdata = self.getspecificturnbetdata(turn)
+    #         for idx in xrange(self.m_lastupdateidx + 1, len(preflopdata)):
+    #             # self.m_cumuinfo.update(*preflopdata[idx])
+    #             self.updatecumuinfo(turn, idx)
+    #     elif self.m_lastupdateturn == turn - 1 and self.m_lastupdateidx + 1 == len(self.getspecificturnbetdata(turn - 1)):
+    #         pass
+
+    # actionidx starts from 0
     def updatecumuinfo(self,round,actionidx):
         self.m_cumuinfo.update(*self.getspecificturnbetdata(round)[actionidx])
         self.m_lastupdateturn = round
