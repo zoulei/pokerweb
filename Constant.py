@@ -24,14 +24,18 @@ CUMUCLT = "cumuclt"
 PREFLOPRANGEDOC = "prefloprange"
 
 FTDATA = "ftdata"
-FT3BETDATA = "ft3betdata"
-FT4BETDATA = "ft4betdata"
-FT5BETDATA = "ft5betdata"
+# FT3BETDATA = "ft3betdata"
+# FT4BETDATA = "ft4betdata"
+# FT5BETDATA = "ft5betdata"
 
 STDATA = "stdata"
-ST3BETDATA = "st3betdata"
-ST4BETDATA = "st4betdata"
-ST5BETDATA = "st5betdata"
+# ST3BETDATA = "st3betdata"
+# ST4BETDATA = "st4betdata"
+# ST5BETDATA = "st5betdata"
+
+A3BETDATA = "3betdata"
+A4BETDATA = "4betdata"
+A5BETDATA = "5betdata"
 
 FTJOINRATEDATA = "ftjoinratedata"
 FT3BETJOINRATEDATA = "ft3betjoinratedata"
@@ -65,25 +69,36 @@ STATETHRE = 1
 BELIEVERATE = 60
 FILTERHANDS = 20
 
-def getpreflopjoinratefield(curturn,betlevel):
+def getprefloprangefield(curturn,betlevel):
+    if betlevel == 3:
+        return A3BETDATA
+    elif betlevel == 4:
+        return A4BETDATA
+    elif betlevel >= 5:
+        return A5BETDATA
+
     if curturn == 1:
-        if betlevel <= 2:
-            return FTREPAIRJOINRATEDATA
-        elif betlevel == 3:
-            return FT3BETREPAIRJOINRATEDATA
-        elif betlevel == 4:
-            return FT4BETREPAIRJOINRATEDATA
-        else:
-            return FT5BETREPAIRJOINRATEDATA
+        return FTDATA
     else:
-        if betlevel <= 2:
-            return STREPAIRJOINRATEDATA
-        elif betlevel == 3:
-            return ST3BETREPAIRJOINRATEDATA
-        elif betlevel == 4:
-            return ST4BETREPAIRJOINRATEDATA
-        else:
-            return ST5BETREPAIRJOINRATEDATA
+        return STDATA
+    # if curturn == 1:
+    #     if betlevel <= 2:
+    #         return FTREPAIRJOINRATEDATA
+    #     elif betlevel == 3:
+    #         return FT3BETREPAIRJOINRATEDATA
+    #     elif betlevel == 4:
+    #         return FT4BETREPAIRJOINRATEDATA
+    #     else:
+    #         return FT5BETREPAIRJOINRATEDATA
+    # else:
+    #     if betlevel <= 2:
+    #         return STREPAIRJOINRATEDATA
+    #     elif betlevel == 3:
+    #         return ST3BETREPAIRJOINRATEDATA
+    #     elif betlevel == 4:
+    #         return ST4BETREPAIRJOINRATEDATA
+    #     else:
+    #         return ST5BETREPAIRJOINRATEDATA
 
 # ========================game level related=============================
 BB = 10

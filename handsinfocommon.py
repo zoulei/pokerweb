@@ -51,3 +51,12 @@ def getnearestkey(querykey,keylist):
 
 # ==================debug related===========================
 pp = pprint.PrettyPrinter(indent= 4)
+
+# ================== action statistics dict related ===========================
+def completedict(rawdoc, * keys):
+    for key in keys[:-1]:
+        if key not in rawdoc:
+            rawdoc[key] = {}
+        rawdoc = rawdoc[key]
+    if keys[-1] not in rawdoc:
+        rawdoc[keys[-1]] = {"call":0,"raise":0,"fold":0,"sum":0}

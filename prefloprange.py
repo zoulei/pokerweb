@@ -5,29 +5,9 @@ import copy
 import believeinterval
 import math
 import tongjihandsinfo
+from handsengine import HandsInfo
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
-
-# the function that calculate preflop information is problematic, need to be rectified
-
-class prefloprangge:
-    def __init__(self):
-        result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
-        self.m_rawdata = result.next()
-
-    def getrange(self,curturn,betlevel,ftlevelkey,stlevelkey,thlevelkey,action):
-        return 0.31
-        if not action:
-            return
-        targetfield = Constant.getpreflopjoinratefield(curturn,betlevel)
-        targetdoc = self.m_rawdata[targetfield]
-
-        for key in [ftlevelkey,stlevelkey,thlevelkey]:
-            nearestftlevelkey = handsinfocommon.getnearestkey(key,targetdoc.keys())
-            targetdoc = targetdoc[nearestftlevelkey]
-
-        return targetdoc[action]
-
 
 
 class JoinrateRepairer:
@@ -277,7 +257,7 @@ def tongjifirstturnstate(handsinfo,anti):
     if result.count() == 0:
         prefloprange = {
             "_id":Constant.PREFLOPRANGEDOC,
-            "ftdata":{},
+            Constant.FTDATA:{},
             Constant.FT3BETDATA:{},
             Constant.FT4BETDATA:{},
             Constant.FT5BETDATA:{},
@@ -430,8 +410,8 @@ def tongjifirstturnstate(handsinfo,anti):
                 ftdata_pos_bet[str(normalpayoff)] = {"call":0,"raise":0,"fold":0}
             curstate = ftdata_pos_bet[str(normalpayoff)]
 
-            if betlevel < 3 and betbb > 10:
-                print handsinfo["_id"], betbb
+            # if betlevel < 3 and betbb > 10:
+            #     print handsinfo["_id"], betbb
 
         else:
             # second turn related
@@ -461,6 +441,8 @@ def tongjifirstturnstate(handsinfo,anti):
             ftdata_pos = ftdata[str(relativepos)]
 
             normalneedtobet = int( (needtobet + 0.5 * bb) / bb )
+            if betlevel < 3 and normalneedtobet in [311,95,69,63,47,42,38,]:
+                print handsdata["_id"],normalneedtobet,needtobet
             if str(normalneedtobet) not in ftdata_pos:
                 ftdata_pos[str(normalneedtobet)] = {}
             ftdata_pos_bet = ftdata_pos[str(normalneedtobet)]
@@ -518,7 +500,90 @@ def tongjifirstturnstate(handsinfo,anti):
     #     print handsinfo["_id"]
     #     asbc
 
-    DBOperater.ReplaceOne(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC},prefloprange,True)
+    # DBOperater.ReplaceOne(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC},prefloprange,True)
+
+class Preflopstatemachine(HandsInfo):
+    def __init__(self,handsinfo,debug= False):
+        HandsInfo.__init__(self,handsinfo)
+        self.m_debug = debug
+        self.retrivedoc()
+        self.calstate()
+        if not debug:
+            self.savedoc()
+
+    def retrivedoc(self):
+        result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
+        if result.count() == 0:
+            prefloprange = {
+                "_id":Constant.PREFLOPRANGEDOC,
+                Constant.FTDATA:{},
+                # Constant.FT3BETDATA:{},
+                # Constant.FT4BETDATA:{},
+                # Constant.FT5BETDATA:{},
+
+                Constant.STDATA:{},
+                Constant.A3BETDATA:{},
+                Constant.A4BETDATA:{},
+                Constant.A5BETDATA:{},
+                # Constant.ST3BETDATA:{},
+                # Constant.ST4BETDATA:{},
+                # Constant.ST5BETDATA:{}
+            }
+        else:
+            prefloprange = result.next()
+
+        self.m_doc = prefloprange
+
+    def savedoc(self):
+        DBOperater.ReplaceOne(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC},self.m_doc,True)
+
+    def generatestate(self):
+        laststate = self.m_cumuinfo.getlaststate()
+        circle = laststate["circle"]
+        betlevel = laststate["betlevel"]
+        relativepos = laststate["relativepos"]
+        normalneedtobet = laststate["normalneedtobet"]
+        normalpayoff = laststate["normalpayoff"]
+        betbb = laststate["betbb"]
+        pos = laststate["pos"]
+
+        field = Constant.getprefloprangefield(circle,betlevel)
+        targetdoc = self.m_doc[field]
+        # if circle > 2:
+        #     print self.m_handsinfo["_id"]
+        if circle == 1 and betlevel < 3:
+            flkey = str(pos)
+            slkey = str(betbb)
+            tlkey = str(normalpayoff)
+        else:
+            flkey = str(relativepos)
+            slkey = str(normalneedtobet)
+            tlkey = str(normalpayoff)
+
+        handsinfocommon.completedict(targetdoc, flkey, slkey, tlkey)
+        # print "===============",circle,betlevel
+        # print flkey,slkey,tlkey
+        # handsinfocommon.pp.pprint( targetdoc)
+        targetdoc = targetdoc[flkey][slkey][tlkey]
+
+        lastaction,lastattack = self.m_cumuinfo.getlastaction()
+        realaction = self.m_cumuinfo.actiontransfer(lastaction)
+        if realaction:
+            targetdoc[realaction] += 1
+            targetdoc["sum"] += 1
+
+        # print realaction
+        # handsinfocommon.pp.pprint(laststate)
+        # handsinfocommon.pp.pprint( self.m_doc)
+
+    def calstate(self):
+        preflopdata = self.getpreflopbetdata()
+        for idx in xrange(len(preflopdata)):
+            self.updatecumuinfo(1, idx)
+            self.generatestate()
+
+def tongjifirstturnstate_(handsinfo):
+    pass
 
 def tongjijoinrate():
     tongjijoinrate_(Constant.JOINRATEDATA)
@@ -570,15 +635,33 @@ def removepreflopdoc():
 
 def tongjiftmain():
     result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,{})
+    doclen =  result.count()
+
+    iternum = doclen / 10000 + 1
+    for idx in xrange(iternum):
+        tongjiftmain_(idx)
+
+def tongjiftmain_(idx):
+    result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,{})
     # result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,
-    #                         {"_id":"35357006093039820170308111711"})
-    idx = 0
+    #                         {"_id":"35357006093039820170308221515"})
+    # idx = 0
+    cnt = 0
     for handsinfo in result:
+
+        cnt  += 1
+        if cnt < idx * 10000:
+            continue
+
+        if cnt >= (idx+1) * 10000:
+            break
+
         # if handsinfo["_id"] == "35357006093039820170526040210":
-        idx += 1
-        if idx % 1000 == 0:
-            print idx
-        tongjifirstturnstate(handsinfo, Constant.ANTI)
+        # idx += 1
+        if cnt % 1000 == 0:
+            print cnt
+        Preflopstatemachine(handsinfo)
+        # tongjifirstturnstate(handsinfo, Constant.ANTI)
 
 if __name__ == "__main__":
     removepreflopdoc()

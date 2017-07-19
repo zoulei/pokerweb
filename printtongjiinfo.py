@@ -67,23 +67,28 @@ def printcombinationinfo():
 
 def preflopftdata():
     result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
-    rawdata = result.next()
-    print "rawkey: ",rawdata.keys()
-    rawdata = rawdata[Constant.FTDATA]
-    # rawdata = rawdata[Constant.FTDATA]
-    pp = pprint.PrettyPrinter(indent= 4)
-    # for pos, data in rawdata.items():
-    print "rawdata"
-    print rawdata.keys()
-    pos = "9"
-    data = rawdata[pos]
-    print "====================="*2,pos,"==========================="*2
-    betbblist = data.keys()
-    betbblist.sort(key = lambda v:int(v),reverse=True)
+    rawdata1 = result.next()
+    print "rawkey: ",rawdata1.keys()
+    for key in rawdata1.keys():
+        if key == "_id":
+            continue
+        rawdata = rawdata1[key]
+        # rawdata = rawdata[Constant.FTDATA]
+        pp = pprint.PrettyPrinter(indent= 4)
+        # for pos, data in rawdata.items():
+        print "---------------------------------------rawdatakey: ",key,"----------------------------------"
+        print rawdata.keys()
+        for idx in rawdata.keys():
+            # print ""
+            pos = idx
+            data = rawdata[pos]
+            print "====================="*2,pos,"==========================="*2
+            betbblist = data.keys()
+            betbblist.sort(key = lambda v:int(v),reverse=True)
 
-    for key in betbblist:
-        print "betbb: ",key
-        pp.pprint(data[key])
+            for key in betbblist:
+                print "betbb: ",key
+                pp.pprint(data[key])
 
 def prefloprepaireddata():
     result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
@@ -122,7 +127,8 @@ if __name__ == "__main__":
     # totalplayer()
     # playerhandsdis()
     # payoffdis()
-    printdatalen6()
+    preflopftdata()
+    # printdatalen6()
     # prefloprepaireddata()
     #  printcombinationinfo()
     # preflopftdata()

@@ -1,7 +1,32 @@
 import Constant
 import handsinfocommon
 import copy
-import prefloprange
+import DBOperater
+
+
+# the function that calculate preflop information is problematic, need to be rectified
+
+class prefloprangge:
+    def __init__(self):
+        result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
+        if result.count() > 0:
+            self.m_rawdata = result.next()
+
+    def getrange(self,curturn,betlevel,ftlevelkey,stlevelkey,thlevelkey,action):
+        return 0.31
+        if not action:
+            return
+        targetfield = Constant.getpreflopjoinratefield(curturn,betlevel)
+        targetdoc = self.m_rawdata[targetfield]
+
+        for key in [ftlevelkey,stlevelkey,thlevelkey]:
+            nearestftlevelkey = handsinfocommon.getnearestkey(key,targetdoc.keys())
+            targetdoc = targetdoc[nearestftlevelkey]
+
+        return targetdoc[action]
+
+
+
 
 # this class do not consider the real seat number
 class CumuInfo:
@@ -14,7 +39,7 @@ class CumuInfo:
 
         self.reset()
 
-        self.m_handsrangeobj = prefloprange.prefloprangge()
+        self.m_handsrangeobj = prefloprangge()
 
     # this function is called after the preflop is over
     def getpreflopinfomation(self):
@@ -78,7 +103,7 @@ class CumuInfo:
         if pos == 0:
             return 0
         relativepos = 0
-        print pos, self.m_afterflopposlist,self.m_inpoolstate
+        # print pos, self.m_afterflopposlist,self.m_inpoolstate
         for idx in self.m_afterflopposlist[::-1]:
             if idx == pos:
                 return relativepos + 1
@@ -169,10 +194,6 @@ class CumuInfo:
         # all in player
         self.m_allinplayer = 0
 
-        # # how many stake the next player need to bet at least
-        self.m_tmpstacksize = copy.deepcopy(self.m_stacksize)
-
-
         self.m_lastaction = 0
         self.m_lastattack = 0
 
@@ -225,6 +246,8 @@ class CumuInfo:
                 return -1
         else:
             lastplayerindex = self.m_afterflopposlist.index(self.m_lastplayer)
+            # print "---",self.m_fakeraiser,self.m_raiser
+            # print self.m_inpoolstate
             for pos in self.m_afterflopposlist[lastplayerindex + 1:] + self.m_afterflopposlist[:lastplayerindex + 1]:
                 if self.m_inpoolstate[pos] == 1:
                     return pos
@@ -290,17 +313,17 @@ class CumuInfo:
             self.newturn()
         self.m_laststate = self.calstatistics()
         self.updatestate(action,value)
-        self.updatecircle()
         self.m_lastplayer = self.m_nextplayer
         self.updatecurturnstate()
         self.m_nextplayer = self.getnextplayer()
+        self.updatecircle()
         self.updateprefloprange()
         self.updateflopinformation()
         self.updateturninformation()
         self.updateriverinformation()
-        print "===========]"
-        print action,value
-        print self.m_inpoolstate
+        # print "===========]"
+        # print action,value
+        # print self.m_inpoolstate
         # if not self.isgameover() and self.m_curturnover:
         #     self.newturn()
 
@@ -370,7 +393,7 @@ class CumuInfo:
                 raise
             self.m_betvalue = value
             self.m_pot += value -self.m_bethistory.get(pos,0)
-            self.m_tmpstacksize[pos] -= value -self.m_bethistory.get(pos,0)
+            self.m_stacksize[pos] -= value -self.m_bethistory.get(pos,0)
             self.m_raiser = pos
             self.m_fakeraiser = 0
 
@@ -380,7 +403,7 @@ class CumuInfo:
             self.m_lastaction = action
             # curstate["call"] += 1
             self.m_pot += self.m_betvalue-self.m_bethistory.get(pos,0)
-            self.m_tmpstacksize[pos] -= self.m_betvalue-self.m_bethistory.get(pos,0)
+            self.m_stacksize[pos] -= self.m_betvalue-self.m_bethistory.get(pos,0)
             self.m_bethistory[pos] = self.m_betvalue
 
         elif action == 4:
@@ -402,7 +425,7 @@ class CumuInfo:
 
                 givepayoff = (value + self.m_pot - self.m_bethistory.get(pos,0)) * 1.0 / ( value - self.m_betvalue)
                 givepayoff = handsinfocommon.roundhalf(givepayoff)
-                if givepayoff <= 3:
+                if givepayoff <= 4:
                     # curstate["raise"] += 1
                     self.m_lastaction = 4.2
                     self.m_betlevel += 1
@@ -411,8 +434,9 @@ class CumuInfo:
                     # curstate["call"] += 1
                 self.m_betvalue = value
             self.m_pot += value-self.m_bethistory.get(pos,0)
-            self.m_tmpstacksize[pos] -= value-self.m_bethistory.get(pos,0)
+            self.m_stacksize[pos] -= value-self.m_bethistory.get(pos,0)
             self.m_bethistory[pos] = value
+            self.m_inpoolstate[pos] = 2
         elif action == 12:
             self.m_lastaction = 12
             for idx in xrange(len(self.m_inpoolstate)):
@@ -459,7 +483,7 @@ class CumuInfo:
             else:
                 payoffrate = 10000
 
-            betbb = int((self.m_pot + 0.5 * bb) / bb)
+            betbb = int((self.m_betvalue + 0.5 * bb) / bb)
 
         normalpayoff = int(round(payoffrate * 2)) * 5
         normalneedtobet = int( (needtobet + 0.5 * bb) / bb )
