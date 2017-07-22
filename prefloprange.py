@@ -586,15 +586,23 @@ def tongjifirstturnstate_(handsinfo):
     pass
 
 def tongjijoinrate():
-    tongjijoinrate_(Constant.JOINRATEDATA)
-
-
-def tongjijoinrate_(datafield):
+    DBOperater.DeleteData(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPJOINRATEDOC})
     result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
     if result.count() == 0:
         return
-    preflopdoc = result.next()
-    joinratedoc = {}
+    keylist = result.next().keys()
+    for key in keylist:
+        if key != "_id":
+            tongjijoinrate_(key)
+
+def tongjijoinrate_(datafield):
+    result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPJOINRATEDOC})
+    if result.count() == 0:
+        joinratedoc = {"_id":Constant.PREFLOPJOINRATEDOC}
+    else:
+        joinratedoc = result.next()
+    joinratedoc[datafield] = {}
+
     preflopdoc[datafield] = joinratedoc
 
     ftdata = preflopdoc[Constant.FTDATA]
@@ -667,5 +675,5 @@ if __name__ == "__main__":
     removepreflopdoc()
 
     tongjiftmain()
-    # tongjijoinrate()
-    # repairjoinrate()
+    tongjijoinrate()
+    repairjoinrate()

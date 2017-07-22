@@ -22,6 +22,8 @@ CUMUCLT = "cumuclt"
 
 # =====================preflop state related=============================
 PREFLOPRANGEDOC = "prefloprange"
+PREFLOPJOINRATEDOC  = "preflopjoinratedoc"
+PREFLOPREPAIRJOINRATEDOC = "prefloprepairjoinratedoc"
 
 FTDATA = "ftdata"
 # FT3BETDATA = "ft3betdata"
