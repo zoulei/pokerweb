@@ -66,7 +66,7 @@ def printcombinationinfo():
 
 
 def preflopftdata():
-    result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
+    result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPREPAIRJOINRATEDOC})
     rawdata1 = result.next()
     print "rawkey: ",rawdata1.keys()
     for key in rawdata1.keys():
