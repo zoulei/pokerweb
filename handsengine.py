@@ -18,11 +18,11 @@ class prefloprangge:
         targetfield = Constant.getprefloprangefield(curturn,betlevel)
         targetdoc = self.m_rawdata[targetfield]
 
-        targetdoc = targetdoc[ftlevelkey]
+        targetdoc = targetdoc[str(ftlevelkey)]
         lowkey = handsinfocommon.getnearestlowkey(stlevelkey,targetdoc.keys())
-        targetdoc = targetdoc[lowkey]
+        targetdoc = targetdoc[str(lowkey)]
         nearestkey = handsinfocommon.getnearestkey(thlevelkey,targetdoc.keys())
-        targetdoc = targetdoc[nearestkey]
+        targetdoc = targetdoc[str(nearestkey)]
 
         return targetdoc[action]
 
@@ -763,3 +763,11 @@ class HandsInfo:
         return self.m_cumuinfo
 
 
+def testgetprefloprange():
+    rangeobj = prefloprangge()
+    print rangeobj.getrange(1,2,9,1,65,"call")
+    print rangeobj.getrange(1,2,9,1,65,"raise")
+    print rangeobj.getrange(1,2,9,1,145,"call")
+
+if __name__ == "__main__":
+    testgetprefloprange()
