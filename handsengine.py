@@ -8,25 +8,23 @@ import DBOperater
 
 class prefloprangge:
     def __init__(self):
-        result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
+        result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPREPAIRJOINRATEDOC})
         if result.count() > 0:
             self.m_rawdata = result.next()
 
     def getrange(self,curturn,betlevel,ftlevelkey,stlevelkey,thlevelkey,action):
-        return 0.31
         if not action:
             return
-        targetfield = Constant.getpreflopjoinratefield(curturn,betlevel)
+        targetfield = Constant.getprefloprangefield(curturn,betlevel)
         targetdoc = self.m_rawdata[targetfield]
 
-        for key in [ftlevelkey,stlevelkey,thlevelkey]:
-            nearestftlevelkey = handsinfocommon.getnearestkey(key,targetdoc.keys())
-            targetdoc = targetdoc[nearestftlevelkey]
+        targetdoc = targetdoc[ftlevelkey]
+        lowkey = handsinfocommon.getnearestlowkey(stlevelkey,targetdoc.keys())
+        targetdoc = targetdoc[lowkey]
+        nearestkey = handsinfocommon.getnearestkey(thlevelkey,targetdoc.keys())
+        targetdoc = targetdoc[nearestkey]
 
         return targetdoc[action]
-
-
-
 
 # this class do not consider the real seat number
 class CumuInfo:

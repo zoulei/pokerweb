@@ -42,6 +42,13 @@ def combination(n,r):
 def permutation(n,r):
     return math.factorial(n) / math.factorial(n - r)
 
+def getnearestlowkey(querykey, keylist):
+    keylist = [int(v) for v in keylist]
+    querykey = int(querykey)
+    for key in keylist[::-1]:
+        if querykey >= key:
+            return key
+
 def getnearestkey(querykey,keylist):
     keylist = [int(v) for v in keylist]
     querykey = int(querykey)
