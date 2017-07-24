@@ -15,17 +15,132 @@ from contextlib import closing
 import shelve
 import os
 
+
 # print math.factorial(52) / math.factorial(2) / math.factorial(52 - 2)
 # print math.factorial(52) / math.factorial(3) / math.factorial(52 - 3)
 # print math.factorial(52) / math.factorial(4) / math.factorial(52 - 4)
 # print math.factorial(52) / math.factorial(5) / math.factorial(52 - 5)
 
-class Privatehandsrange:
+class Handsstrengthengine:
     def __init__(self):
-        pass
+        self.m_cardsengine = hunlgame.Cardsengine()
+        self.m_privatecardsengine = hunlgame.Cardsengine()
 
-    def gethands(self,rangevalue):
-        pass
+        if os.path.exists(Constant.NEWSTRENGTHMAP):
+            self.m_cache = True
+            self.m_strengthmap = shelve.open(Constant.NEWSTRENGTHMAP)
+        else:
+            self.m_cache = False
+            self.m_strengthmap = shelve.open(Constant.NEWSTRENGTHMAP,"c")
+
+        self.calculatestrength()
+
+    def isvalidboard(self, board):
+        if board.isabb() or board.isflush() or board.issequence() or board.isweaksequence():
+            return False
+        return True
+
+    def getpossiblehands(self, boardcards):
+        self.m_privatecardsengine.reset()
+        for card in boardcards:
+            self.m_privatecardsengine.remove(card)
+        handslist = []
+        for hands in self.m_privatecardsengine.generateallhands():
+            handslist.append(list(hands))
+        return handslist
+
+    def getnormalizedhandsrank(self, board, allhands):
+        board.sort()
+        if self.m_cache:
+            normalizedsortresult = self.m_strengthmap[hunlgame.board2str(board)]
+        else:
+            poker = hunlgame.Toypoker()
+
+            results = poker.determine_score(board, allhands)
+            results = zip(results,range(len(results)))
+            results = filter(lambda v: (v[0][0] > 1 or ( v[0][0] == 1 and v[0][1][0] >= board[-1].value) ),results )
+            def cmphands(result1,result2):
+                result1 = result1[0]
+                result2 = result2[0]
+                if result1[0] > result2[0]:
+                    return 1
+                elif result1[0] < result2[0]:
+                    return -1
+                else:
+                    for kiker1, kiker2 in zip(result1[1],result2[1]):
+                        if kiker1 > kiker2:
+                            return 1
+                        elif kiker1 < kiker2:
+                            return -1
+                    else:
+                        return 0
+
+            results.sort(cmp = cmphands)
+            handsnumber = len(results)
+
+            lastrank = 1
+            sortresult = {1:[results[0][1]]}
+            for idx in xrange(1,len(results)):
+                curresult = results[idx]
+                lastresult = results[idx - 1]
+                if curresult[0] == lastresult[0]:
+                    # the same strength
+                    sortresult[lastrank].append(curresult[1])
+                else:
+                    sortresult[idx + 1] = [curresult[1]]
+                    lastrank = idx + 1
+
+            normalizedsortresult = {}
+            for key, value in sortresult.items():
+                normalizedsortresult[key * 1.0 / handsnumber] = value
+
+            self.m_strengthmap[hunlgame.board2str(board)] = normalizedsortresult
+
+        return normalizedsortresult
+
+    def f(self,v):
+        return v * v
+
+    def removesymmetry(self,avgstrengthmap):
+        newmap = {}
+        for key,value in avgstrengthmap.items():
+            cardsstr = key.split(" ")
+            if cardsstr[0][-1] == cardsstr[1][-1]:
+                newkey = cardsstr[0][:-1] + cardsstr[1][:-1] + "s"
+            else:
+                newkey = cardsstr[0][:-1] + cardsstr[1][:-1] + "o"
+
+            # if key[1] == key[4]:
+            #     newkey = key[0] + key[3] + "s"
+            # else:
+            #     newkey = key[0] + key[3] + "o"
+            newmap[newkey] = value
+        return newmap
+
+    def calculatestrength(self):
+        handsscore = {}
+        for hand in self.m_cardsengine.generateallhands():
+            handsscore[hunlgame.board2str(hand)] = 0
+
+        for flopcards in self.m_cardsengine.generateallflop():
+            flop = hunlgame.Board(flopcards)
+            if not self.isvalidboard(flop):
+                continue
+
+            allhands = self.getpossiblehands(flopcards)
+            normalizedsortresult = self.getnormalizedhandsrank(list(flopcards),copy.deepcopy(allhands) )
+
+            for score, handslist in normalizedsortresult.items():
+                for handidx in handslist:
+                    handsscore[hunlgame.board2str(allhands[handidx])] += f(score)
+        handsscore = self.removesymmetry(handsscore)
+
+        handsscoreinfo = handsscore.items()
+        handsscoreinfo.sort(key = lambda v:- v[1])
+        for hand, score in handsscoreinfo:
+            print hand,"\t:\t",score
+
+        return handsscore
 
 def f(v):
     return v * v
@@ -325,6 +440,8 @@ def testshelveefficient2():
 
     completestrengthmap.close()
 
+def testhandsstrengthengine():
+    Handsstrengthengine()
 
 if __name__ == "__main__":
     # test()
@@ -335,4 +452,5 @@ if __name__ == "__main__":
     # testshelveefficient1()
     # test()
     # calavgstrength(4)
-    testshelveefficient2()
+    # testshelveefficient2()
+    testhandsstrengthengine()

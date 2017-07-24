@@ -119,6 +119,8 @@ PRIVATECARDSSTRENGTH = CACHEDIR + "privatecardsstrength"
 
 SCORERANGE = 50 # lower, pair gets priority
 
+NEWSTRENGTHMAP = CACHEDIR + "newstrengthmap"
+
 # ========================board value related================================
 BOARDVALUE = CACHEDIR + "boardvalue"
 
