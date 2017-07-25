@@ -806,5 +806,13 @@ def testgetprefloprange():
     for hand in rangeobj.gethandsinrange(0.01):
         print hand
 
+    joinrate = rangeobj.getrange(1,1,3,1,30,"raise")
+    print "joinrate:    ",joinrate
+    print rangeobj.gethandsinfoinrange(joinrate)
+
+    joinrate = rangeobj.getrange(1,1,3,1,30,"call")
+    print rangeobj.gethandsinfoinrange(joinrate)
+    print "joinrate:    ",joinrate
+
 if __name__ == "__main__":
     testgetprefloprange()
