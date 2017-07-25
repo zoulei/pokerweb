@@ -2,6 +2,7 @@ import Constant
 import handsinfocommon
 import copy
 import DBOperater
+import hunlgame
 
 
 # the function that calculate preflop information is problematic, need to be rectified
@@ -11,6 +12,23 @@ class prefloprangge:
         result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPREPAIRJOINRATEDOC})
         if result.count() > 0:
             self.m_rawdata = result.next()
+
+        self.m_handsjoinrate = []
+        self.readjoinratedata()
+
+    def readjoinratedata(self):
+        f = open("data/handsrank")
+        handsnum = 0
+        for line in f:
+            if line[0] == line[1]:
+                handsnum += 6
+            elif line[2] == "s":
+                handsnum += 4
+            else:
+                handsnum += 12
+            self.m_handsjoinrate.append([line.strip(), handsnum * 1.0 / 1326])
+
+        f.close()
 
     def getrange(self,curturn,betlevel,ftlevelkey,stlevelkey,thlevelkey,action):
         if not action:
@@ -25,6 +43,21 @@ class prefloprangge:
         targetdoc = targetdoc[str(nearestkey)]
 
         return targetdoc[action]
+
+    def gethandsinfoinrange(self, joinrate):
+        handslist = []
+        for hand, curjoinrate in self.m_handsjoinrate:
+            handslist.append(hand)
+            if curjoinrate > joinrate:
+                break
+        return handslist
+
+    def gethandsinrange(self, joinrate):
+        handsinfolist = self.gethandsinfoinrange(joinrate)
+        handslist = []
+        for handsstr in handsinfolist:
+            handslist.extend(hunlgame.Cardsengine.shorthandstoallhands(handsstr))
+        return handslist
 
 # this class do not consider the real seat number
 class CumuInfo:
@@ -768,6 +801,10 @@ def testgetprefloprange():
     print rangeobj.getrange(1,2,9,1,65,"call")
     print rangeobj.getrange(1,2,9,1,65,"raise")
     print rangeobj.getrange(1,2,9,1,145,"call")
+
+    print rangeobj.gethandsinfoinrange(0.1)
+    for hand in rangeobj.gethandsinrange(0.01):
+        print hand
 
 if __name__ == "__main__":
     testgetprefloprange()

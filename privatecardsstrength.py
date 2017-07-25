@@ -1,25 +1,39 @@
-
-import sys
-
-import math
-import hunlgame
-import itertools
-import copy
-import json
-import pprint
-import Constant
-import handsinfocommon
-import pickle
-
-from contextlib import closing
-import shelve
-import os
+#
+# import sys
+#
+# import math
+# import hunlgame
+# import itertools
+# import copy
+# import json
+# import pprint
+# import Constant
+# import handsinfocommon
+# import pickle
+#
+# from contextlib import closing
+# import shelve
+# import os
 
 
 # print math.factorial(52) / math.factorial(2) / math.factorial(52 - 2)
 # print math.factorial(52) / math.factorial(3) / math.factorial(52 - 3)
 # print math.factorial(52) / math.factorial(4) / math.factorial(52 - 4)
 # print math.factorial(52) / math.factorial(5) / math.factorial(52 - 5)
+
+ranklist = [
+    "AAo",  "KKo",  "QQo",  "KAs",  "JJo",  "KAo",  "AQs",  "TTo",
+    "AQo",
+    "AJs",
+    "QKs",
+    "99o",
+    "88o",
+    "JKs",
+    "ATs",
+    "77o",
+    "66o",
+    "JQs"
+]
 
 class Handsstrengthengine:
     def __init__(self):
@@ -358,9 +372,30 @@ def printstrengthrank(targmap):
                 handsnum += 12
         print handsstr, " : ", strength, handsnum * 1.0 / 1326 * 100
 
+def printallhands():
+    valuelist = ["2","3","4","5","6","7","8","9","T","J","Q","K","A"]
+    handslist = []
+    for value in valuelist[::-1]:
+        handslist.append( value + value + "o")
+    for idx in xrange(len(valuelist)):
+        for idx1 in xrange(idx + 1,len(valuelist)):
+            handslist.append( valuelist[idx] + valuelist[idx1] + "s")
+            handslist.append( valuelist[idx] + valuelist[idx1] + "o")
+
+    cnt = 0
+    for hands in handslist:
+        print hands,
+        cnt += 1
+        if cnt %10 == 0:
+            print "\n",
+        else:
+            print "   ",
+
 def test():
-    calsingleturncardstrength()
-    avgstrengthmap = calprivatecardstrength()
+    flopmap = calavgstrength(3)
+    flopmap = removesymmetry(flopmap)
+    printstrengthrank(flopmap)
+    # avgstrengthmap = calprivatecardstrength()
 
 def testprintboardstr():
     completestrengthmap = shelve.open(Constant.COMPLETESTRENGTHMAPPREFIX + str(4))
@@ -443,6 +478,33 @@ def testshelveefficient2():
 def testhandsstrengthengine():
     Handsstrengthengine()
 
+def clearhandstxt():
+    f = open("f_v.txt")
+    writeline = ""
+    for line in f:
+        writeline += line.split(":")[0].strip() + "\n"
+    f.close()
+    f = open("f_v.txt.tmp","w")
+    f.write(writeline)
+    f.close()
+
+def addjoinratetxt():
+    f = open("data/handsrank")
+    handsnum = 0
+    writeline = ""
+    for line in f:
+        if line[0] == line[1]:
+            handsnum += 6
+        elif line[2] == "s":
+            handsnum += 4
+        else:
+            handsnum += 12
+        writeline += line[:-1] + "\t:\t" + str(round(handsnum * 100.0 / 1326,3) ) + "\n"
+    f.close()
+    f = open("data/handsrankrate","w")
+    f.write(writeline)
+    f.close()
+
 if __name__ == "__main__":
     # test()
     # calsingleturncardstrength()
@@ -453,4 +515,8 @@ if __name__ == "__main__":
     # test()
     # calavgstrength(4)
     # testshelveefficient2()
-    testhandsstrengthengine()
+    # testhandsstrengthengine()
+    # printallhands()
+    # test()
+    # clearhandstxt()
+    addjoinratetxt()
