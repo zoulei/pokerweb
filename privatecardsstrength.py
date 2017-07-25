@@ -99,7 +99,7 @@ class Handsstrengthengine:
         return normalizedsortresult
 
     def f(self,v):
-        return v * v
+        return v
 
     def removesymmetry(self,avgstrengthmap):
         newmap = {}
