@@ -268,17 +268,11 @@ class Preflopstatemachine(HandsInfo):
             prefloprange = {
                 "_id":Constant.PREFLOPRANGEDOC,
                 Constant.FTDATA:{},
-                # Constant.FT3BETDATA:{},
-                # Constant.FT4BETDATA:{},
-                # Constant.FT5BETDATA:{},
 
                 Constant.STDATA:{},
                 Constant.A3BETDATA:{},
                 Constant.A4BETDATA:{},
                 Constant.A5BETDATA:{},
-                # Constant.ST3BETDATA:{},
-                # Constant.ST4BETDATA:{},
-                # Constant.ST5BETDATA:{}
             }
         else:
             prefloprange = result.next()

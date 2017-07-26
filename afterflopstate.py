@@ -38,7 +38,7 @@ class afterflopstate(HandsInfo):
         allin = statistics["allin"]
         pot = statistics["pot"]
 
-        newplayerrange = [-1] * 10
+        newplayerrange = [0] * 10
         print playerrange
         for idx,state in enumerate(self.m_cumuinfo.m_inpoolstate):
             if state == 0:
@@ -48,7 +48,7 @@ class afterflopstate(HandsInfo):
         print "raiser:",raiser
         self.m_preflopstate = {
             "remain"    :   remain,
-            # raiser is based on the position of theß state right after preflop
+            # raiser is based on the position of the state right after preflop
             "raiser"    :   self.m_cumuinfo.getrelativepos(raiser),
             "pot"       :   pot,
             "allin"     :   allin,

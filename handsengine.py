@@ -231,7 +231,7 @@ class CumuInfo:
         self.m_laststate = {}
 
         # 1. player's range. 2. betlevel. 3. player number and relative pos. 4. raiser. 5. pot. 6. how many player all in.
-        self.m_prefloprange = [-1] * 10
+        self.m_prefloprange = [0] * 10
 
 
     def initinpoolstate(self):
@@ -565,13 +565,15 @@ class CumuInfo:
             newrange = self.m_handsrangeobj.getrange(self.m_laststate["circle"],self.m_laststate["betlevel"],
                                           self.m_laststate["pos"],self.m_laststate["betbb"],self.m_laststate["normalpayoff"],
                                           self.actiontransfer(self.m_lastaction) )
-        elif self.m_laststate["circle"] > 1:
+        else: # > 1
             newrange = self.m_handsrangeobj.getrange(self.m_laststate["circle"],self.m_laststate["betlevel"],
                                           self.m_laststate["relativepos"],self.m_laststate["normalneedtobet"],self.m_laststate["normalpayoff"],
                                           self.actiontransfer(self.m_lastaction) )
 
         if newrange:
-            self.m_prefloprange[self.m_laststate["pos"]] = newrange
+            if not self.m_prefloprange[self.m_laststate["pos"]]:
+                self.m_prefloprange[self.m_laststate["pos"]] = 1
+            self.m_prefloprange[self.m_laststate["pos"]] *= newrange
 
         self.m_preflopraiser = self.m_raiser
         self.m_preflopbetlevel = self.m_betlevel
@@ -789,6 +791,7 @@ class HandsInfo:
         self.m_cumuinfo.update(*self.getspecificturnbetdata(round)[actionidx])
         self.m_lastupdateturn = round
         self.m_lastupdateidx = actionidx
+        # handsinfocommon.pp.pprint(self.m_cumuinfo.getlaststate())
 
     # round starts from 0, which means preflop
     # actionidx starts from 0, which means the first action
