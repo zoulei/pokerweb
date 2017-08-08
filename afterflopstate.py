@@ -14,6 +14,13 @@ HEADER = Constant.TAB.join(["range","relativepos","playernumber",
                             "boardvalue","handsstrength","buystrength",
                             "action"])
 
+class statekey:
+    def __init__(self):
+        self.m_key = ""
+
+    def addpreflopstate(self, preflopstate):
+        pass
+
 class afterflopstate(HandsInfo):
     def __init__(self, handsdata):
         HandsInfo.__init__(self,handsdata)
@@ -112,6 +119,12 @@ class afterflopstate(HandsInfo):
         elif round == 4:
             return self.m_riverstate
 
+    def getcurrentstatekey(self):
+        if self.m_cumuinfo.m_curturn == 1 and not self.m_cumuinfo.m_curturnover:
+            # preflop
+            return
+
+
 def test():
     result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,{})
     for rawdata in result:
@@ -170,7 +183,7 @@ def tongjipreflopgeneralstate():
     prefloptjinfo = {}
     prefloptjinfoallin = {}
     solotjinfo = {}
-
+    sumhands = 0
     for handsinfo in result:
         preflopgeneralstate = handsinfo[Constant.PREFLOPGENERALSTATE]
         remain = preflopgeneralstate["remain"]
@@ -178,6 +191,9 @@ def tongjipreflopgeneralstate():
         betlevel = preflopgeneralstate["betlevel"]
         allin = preflopgeneralstate["allin"]
         total = remain + allin
+        sumhands += 1
+        if allin > 0:
+            continue
         if remain not in prefloptjinfo:
             prefloptjinfo[remain] = 0
         prefloptjinfo[remain] += 1
@@ -192,10 +208,15 @@ def tongjipreflopgeneralstate():
             if betlevel == 5:
                 print handsinfo["_id"]
             solotjinfo[raiser].add(betlevel)
+    print "total : ",sumhands
 
-    print "remain : "
+    print "preflop allin : ", (sumhands - sum(prefloptjinfo.values()) ) * 1.0 / sumhands
+
+    print "remain : ",sum(prefloptjinfo.values())
     handsinfocommon.pp.pprint(prefloptjinfo)
 
+    for key in prefloptjinfoallin.keys():
+        prefloptjinfoallin[key] = prefloptjinfoallin[key] * 1.0 / sumhands
     print "remain all : "
     handsinfocommon.pp.pprint(prefloptjinfoallin)
 
