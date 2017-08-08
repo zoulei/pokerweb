@@ -39,13 +39,13 @@ class afterflopstate(HandsInfo):
         pot = statistics["pot"]
 
         newplayerrange = [0] * 10
-        print playerrange
+        # print playerrange
         for idx,state in enumerate(self.m_cumuinfo.m_inpoolstate):
             if state == 0:
                 continue
             ownpos = self.m_cumuinfo.getrelativepos(idx)
             newplayerrange[ownpos] = playerrange[idx]
-        print "raiser:",raiser
+        # print "raiser:",raiser
         self.m_preflopstate = {
             "remain"    :   remain,
             # raiser is based on the position of the state right after preflop
@@ -57,22 +57,6 @@ class afterflopstate(HandsInfo):
             "board"     :   self.getboard()[:3]
         }
 
-        # for idx,state in enumerate(self.m_cumuinfo.m_inpoolstate):
-        #     if state != 1:
-        #         continue
-        #     ownpos = self.m_cumuinfo.getrelativepos(idx)
-        #     writeinformation = {
-        #         "remain"    :   remain,
-        #         "ownpos"    :   ownpos,
-        #         "raiser"     :   self.m_cumuinfo.getrelativepos(raiser),
-        #         # "israiser"  :   1,
-        #         # "relativepos"   :   1,
-        #         "pot"       :   pot,
-        #         "allin"     :   allin,
-        #         "betlevel"  :   betlevel,
-        #         "range"     :   newplayerrange,
-        #     }
-
     def calflopstate(self):
         self.calspecificturnstate(2)
 
@@ -83,6 +67,10 @@ class afterflopstate(HandsInfo):
         self.calspecificturnstate(4)
 
     def calspecificturnstate(self, round):
+        if round == 1:
+            self.calpreflopstate()
+            return
+
         if self.m_cumuinfo.m_curturn > round:
             self.reset()
         self.traversespecificturn(round)
@@ -96,7 +84,9 @@ class afterflopstate(HandsInfo):
 
             # for after flop state, raiser is based on the position information of previous turn.
             "raiser"    :   self.m_cumuinfo.getrelativepos(curturnstate["raiser"]),
-            "attack"    :   curturnstate["attack"],
+
+            # attack is only used for after flop's state
+            "attack"    :   curturnstate.get("attack",0),
         }
         if round == 2:
             self.m_flopstate = targetturnstate
@@ -135,5 +125,84 @@ def test():
 
         raw_input()
 
+def calpreflopgeneralstatemain():
+    result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,{})
+    doclen =  result.count()
+
+    iternum = doclen / 10000 + 1
+    for idx in xrange(iternum):
+        calpreflopgeneralstatemain_(idx)
+
+def calpreflopgeneralstatemain_(idx):
+    result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,{})
+    # result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,
+    #                         {"_id":"35357006093039820170308221515"})
+    # idx = 0
+
+    doclist = []
+    cnt = 0
+    for handsinfo in result:
+        cnt  += 1
+        if cnt < idx * 10000:
+            continue
+
+        if cnt >= (idx+1) * 10000:
+            break
+
+        if cnt % 1000 == 0:
+            print cnt
+        doclist.append(handsinfo)
+
+    for handsinfo in doclist:
+        try:
+            afterstateinformation = afterflopstate(handsinfo)
+            afterstateinformation.calspecificturnstate(1)
+            handsinfo[Constant.PREFLOPGENERALSTATE] = afterstateinformation.getspecificturnstate(1)
+
+            DBOperater.ReplaceOne(Constant.HANDSDB,Constant.TJHANDSCLT,{"_id":handsinfo["_id"]},handsinfo)
+        except:
+            print handsinfo["_id"]
+            raise
+
+def tongjipreflopgeneralstate():
+    result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,{})
+
+    prefloptjinfo = {}
+    prefloptjinfoallin = {}
+    solotjinfo = {}
+
+    for handsinfo in result:
+        preflopgeneralstate = handsinfo[Constant.PREFLOPGENERALSTATE]
+        remain = preflopgeneralstate["remain"]
+        raiser = preflopgeneralstate["raiser"]
+        betlevel = preflopgeneralstate["betlevel"]
+        allin = preflopgeneralstate["allin"]
+        total = remain + allin
+        if remain not in prefloptjinfo:
+            prefloptjinfo[remain] = 0
+        prefloptjinfo[remain] += 1
+
+        if total not in prefloptjinfoallin:
+            prefloptjinfoallin[total] = 0
+        prefloptjinfoallin[total] += 1
+
+        if total == 2 and allin == 0:
+            if raiser not in solotjinfo:
+                solotjinfo[raiser] = set()
+            if betlevel == 5:
+                print handsinfo["_id"]
+            solotjinfo[raiser].add(betlevel)
+
+    print "remain : "
+    handsinfocommon.pp.pprint(prefloptjinfo)
+
+    print "remain all : "
+    handsinfocommon.pp.pprint(prefloptjinfoallin)
+
+    print "solo : "
+    handsinfocommon.pp.pprint(solotjinfo)
+
 if __name__ == "__main__":
-    test()
+    # test()
+    # calpreflopgeneralstatemain()
+    tongjipreflopgeneralstate()

@@ -71,6 +71,8 @@ STATETHRE = 1
 BELIEVERATE = 60
 FILTERHANDS = 20
 
+PREFLOPGENERALSTATE = "preflopgeneralstate"
+
 def getprefloprangefield(curturn,betlevel):
     if betlevel == 3:
         return A3BETDATA
@@ -83,24 +85,7 @@ def getprefloprangefield(curturn,betlevel):
         return FTDATA
     else:
         return STDATA
-    # if curturn == 1:
-    #     if betlevel <= 2:
-    #         return FTREPAIRJOINRATEDATA
-    #     elif betlevel == 3:
-    #         return FT3BETREPAIRJOINRATEDATA
-    #     elif betlevel == 4:
-    #         return FT4BETREPAIRJOINRATEDATA
-    #     else:
-    #         return FT5BETREPAIRJOINRATEDATA
-    # else:
-    #     if betlevel <= 2:
-    #         return STREPAIRJOINRATEDATA
-    #     elif betlevel == 3:
-    #         return ST3BETREPAIRJOINRATEDATA
-    #     elif betlevel == 4:
-    #         return ST4BETREPAIRJOINRATEDATA
-    #     else:
-    #         return ST5BETREPAIRJOINRATEDATA
+
 
 # ========================game level related=============================
 BB = 10

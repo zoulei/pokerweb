@@ -90,23 +90,6 @@ def preflopftdata():
                 print "betbb: ",key
                 pp.pprint(data[key])
 
-def prefloprepaireddata():
-    result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
-    rawdata = result.next()
-    rawdata = rawdata[Constant.REPAIRJOINRATE]
-    # rawdata = rawdata[Constant.FTDATA]
-    pp = pprint.PrettyPrinter(indent= 4)
-    # for pos, data in rawdata.items():
-    pos = "9"
-    data = rawdata[pos]
-    print "====================="*2,pos,"==========================="*2
-    betbblist = data.keys()
-    betbblist.sort(key = lambda v:int(v),reverse=True)
-
-    for key in betbblist:
-        print "betbb: ",key
-        pp.pprint(data[key])
-
 def printdatalen6():
     result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,{})
     showcardinfo = {}
@@ -122,6 +105,10 @@ def printdatalen6():
     print "============================="
     handsinfocommon.pp.pprint(showcardinfo)
     print "sumhands :   ",sumhands
+
+def printhandsinfo(handsid):
+    result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,{"_id":handsid})
+    handsinfocommon.pp.pprint(result.next())
 
 if __name__ == "__main__":
     # totalplayer()

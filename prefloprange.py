@@ -389,10 +389,10 @@ def tongjiftmain():
         tongjiftmain_(idx)
 
 def tongjiftmain_(idx):
-    result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,{})
-    # result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,
-    #                         {"_id":"35357006093039820170308221515"})
-    # idx = 0
+    # result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,{})
+    result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,
+                            {"_id":"35858405032626420170603224833"})
+    idx = 0
 
     doclist = []
     cnt = 0
@@ -413,7 +413,7 @@ def tongjiftmain_(idx):
         Preflopstatemachine(handsinfo)
 
 if __name__ == "__main__":
-    removepreflopdoc()
+    # removepreflopdoc()
 
     tongjiftmain()
     tongjijoinrate()

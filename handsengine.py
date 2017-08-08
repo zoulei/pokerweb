@@ -31,18 +31,23 @@ class prefloprangge:
         f.close()
 
     def getrange(self,curturn,betlevel,ftlevelkey,stlevelkey,thlevelkey,action):
-        if not action:
+        try:
+            if not action:
+                return
+            targetfield = Constant.getprefloprangefield(curturn,betlevel)
+            targetdoc = self.m_rawdata[targetfield]
+
+            targetdoc = targetdoc[str(ftlevelkey)]
+            lowkey = handsinfocommon.getnearestlowkey(stlevelkey,targetdoc.keys())
+            targetdoc = targetdoc[str(lowkey)]
+            nearestkey = handsinfocommon.getnearestkey(thlevelkey,targetdoc.keys())
+            targetdoc = targetdoc[str(nearestkey)]
+
+            return targetdoc[action]
+        except:
+            print "getrange error."
+            print "getrange parameter : ",curturn,betlevel,ftlevelkey,stlevelkey,thlevelkey,action
             return
-        targetfield = Constant.getprefloprangefield(curturn,betlevel)
-        targetdoc = self.m_rawdata[targetfield]
-
-        targetdoc = targetdoc[str(ftlevelkey)]
-        lowkey = handsinfocommon.getnearestlowkey(stlevelkey,targetdoc.keys())
-        targetdoc = targetdoc[str(lowkey)]
-        nearestkey = handsinfocommon.getnearestkey(thlevelkey,targetdoc.keys())
-        targetdoc = targetdoc[str(nearestkey)]
-
-        return targetdoc[action]
 
     def gethandsinfoinrange(self, joinrate):
         handslist = []
@@ -135,6 +140,9 @@ class CumuInfo:
             return 0
         relativepos = 0
         # print pos, self.m_afterflopposlist,self.m_inpoolstate
+        if self.m_inpoolstate[pos] == 2:
+            # all in, no relativepos
+            return 0
         for idx in self.m_afterflopposlist[::-1]:
             if idx == pos:
                 return relativepos + 1
@@ -561,7 +569,7 @@ class CumuInfo:
     def updateprefloprange(self):
         if self.m_laststate["round"] != 1:
             return
-        if self.m_laststate["circle"] == 1:
+        if self.m_laststate["circle"] == 1 and self.m_laststate["betlevel"] < 3:
             newrange = self.m_handsrangeobj.getrange(self.m_laststate["circle"],self.m_laststate["betlevel"],
                                           self.m_laststate["pos"],self.m_laststate["betbb"],self.m_laststate["normalpayoff"],
                                           self.actiontransfer(self.m_lastaction) )
