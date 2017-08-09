@@ -32,3 +32,37 @@ tongjiinfo 函数检查该牌局信息是否正确记录
 秀牌信息永远在第6个元素，也就是下标为5的位置。
 牌面信息一般是在行动数据之后，但是也有特例。对于turn上就all in的牌局，牌面信息会在第7个元素，
 我也不知道为什么，如果想知道可以去看收集牌局信息的代码。
+
+
+
+数据从原始数据开始的数据处理过程：
+第一步：
+collecthands.uploadHandsInfo
+从客户端接收数据并存储
+
+第二步：
+completehands.maincompletehands
+识别玩家名字，并存储到数据库中新的collection中
+
+第三步：
+tongjihandsinfo.tongjimain
+统计玩家的输赢以及每一轮的投入，以及玩家每一轮的行为数量，并统计每个玩家的总输赢，以及每个玩家的总手牌数，
+并将结果存储到新的collection中
+注：当系统完整运行时，该程序需要移除已经处理的数据，现在还没有进行这些处理;在 __main__ 函数中前两个函数移除
+存储统计信息的document，系统完整运行之后不能移除这些信息
+
+第四步：
+prefloprange.py
+tongjiftmain()
+tongjijoinrate()
+repairjoinrate()
+依次执行这三个方法来更新翻牌前入池率信息， 并存储到新的document中
+注：现在这些函数都只能批量处理函数，完整系统运行时还需要简单修改成不断检查源数据并处理
+
+第五步：
+afterflopstate.py
+calpreflopgeneralstatemain()
+更新翻牌前统计信息，统计信息直接存储到源数据中
+StateCalculater(Constant.HANDSDB,Constant.HANDSCLT).traverse()
+更新翻牌后所有行动的状态，该信息直接存储到源数据中
+注：现在这些函数都是批处理，完整系统运行时还需要及时移除数据并通过设置时间间隔等方式来防止对同一个数据的重复计算
