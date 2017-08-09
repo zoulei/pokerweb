@@ -484,6 +484,10 @@ class CumuInfo:
             self.m_allinplayer = 0
             self.m_curturnover = True
 
+        if self.m_stacksize[pos] < 0:
+            print "stacksize less than 0 error :",self.m_handsinfo["_id"]
+            raise
+
     # this function is called before the action is updated
     def calstatistics(self):
         bb = self.m_bb
@@ -795,6 +799,9 @@ class HandsInfo:
 
     # actionidx starts from 0
     def updatecumuinfo(self,round,actionidx):
+        if self.m_cumuinfo.m_curturnover and actionidx != 0:
+            print "extra action error: ",self.m_handsinfo["_id"]
+            raise
         self.m_cumuinfo.update(*self.getspecificturnbetdata(round)[actionidx])
         self.m_lastupdateturn = round
         self.m_lastupdateidx = actionidx
