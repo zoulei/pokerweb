@@ -328,7 +328,6 @@ class CumuInfo:
                 self.m_curturnover = True
             else:
                 self.m_curturnover = False
-
     def isgameover(self):
         if self.m_curturnover == False:
             return False

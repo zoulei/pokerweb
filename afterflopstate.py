@@ -156,7 +156,12 @@ class afterflopstate(HandsInfo):
         return self.m_statekeys
 
     def updatecumuinfo(self,round,actionidx):
-        self.encode()
+        try:
+            self.encode()
+        except:
+            print self.m_handsinfo["_id"]
+            print round,actionidx,self.m_cumuinfo.m_curturn,self.m_cumuinfo.m_curturnover
+            raise
         HandsInfo.updatecumuinfo(self,round,actionidx)
 
     def encode(self):
