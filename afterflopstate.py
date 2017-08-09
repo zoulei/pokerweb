@@ -8,27 +8,50 @@ import DBOperater
 
 from tongjihandsinfo import *
 from handsengine import HandsInfo
+from TraverseHands import TraverseHands
 
 HEADER = Constant.TAB.join(["range","relativepos","playernumber",
                             "flopattack","turnattack","riverattack",
                             "boardvalue","handsstrength","buystrength",
                             "action"])
 
-class statekey:
-    def __init__(self):
+class Statekey:
+    ITEMSEP = ";;"
+    def __init__(self,curturn,stateinfolist):
         self.m_key = ""
+        self.m_curturn = curturn
+        self.m_stateinfolist = stateinfolist
 
-    def addpreflopstate(self, preflopstate):
-        pass
+    def __str__(self):
+        if self.m_key:
+            return self.m_key
+        self.m_key = str(self.m_curturn)
+        if self.m_curturn >= 2:
+            preflopinfo = self.m_stateinfolist[0]
+            remain = preflopinfo["remain"]
+            raiser = preflopinfo["raiser"]
+            betlevel = preflopinfo["betlevel"]
+            self.m_key += self.ITEMSEP + Constant.DOT.join([str(v) for v in [remain,raiser,betlevel]])
+        for idx in xrange(1,self.m_curturn -1):
+            afterflopinfo = self.m_stateinfolist[idx]
+            raiser = afterflopinfo["raiser"]
+            attack = afterflopinfo["attack"]
+            self.m_key += self.ITEMSEP + Constant.DOT.join([str(v) for v in [raiser,attack]])
+
+        for item in self.m_stateinfolist[self.m_curturn -1 :]:
+            self.m_key += self.ITEMSEP + str(item)
+        return self.m_key
 
 class afterflopstate(HandsInfo):
     def __init__(self, handsdata):
         HandsInfo.__init__(self,handsdata)
 
-    def writeheader(self):
-        file = open(Constant.AFTERFLOPSTATEHEADER,"w")
-        file.write(HEADER)
-        file.close()
+        self.reset()
+
+    # def writeheader(self):
+    #     file = open(Constant.AFTERFLOPSTATEHEADER,"w")
+    #     file.write(HEADER)
+    #     file.close()
 
     def calpreflopstate(self):
         if self.m_cumuinfo.m_curturn > 1:
@@ -124,6 +147,38 @@ class afterflopstate(HandsInfo):
             # preflop
             return
 
+    def reset(self):
+        HandsInfo.reset(self)
+        self.m_laststate = []
+        self.m_statekeys = []
+
+    def getstatekey(self):
+        return self.m_statekeys
+
+    def updatecumuinfo(self,round,actionidx):
+        self.encode()
+        HandsInfo.updatecumuinfo(self,round,actionidx)
+
+    def encode(self):
+        if self.m_cumuinfo.m_curturn == 1 and not self.m_cumuinfo.m_curturnover:
+            return
+        if self.m_cumuinfo.m_curturnover:
+            realturn = self.m_cumuinfo.m_curturn + 1
+        else:
+            realturn = self.m_cumuinfo.m_curturn
+        if self.m_cumuinfo.m_curturnover:
+            self.m_laststate = []
+            self.m_laststate.append(self.m_preflopstate)
+            if realturn > 2:
+                self.m_laststate.append(self.m_flopstate)
+            if realturn > 3:
+                self.m_laststate.append(self.m_turnstate)
+        else:
+            self.m_laststate.append(self.m_cumuinfo.m_lastattack)
+        curstate = Statekey(realturn,self.m_laststate)
+        if self.m_cumuinfo.m_curturnover:
+            self.m_statekeys.append([])
+        self.m_statekeys[-1].append(str(curstate))
 
 def test():
     result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,{})
@@ -223,7 +278,28 @@ def tongjipreflopgeneralstate():
     print "solo : "
     handsinfocommon.pp.pprint(solotjinfo)
 
+class StateCalculater(TraverseHands):
+    def filter(self, handsinfo):
+        preflopgeneralinfo = handsinfo["preflopgeneralstate"]
+        if preflopgeneralinfo["allin"] > 0:
+            return True
+        if preflopgeneralinfo["remain"] != 2:
+            return True
+
+    def mainfunc(self, handsinfo):
+        if self.filter(handsinfo):
+            return
+
+        statecalculator = afterflopstate(handsinfo)
+        statecalculator.calallturnstate()
+        handsinfo["statekeys"] = statecalculator.getstatekey()
+        # handsinfocommon.pp.pprint(handsinfo)
+        # raw_input()
+
+        DBOperater.ReplaceOne(self.m_db,self.m_clt,{"_id":handsinfo["_id"]}, handsinfo)
+
 if __name__ == "__main__":
     # test()
     # calpreflopgeneralstatemain()
-    tongjipreflopgeneralstate()
+    # tongjipreflopgeneralstate()
+    StateCalculater(Constant.HANDSDB,Constant.HANDSCLT).traverse()

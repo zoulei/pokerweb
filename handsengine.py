@@ -412,7 +412,7 @@ class CumuInfo:
         if value > self.m_betvalue:
             givepayoff = (value + self.m_pot - self.m_bethistory.get(pos,0)) * 1.0 / ( value - self.m_betvalue)
             givepayoff = handsinfocommon.roundhalf(givepayoff)
-            self.m_lastattack = self.m_betlevel + 1 + givepayoff * 0.1
+            self.m_lastattack = self.m_betlevel + 1 + givepayoff * 0.001
         else:
             self.m_lastattack = 0
 
