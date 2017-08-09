@@ -3,23 +3,30 @@ import Constant
 
 class TraverseHands:
     # def __init__(self,db,clt,handsnum = 0):
-    def __init__(self, db, clt):
+    def __init__(self, db, clt, handsid = ""):
         self.m_db = db
         self.m_clt = clt
+        self.m_handsid = handsid
         # self.m_limit = handsnum
 
     def traverse(self):
-        result = DBOperater.Find(Constant.HANDSDB, Constant.TJHANDSCLT, {})
+        if self.m_handsid:
+            result = DBOperater.Find(Constant.HANDSDB, Constant.TJHANDSCLT, {"_id":self.m_handsid})
+        else:
+            result = DBOperater.Find(Constant.HANDSDB, Constant.TJHANDSCLT, {})
         doclen = result.count()
+        print "traverse document length : ",doclen
 
         iternum = doclen / 10000 + 1
         for idx in xrange(iternum):
             self.traverse_(idx)
 
     def traverse_(self, idx):
-        result = DBOperater.Find(Constant.HANDSDB, Constant.TJHANDSCLT, {})
-        # result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,
-        #                         {"_id":"35357006093039820170308221515"})
+        if not self.m_handsid:
+            result = DBOperater.Find(Constant.HANDSDB, Constant.TJHANDSCLT, {})
+        else:
+            result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,
+                                {"_id":self.m_handsid})
 
         doclist = []
         cnt = 0

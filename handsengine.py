@@ -73,6 +73,7 @@ class CumuInfo:
         self.m_bb = Constant.BB
         self.m_anti = Constant.ANTI
 
+        self.generateposmap()
         self.reset()
 
         self.m_handsrangeobj = prefloprangge()
@@ -149,6 +150,29 @@ class CumuInfo:
             if self.m_inpoolstate[idx] == 1:
                 relativepos += 1
         return 0
+
+    def getposmap(self):
+        return self.m_posmap
+
+    def getreverseposmap(self):
+        return self.m_reverseposmap
+
+    def generateposmap(self):
+        realinpoolplayer = self.m_handsinfo["data"][0][2]
+
+        sbpos = realinpoolplayer[0]
+        bbpos = realinpoolplayer[1]
+
+        self.m_posmap = {}
+        self.m_reverseposmap = {}
+        self.m_posmap[9] = sbpos
+        self.m_reverseposmap[sbpos] = 9
+        self.m_posmap[8] = bbpos
+        self.m_reverseposmap[bbpos] = 8
+
+        for idx, realpos in enumerate(realinpoolplayer[::-1][:-2]):
+            self.m_posmap[idx + 1] = realpos
+            self.m_reverseposmap[realpos] = idx + 1
 
     def reset(self):
         # stack of each player
@@ -788,14 +812,9 @@ class HandsInfo:
                 self.traversespecificturn(idx)
             return
 
-    # def traversespecificturn(self,turn):
-    #     if self.m_lastupdateturn == turn:
-    #         preflopdata = self.getspecificturnbetdata(turn)
-    #         for idx in xrange(self.m_lastupdateidx + 1, len(preflopdata)):
-    #             # self.m_cumuinfo.update(*preflopdata[idx])
-    #             self.updatecumuinfo(turn, idx)
-    #     elif self.m_lastupdateturn == turn - 1 and self.m_lastupdateidx + 1 == len(self.getspecificturnbetdata(turn - 1)):
-    #         pass
+    def traversealldata(self):
+        turncount = self.getturncount()
+        self.traversespecificturn(turncount)
 
     # actionidx starts from 0
     def updatecumuinfo(self,round,actionidx):
@@ -811,6 +830,9 @@ class HandsInfo:
     # actionidx starts from 0, which means the first action
     def getcumuinfo(self):
         return self.m_cumuinfo
+
+    def getStack(self):
+        return self.m_handsinfo["data"][0][3]
 
 
 def testgetprefloprange():

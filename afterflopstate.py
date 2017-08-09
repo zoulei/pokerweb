@@ -307,4 +307,4 @@ if __name__ == "__main__":
     # test()
     # calpreflopgeneralstatemain()
     # tongjipreflopgeneralstate()
-    StateCalculater(Constant.HANDSDB,Constant.HANDSCLT).traverse()
+    StateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT).traverse()
