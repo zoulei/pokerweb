@@ -246,8 +246,15 @@ def tongjipreflopgeneralstate():
     sumhands = 0
 
     remain2showcard = 0
+
+    showhands = 0
+    curcount = 0
     for handsinfo in result:
+        curcount += 1
+        if curcount % 1000 == 0:
+            print curcount
         preflopgeneralstate = handsinfo[Constant.PREFLOPGENERALSTATE]
+        pvcard = HandsInfo(handsinfo).getprivatecard()
         remain = preflopgeneralstate["remain"]
         raiser = preflopgeneralstate["raiser"]
         betlevel = preflopgeneralstate["betlevel"]
@@ -272,6 +279,11 @@ def tongjipreflopgeneralstate():
             solotjinfo[raiser].add(betlevel)
             if handsinfo["showcard"] == 1:
                 remain2showcard += 1
+                for item in pvcard:
+                    if item[0][0][0] == 0:
+                       continue
+                    else:
+                        showhands += 1
     print "total : ",sumhands
 
     print "preflop allin : ", (sumhands - sum(prefloptjinfo.values()) ) * 1.0 / sumhands
@@ -288,6 +300,8 @@ def tongjipreflopgeneralstate():
     handsinfocommon.pp.pprint(solotjinfo)
 
     print "remain2showcard : ",remain2showcard
+
+    print "showhands : ",showhands,showhands * 1.0 / remain2showcard
 
 class StateCalculater(TraverseHands):
     def filter(self, handsinfo):
