@@ -38,6 +38,7 @@ tongjiinfo 函数检查该牌局信息是否正确记录
 -2  ：   action record error
 -3  ：   empty payoff, payoff cannot be calculated, this means show card is not recorded
 -1  ：   reason not known, check for specific reason
+-4  ：   error found in the fifth step below
 0   ：   hands is normal, but donot play to show card
 1   ：   hands is normal and play to show card
 
@@ -60,6 +61,21 @@ tongjihandsinfo.tongjimain
 存储统计信息的document，系统完整运行之后不能移除这些信息
 
 第四步：
+handinforepairer.py
+RepaireAllStack(Constant.HANDSDB, Constant.TJHANDSCLT).traverse()
+修复stack记录错误。
+RepaireLastAllin(Constant.HANDSDB, Constant.TJHANDSCLT).traverse()
+修复最后一个动作为all in时，来不及记录all in 值就收POT的情况。
+修复后的结果存储在原数据中。
+
+第五步：
+handcheck.py
+CheckHand(Constant.HANDSDB, Constant.TJHANDSCLT).traverse()
+再次检查牌局是否有错误，如果有错误，showcard置为-4
+对于check after raise 类错误，有一部分可以将check替换为call，但是不知道当时为什么会记录为check，今后
+如果有精力可以修复这一部分能用的数据。
+
+第六步：
 prefloprange.py
 tongjiftmain()
 tongjijoinrate()
@@ -67,7 +83,7 @@ repairjoinrate()
 依次执行这三个方法来更新翻牌前入池率信息， 并存储到新的document中
 注：现在这些函数都只能批量处理函数，完整系统运行时还需要简单修改成不断检查源数据并处理
 
-第五步：
+第七步：
 afterflopstate.py
 calpreflopgeneralstatemain()
 更新翻牌前统计信息，统计信息直接存储到源数据中

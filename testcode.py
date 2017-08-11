@@ -22,5 +22,6 @@ class B(A):
 
         print self.getb()
 
+
 if __name__ == "__main__":
     B()

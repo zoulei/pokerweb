@@ -3,6 +3,7 @@ import handsinfocommon
 import copy
 import DBOperater
 import hunlgame
+import handsinfoexception
 
 
 class prefloprangge:
@@ -325,12 +326,36 @@ class CumuInfo:
             if self.m_inpoolstate[pos] == 1:
                 return pos
 
+    def islastactioner(self, lastplayer):
+        if self.m_curturn == 1:
+            poslist = self.m_preflopposlist
+        else:
+            poslist = self.m_afterflopposlist
+        for pos in poslist[::-1]:
+            if pos == lastplayer:
+                return True
+            if self.m_inpoolstate[pos] == 1:
+                return False
+
     def updatecurturnstate(self):
         # print self.m_handsinfo["_id"]
         # print "raiser info : ",self.getnextplayer(),self.m_fakeraiser
+        if self.m_remainplayer == 1:
+            self.m_curturnover = True
+            return
+
+        if self.m_remainplayer - self.m_allinplayer == 0:
+            self.m_curturnover = True
+            return
+
+        if self.m_remainplayer - self.m_allinplayer == 1 and self.m_inpoolstate[self.m_lastplayer] == 1:
+            # the only one that remains is the last actioner, which means the turn over
+            self.m_curturnover = True
+            return
+        # print "sss:",self.getlastactioner(),self.m_lastplayer,self.m_raiser,self.m_fakeraiser
         if self.m_raiser == 0 and self.m_fakeraiser == 0:
             # no raiser
-            if self.getlastactioner() == self.m_lastplayer:
+            if self.islastactioner(self.m_lastplayer):
                 self.m_curturnover = True
             else:
                 self.m_curturnover = False
@@ -351,6 +376,8 @@ class CumuInfo:
     def isgameover(self):
         if self.m_curturnover == False:
             return False
+        if self.m_curturnover == True and self.m_curturn == 4:
+            return True
 
         remain = self.m_remainplayer - self.m_allinplayer
         if remain > 1:
@@ -366,7 +393,7 @@ class CumuInfo:
     def update(self,action,value):
         if self.isgameover():
             print "game has over"
-            raise
+            raise handsinfoexception.ExtraAction()
         if self.m_curturnover:
             self.newturn()
         self.m_laststate = self.calstatistics()
@@ -419,18 +446,19 @@ class CumuInfo:
         return validraisevalue
 
     def updatestate(self,action,value):
+        realvalue = value
         pos = self.m_nextplayer
 
         if action == 2:
             value = self.calvalidraisevalue(pos, value)
             if value <= self.m_betvalue:
                 # all other has all in, invalid raiser
-                action = 3
+                action = 6
         elif action == 4 and value > self.m_betvalue:
             value = self.calvalidraisevalue(pos, value)
             if value <= self.m_betvalue:
                 # all other has all in, invalid raiser
-                action = 3
+                action = 6
 
         if value > self.m_betvalue:
             givepayoff = (value + self.m_pot - self.m_bethistory.get(pos,0)) * 1.0 / ( value - self.m_betvalue)
@@ -452,7 +480,7 @@ class CumuInfo:
             self.m_raisevalue = value - self.m_betvalue
             if (self.m_betvalue >= value):
                 print "betvalue >= value"
-                raise
+                raise handsinfoexception.RaiseValueDecrease()
             self.m_betvalue = value
             self.m_pot += value -self.m_bethistory.get(pos,0)
             self.m_stacksize[pos] -= value -self.m_bethistory.get(pos,0)
@@ -461,12 +489,20 @@ class CumuInfo:
 
             self.m_bethistory[pos] = value
 
-        elif action == 3 or action == 6:
+        elif action == 3:
+            self.m_lastaction = action
+            if self.m_bethistory.get(pos,0) != self.m_betvalue:
+                print "check when raise made : ",self.m_bethistory.get(pos,0),self.m_betvalue, action, realvalue
+                raise handsinfoexception.CheckWhenRaiseMade()
+
+        elif action == 6:
             self.m_lastaction = action
             # curstate["call"] += 1
             self.m_pot += self.m_betvalue-self.m_bethistory.get(pos,0)
             self.m_stacksize[pos] -= self.m_betvalue-self.m_bethistory.get(pos,0)
             self.m_bethistory[pos] = self.m_betvalue
+
+
 
         elif action == 4:
             self.m_allinplayer += 1
@@ -496,9 +532,13 @@ class CumuInfo:
                     # curstate["call"] += 1
                 self.m_betvalue = value
             self.m_pot += value-self.m_bethistory.get(pos,0)
-            self.m_stacksize[pos] -= value-self.m_bethistory.get(pos,0)
-            self.m_bethistory[pos] = value
+            self.m_stacksize[pos] -= realvalue-self.m_bethistory.get(pos,0)
+            self.m_bethistory[pos] = realvalue
             self.m_inpoolstate[pos] = 2
+
+            if self.m_stacksize[pos] > 0:
+                # print "all in with extra chips : ", pos, self.m_stacksize[pos]
+                raise handsinfoexception.AllinWithExtraChips()
         elif action == 12:
             self.m_lastaction = 12
             for idx in xrange(len(self.m_inpoolstate)):
@@ -816,6 +856,14 @@ class HandsInfo:
         turncount = self.getturncount()
         self.traversespecificturn(turncount)
 
+    def islastaction(self,round,actionidx):
+        turncount = self.getturncount()
+        if turncount != round:
+            return False
+        if len(self.getspecificturnbetdata(turncount)) != actionidx + 1:
+            return False
+        return True
+
     # actionidx starts from 0
     def updatecumuinfo(self,round,actionidx):
         if self.m_cumuinfo.m_curturnover and actionidx != 0:
@@ -824,7 +872,7 @@ class HandsInfo:
             print "---handsinfo-----:"
             import printtongjiinfo
             printtongjiinfo.printhandsinfo(self.m_handsinfo["_id"])
-            raise
+            raise handsinfoexception.ExtraAction()
         self.m_cumuinfo.update(*self.getspecificturnbetdata(round)[actionidx])
         self.m_lastupdateturn = round
         self.m_lastupdateidx = actionidx
