@@ -292,9 +292,6 @@ class StateCalculater(TraverseHands):
             return True
 
     def mainfunc(self, handsinfo):
-        if self.filter(handsinfo):
-            return
-
         statecalculator = afterflopstate(handsinfo)
         statecalculator.calallturnstate()
         handsinfo["statekeys"] = statecalculator.getstatekey()

@@ -257,6 +257,8 @@ class Preflopstatemachine(HandsInfo):
     def __init__(self,handsinfo,debug= False):
         HandsInfo.__init__(self,handsinfo)
         self.m_debug = debug
+	if not self.isvalid():
+	    return
         self.retrivedoc()
         self.calstate()
         if not debug:
@@ -392,7 +394,6 @@ def tongjiftmain_(idx):
     result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,{})
     # result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,
     #                         {"_id":"35858405032626420170603224833"})
-    idx = 0
 
     doclist = []
     cnt = 0

@@ -11,20 +11,56 @@ class StackRepairer(HandsInfo):
         self.m_clt = clt
 
     def repairStack(self):
-        self.traversealldata()
         self.m_handsinfo["repairstack"] = False
-        for idx, value in self.m_cumuinfo.m_stacksize:
-            if value < 0:
-                self.m_handsinfo["data"][0][3][self.m_cumuinfo.getposmap()[idx] - 1] -= value * 3
-                self.m_handsinfo["repairstack"] = True
+        self.traversealldata()
+        DBOperater.ReplaceOne(self.m_db,self.m_clt,{"_id":self.m_handsinfo["_id"]},self.m_handsinfo)
+        if self.m_handsinfo["repairstack"] == True:
+            handsinfocommon.pp.pprint(self.m_handsinfo)
+	    return True
+	return False
 
-        handsinfocommon.pp.pprint(self.m_handsinfo)
+    # traverse bet data and repair it if needed
+    def traversealldata(self):
+        turncount = self.getturncount()
+        for turnnumber in xrange(1,turncount + 1):
+            curturndata = self.getspecificturnbetdata(turnnumber)
+            for idx in xrange(len(curturndata)):
+                self.updatecumuinfo(turnnumber, idx)
+                value = self.m_cumuinfo.m_stacksize[self.m_cumuinfo.m_lastplayer]
 
-        # DBOperater.ReplaceOne(self.m_db,self.m_clt,{"_id":self.m_handsinfo["_id"]},self.m_handsinfo)
+                if value < 0:
+                    self.m_handsinfo["data"][0][3][self.m_cumuinfo.getposmap()[self.m_cumuinfo.m_lastplayer] - 1] -= value
+                    print "add : ", -value,curturndata[idx],self.m_cumuinfo.m_lastplayer
+                    self.m_handsinfo["repairstack"] = True
+                    self.reset()
+                    self.traversealldata()
+                    return
+                if value == 0 and curturndata[idx][0] != 4:
+                    self.m_handsinfo["data"][0][3][self.m_cumuinfo.getposmap()[self.m_cumuinfo.m_lastplayer] - 1] += self.m_cumuinfo.m_betvalue
+                    print self.m_handsinfo["_id"]
+                    print "add : ", self.m_cumuinfo.m_betvalue,curturndata[idx],self.m_cumuinfo.m_lastplayer
+                    self.m_handsinfo["repairstack"] = True
+                    self.reset()
+                    self.traversealldata()
+                    return
 
 class RepaireAllStack(TraverseHands):
+    def __init__(self,db,clt,handsid=""):
+	TraverseHands.__init__(self,db,clt,handsid)
+	self.m_cnt = 0
+
+    def filter(self,handsinfo):
+        showcard = handsinfo["showcard"]
+        if showcard >= 0 or showcard == -3:
+            return False
+        return True
+
     def mainfunc(self,handsinfo):
-        StackRepairer(handsinfo,self.m_db,self.m_clt).repairStack()
+	if StackRepairer(handsinfo,self.m_db,self.m_clt).repairStack():
+		self.m_cnt += 1
 
 if __name__ == "__main__":
-    RepaireAllStack(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="35357006093039820170309212244").traverse()
+    # RepaireAllStack(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="35357006093039820170309212244").traverse()
+    v = RepaireAllStack(Constant.HANDSDB, Constant.TJHANDSCLT)
+    v.traverse()
+    print v.m_cnt

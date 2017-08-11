@@ -8,6 +8,7 @@ class TraverseHands:
         self.m_clt = clt
         self.m_handsid = handsid
         # self.m_limit = handsnum
+        self.m_processeddata = 0
 
     def traverse(self):
         if self.m_handsid:
@@ -20,6 +21,8 @@ class TraverseHands:
         iternum = doclen / 10000 + 1
         for idx in xrange(iternum):
             self.traverse_(idx)
+
+        print "processeddata : ",self.m_processeddata
 
     def traverse_(self, idx):
         if not self.m_handsid:
@@ -47,7 +50,12 @@ class TraverseHands:
             doclist.append(handsinfo)
 
         for handsinfo in doclist:
-            self.mainfunc(handsinfo)
+            if not self.filter(handsinfo):
+                self.m_processeddata += 1
+                self.mainfunc(handsinfo)
+
+    def filter(self, handsinfo):
+        return False
 
     def mainfunc(self, handsinfo):
         print "mainfunc of TraverseHands"

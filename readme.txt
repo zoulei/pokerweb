@@ -33,6 +33,14 @@ tongjiinfo 函数检查该牌局信息是否正确记录
 牌面信息一般是在行动数据之后，但是也有特例。对于turn上就all in的牌局，牌面信息会在第7个元素，
 我也不知道为什么，如果想知道可以去看收集牌局信息的代码。
 
+"showcard" 域的意义，"showcard" 域是在tongjihandsinfo函数中加入的，是对牌局信息进行的基本检查，其值的意义如下：
+负数意味着存在某些错误，正数意味着没有错误（这里没有检查后手信息是否有误）
+-2  ：   action record error
+-3  ：   empty payoff, payoff cannot be calculated, this means show card is not recorded
+-1  ：   reason not known, check for specific reason
+0   ：   hands is normal, but donot play to show card
+1   ：   hands is normal and play to show card
+
 
 
 数据从原始数据开始的数据处理过程：

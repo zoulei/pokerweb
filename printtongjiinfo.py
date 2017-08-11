@@ -119,4 +119,4 @@ if __name__ == "__main__":
     # prefloprepaireddata()
     #  printcombinationinfo()
     # preflopftdata()
-    printhandsinfo("35357006093039820170309212244")
+    printhandsinfo("35858405032626420170613144846")

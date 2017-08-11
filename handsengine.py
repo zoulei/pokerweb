@@ -5,8 +5,6 @@ import DBOperater
 import hunlgame
 
 
-# the function that calculate preflop information is problematic, need to be rectified
-
 class prefloprangge:
     def __init__(self):
         result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPREPAIRJOINRATEDOC})
@@ -66,7 +64,6 @@ class prefloprangge:
 
 # this class do not consider the real seat number
 class CumuInfo:
-    # def __init__(self, playerquantity, bbvalue, anti, stacksize):
     def __init__(self, handsinfo):
         self.m_handsinfo = handsinfo
         self.m_playerquantity = len(self.m_handsinfo["data"][0][2])
@@ -274,11 +271,6 @@ class CumuInfo:
             self.m_inpoolstate[pos] = 1
 
     def newturn(self):
-
-        # if self.m_curturn == 1:
-        #     self.m_preflopraiser = self.m_raiser
-        #     self.m_preflopbetlevel = self.m_betlevel
-
         self.m_curturn += 1
         self.m_curturnover = False
         self.m_raiser = 0
@@ -302,8 +294,8 @@ class CumuInfo:
             for pos in poslist:
                 if self.m_inpoolstate[pos] == 1:
                     return pos
-                if self.m_raiser == pos:
-                    return pos
+                # if self.m_raiser == pos:
+                #     return pos
             else:
                 # every one all in or fold
                 return -1
@@ -334,7 +326,9 @@ class CumuInfo:
                 return pos
 
     def updatecurturnstate(self):
-        if self.m_raiser == 0:
+        # print self.m_handsinfo["_id"]
+        # print "raiser info : ",self.getnextplayer(),self.m_fakeraiser
+        if self.m_raiser == 0 and self.m_fakeraiser == 0:
             # no raiser
             if self.getlastactioner() == self.m_lastplayer:
                 self.m_curturnover = True
@@ -349,9 +343,11 @@ class CumuInfo:
         else:
             # has invalid raise
             if self.getnextplayer() == self.m_fakeraiser:
+                # print "nextplayer : ",self.getnextplayer(),self.m_fakeraiser
                 self.m_curturnover = True
             else:
                 self.m_curturnover = False
+
     def isgameover(self):
         if self.m_curturnover == False:
             return False
@@ -378,6 +374,7 @@ class CumuInfo:
         self.m_lastplayer = self.m_nextplayer
         self.updatecurturnstate()
         self.m_nextplayer = self.getnextplayer()
+        # print "player: ",self.m_lastplayer,self.m_nextplayer, action, value
         self.updatecircle()
         self.updateprefloprange()
         self.updateflopinformation()
@@ -390,6 +387,9 @@ class CumuInfo:
         #     self.newturn()
 
     def updatecircle(self):
+        if self.m_nextplayer == -1:
+            return
+
         if self.m_lastplayer == 0:
             self.m_circle = 1
             return
@@ -508,9 +508,9 @@ class CumuInfo:
             self.m_allinplayer = 0
             self.m_curturnover = True
 
-        if self.m_stacksize[pos] < 0:
-            print "stacksize less than 0 error :",self.m_handsinfo["_id"]
-            raise
+        # if self.m_stacksize[pos] < 0:
+        #     print "stacksize less than 0 error :",self.m_handsinfo["_id"]
+        #     raise
 
     # this function is called before the action is updated
     def calstatistics(self):
@@ -820,6 +820,10 @@ class HandsInfo:
     def updatecumuinfo(self,round,actionidx):
         if self.m_cumuinfo.m_curturnover and actionidx != 0:
             print "extra action error: ",self.m_handsinfo["_id"]
+            print "error round and action : ",round, actionidx
+            print "---handsinfo-----:"
+            import printtongjiinfo
+            printtongjiinfo.printhandsinfo(self.m_handsinfo["_id"])
             raise
         self.m_cumuinfo.update(*self.getspecificturnbetdata(round)[actionidx])
         self.m_lastupdateturn = round
