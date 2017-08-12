@@ -227,6 +227,9 @@ def calpreflopgeneralstatemain_(idx):
         doclist.append(handsinfo)
 
     for handsinfo in doclist:
+        showcard = handsinfo["showcard"]
+        if not (showcard == -3 or showcard >= 0):
+            continue
         try:
             afterstateinformation = afterflopstate(handsinfo)
             afterstateinformation.calspecificturnstate(1)
@@ -235,6 +238,7 @@ def calpreflopgeneralstatemain_(idx):
             DBOperater.ReplaceOne(Constant.HANDSDB,Constant.TJHANDSCLT,{"_id":handsinfo["_id"]},handsinfo)
         except:
             print handsinfo["_id"]
+            handsinfocommon.pp.pprint(handsinfo)
             raise
 
 def tongjipreflopgeneralstate():
@@ -305,6 +309,9 @@ def tongjipreflopgeneralstate():
 
 class StateCalculater(TraverseHands):
     def filter(self, handsinfo):
+        showcard = handsinfo["showcard"]
+        if not (showcard == -3 or showcard >= 0):
+            return True
         preflopgeneralinfo = handsinfo["preflopgeneralstate"]
         if preflopgeneralinfo["allin"] > 0:
             return True
@@ -324,5 +331,5 @@ class StateCalculater(TraverseHands):
 if __name__ == "__main__":
     # test()
     # calpreflopgeneralstatemain()
-    tongjipreflopgeneralstate()
-    # StateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT).traverse()
+    # tongjipreflopgeneralstate()
+    StateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT).traverse()
