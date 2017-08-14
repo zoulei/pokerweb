@@ -29,6 +29,7 @@ class prefloprangge:
 
         f.close()
 
+    # joinrate of specific state
     def getrange(self,curturn,betlevel,ftlevelkey,stlevelkey,thlevelkey,action):
         try:
             if not action:
@@ -48,14 +49,18 @@ class prefloprangge:
             print "getrange parameter : ",curturn,betlevel,ftlevelkey,stlevelkey,thlevelkey,action
             return
 
+    # short representation of hands in range
     def gethandsinfoinrange(self, joinrate):
         handslist = []
+        if joinrate == 0:
+            return handslist
         for hand, curjoinrate in self.m_handsjoinrate:
             handslist.append(hand)
-            if curjoinrate > joinrate:
+            if curjoinrate >= joinrate:
                 break
         return handslist
 
+    # full representation of hands in range
     def gethandsinrange(self, joinrate):
         handsinfolist = self.gethandsinfoinrange(joinrate)
         handslist = []
@@ -149,9 +154,15 @@ class CumuInfo:
                 relativepos += 1
         return 0
 
+    # get realpos from relativepos
+    def getrealpos(self, pos):
+        return self.getposmap()[pos]
+
+    # relativepos to realpos
     def getposmap(self):
         return self.m_posmap
 
+    # realpos to relativepos
     def getreverseposmap(self):
         return self.m_reverseposmap
 
@@ -722,14 +733,33 @@ class HandsInfo:
         # 0 means game over in advance
         # 1 means game over with showcard
         self.m_showcard = self.m_handsinfo["showcard"]
+        self.m_board = self.getboard()
 
         self.reset()
+        self.initprivatehand()
 
     def reset(self):
         self.m_cumuinfo = CumuInfo(self.m_handsinfo)
 
         self.m_lastupdateturn = 1
         self.m_lastupdateidx = -1
+
+    def initprivatehand(self):
+        privateinfo = self.getprivatecardinfo()
+        if not privateinfo:
+            self.m_privatehands = [None]*9
+            return
+        self.m_privatehands = []
+        for pvcard in privateinfo:
+            handinfo = pvcard[0]
+            if handinfo[0][0] == 0:
+                self.m_privatehands.append(None)
+            else:
+                symbol1 = handinfo[0][0]
+                value1 = handinfo[0][1]
+                symbol2 = handinfo[1][0]
+                value2 = handinfo[1][1]
+                self.m_privatehands.append( hunlgame.Hands([hunlgame.Card(symbol1-1,value1),hunlgame.Card(symbol2-1,value2)]) )
 
     def getplayerquantity(self):
         return self.m_playerquantitiy
@@ -809,11 +839,25 @@ class HandsInfo:
                 if handsdata[idx]!= None:
                     return handsdata[idx]
 
-    def getprivatecard(self):
+    def getcurboard(self):
+        realturn = self.m_cumuinfo.m_curturn
+        if self.m_cumuinfo.m_curturnover:
+            realturn += 1
+        if realturn == 1:
+            return []
+        return self.m_board[realturn + 1]
+
+    def getprivatecardinfo(self):
         if self.m_showcard > 0 or self.m_showcard == -3:
             return self.m_handsinfo["data"][5]
         else:
             return None
+
+    def getprivatehands(self):
+        return self.m_privatehands
+
+    def gethand(self, pos):
+        return self.m_privatehands[pos - 1]
 
     def getpreflopinformation(self):
         self.traversepreflop()

@@ -258,7 +258,7 @@ def tongjipreflopgeneralstate():
         if curcount % 1000 == 0:
             print curcount
         preflopgeneralstate = handsinfo[Constant.PREFLOPGENERALSTATE]
-        pvcard = HandsInfo(handsinfo).getprivatecard()
+        pvcard = HandsInfo(handsinfo).getprivatecardinfo()
         remain = preflopgeneralstate["remain"]
         raiser = preflopgeneralstate["raiser"]
         betlevel = preflopgeneralstate["betlevel"]

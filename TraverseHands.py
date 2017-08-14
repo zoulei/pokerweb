@@ -52,7 +52,11 @@ class TraverseHands:
         for handsinfo in doclist:
             if not self.filter(handsinfo):
                 self.m_processeddata += 1
-                self.mainfunc(handsinfo)
+                try:
+                    self.mainfunc(handsinfo)
+                except:
+                    print "error : ",handsinfo["_id"]
+                    raise
 
     def filter(self, handsinfo):
         return False
