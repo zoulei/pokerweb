@@ -15,6 +15,7 @@ HEADER = Constant.TAB.join(["range","relativepos","playernumber",
                             "boardvalue","handsstrength","buystrength",
                             "action"])
 
+# ;; is seperator, the first element is the round number
 class Statekey:
     ITEMSEP = ";;"
     def __init__(self,curturn,stateinfolist):

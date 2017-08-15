@@ -1,5 +1,6 @@
 import DBOperater
 import Constant
+import handsinfocommon
 
 class TraverseHands:
     # def __init__(self,db,clt,handsnum = 0):
@@ -54,8 +55,12 @@ class TraverseHands:
                 self.m_processeddata += 1
                 try:
                     self.mainfunc(handsinfo)
+                except  KeyboardInterrupt:
+                    exit()
                 except:
+                    print "===============error=============="
                     print "error : ",handsinfo["_id"]
+                    handsinfocommon.pp.pprint(handsinfo)
                     raise
 
     def filter(self, handsinfo):

@@ -733,10 +733,11 @@ class HandsInfo:
         # 0 means game over in advance
         # 1 means game over with showcard
         self.m_showcard = self.m_handsinfo["showcard"]
-        self.m_board = self.getboard()
 
         self.reset()
+
         self.initprivatehand()
+        self.initboard()
 
     def reset(self):
         self.m_cumuinfo = CumuInfo(self.m_handsinfo)
@@ -744,22 +745,32 @@ class HandsInfo:
         self.m_lastupdateturn = 1
         self.m_lastupdateidx = -1
 
+    def getid(self):
+        return self.m_handsinfo["_id"]
+
     def initprivatehand(self):
         privateinfo = self.getprivatecardinfo()
+        self.m_privatehands = [None] * 10
         if not privateinfo:
-            self.m_privatehands = [None]*9
             return
-        self.m_privatehands = []
+        privatehands = []
         for pvcard in privateinfo:
             handinfo = pvcard[0]
             if handinfo[0][0] == 0:
-                self.m_privatehands.append(None)
+                privatehands.append(None)
             else:
                 symbol1 = handinfo[0][0]
                 value1 = handinfo[0][1]
                 symbol2 = handinfo[1][0]
                 value2 = handinfo[1][1]
-                self.m_privatehands.append( hunlgame.Hands([hunlgame.Card(symbol1-1,value1),hunlgame.Card(symbol2-1,value2)]) )
+                privatehands.append( hunlgame.Hands([hunlgame.Card(symbol1-1,value1),hunlgame.Card(symbol2-1,value2)]) )
+
+        for realpos, pos in self.m_cumuinfo.getreverseposmap().items():
+            self.m_privatehands[pos] = privatehands[realpos - 1]
+
+    def initboard(self):
+        board = self.getboard()
+        self.m_board = [hunlgame.Card(s - 1,v) for s,v in board]
 
     def getplayerquantity(self):
         return self.m_playerquantitiy
@@ -845,7 +856,7 @@ class HandsInfo:
             realturn += 1
         if realturn == 1:
             return []
-        return self.m_board[realturn + 1]
+        return self.m_board[:realturn + 1]
 
     def getprivatecardinfo(self):
         if self.m_showcard > 0 or self.m_showcard == -3:
@@ -857,7 +868,7 @@ class HandsInfo:
         return self.m_privatehands
 
     def gethand(self, pos):
-        return self.m_privatehands[pos - 1]
+        return self.m_privatehands[pos]
 
     def getpreflopinformation(self):
         self.traversepreflop()

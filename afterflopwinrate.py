@@ -13,9 +13,12 @@ class WinrateEngine(HandsInfo):
         self.m_range = []
 
     def initprefloprange(self):
-        prefloprange = self.m_preflopgeneralstate["range"]
-        for rangenum in prefloprange:
-            self.m_range.append( self.m_cumuinfo.m_handsrangeobj.gethandsinrange(rangenum) )
+        prefloprange = self.m_cumuinfo.m_prefloprange
+        for pos, rangenum in enumerate(prefloprange):
+            if self.m_cumuinfo.m_inpoolstate[pos] != 0:
+                self.m_range.append( self.m_cumuinfo.m_handsrangeobj.gethandsinrange(rangenum) )
+            else:
+                self.m_range.append(self.m_cumuinfo.m_handsrangeobj.gethandsinrange(0))
 
     # pos is relativepos
     def calwinrate(self, pos):
@@ -37,7 +40,9 @@ class WinrateEngine(HandsInfo):
         return self.calwinrate(self.m_cumuinfo.m_nextplayer)
 
     def calrealwinrate(self, pos):
-        curhand = self.gethand(self.m_cumuinfo.getrealpos(pos))
+        # realpos = self.m_cumuinfo.getrealpos(pos)
+        curhand = self.gethand(pos)
+        # print "hand : ",self.gethand(self.m_cumuinfo.getrealpos(pos))
         if not curhand:
             return
         myhands = [curhand,]
@@ -48,27 +53,57 @@ class WinrateEngine(HandsInfo):
             handsinrange = self.m_range[idx]
             if handsinrange:
                 ophands.append(handsinrange)
+
+        print "handsid : ",self.m_handsinfo["_id"]
+        print "handslen : ",len(myhands),len(ophands)
+
         if len(ophands) == 1:
-            winratecalculator = hunlgame.SoloWinrateCalculator(self.getcurboard(), myhands, ophands[0])
+            curboard = self.getcurboard()
+            # curboard[1] = hunlgame.Card(0, 3)
+            print "board : "
+            for v in curboard:
+                print v
+            print "pos : ", pos
+            print "myhand : ",myhands[0]
+            print "hand len : ", len(myhands),len(ophands[0])
+
+            winratecalculator = hunlgame.SoloWinrateCalculator(curboard, myhands, ophands[0],debug=False)
             curwinrate = winratecalculator.calmywinrate()
             nextturnwinrate = winratecalculator.calnextturnwinrate()
+            # nextturnwinrate = 0
             return [curwinrate, nextturnwinrate]
+        else:
+            # not wrriten yet
+            raise
 
-    def updatecumuinfo(self,round,actionidx):
-        if round > 1:
-            curstatestr = self.m_statekeys[round - 2][actionidx]
+    def updatecumuinfo(self,round1,actionidx):
+        if round1 > 1:
+            curstatestr = self.m_statekeys[round1 - 2][actionidx]
             print "curstatestr : ", curstatestr
-            print "joinrate: ", self.m_preflopgeneralstate["range"]
-            print "round-actionidx:",round,actionidx,self.calrealwinrate(self.m_cumuinfo.m_nextplayer)
+            print "joinrate: ", self.m_cumuinfo.m_prefloprange
+            print "round-actionidx:",round1,actionidx
+            result = self.calrealwinrate(self.m_cumuinfo.m_nextplayer)
+            if result:
+                curwinrate,nextwinrate = result
+                print "---------",[curwinrate,nextwinrate]
+                print "---------diff : ",  nextwinrate - curwinrate
 
-        HandsInfo.updatecumuinfo(self,round,actionidx)
-        if round == 1 and self.m_cumuinfo.m_curturnover:
+        HandsInfo.updatecumuinfo(self,round1,actionidx)
+        if round1 == 1 and self.m_cumuinfo.m_curturnover:
             self.initprefloprange()
+
+        if round1 > 1:
+            if result:
+                f = open(Constant.CACHEDIR + "tmpstate", "a")
+                f.write(Constant.TAB.join([str(v) for v in [round(curwinrate,3), round(nextwinrate,3), self.m_cumuinfo.m_lastattack,self.getid()]])+"\n")
+                f.close()
+
 
     def test(self):
         self.traversepreflop()
         self.updatecumuinfo(2,0)
-        raw_input()
+        # self.updatecumuinfo(2, 1)
+        # raw_input()
         print "\n\n\n"
 
 class WinrateCalculater(TraverseHands):
@@ -80,6 +115,8 @@ class WinrateCalculater(TraverseHands):
         if preflopgeneralinfo["allin"] > 0:
             return True
         if preflopgeneralinfo["remain"] != 2:
+            return True
+        if handsinfo[Constant.STATEKEY][0][0] != "2;;2,1,2":
             return True
         return False
 

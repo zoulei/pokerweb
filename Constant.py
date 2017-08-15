@@ -109,6 +109,9 @@ NEWSTRENGTHMAP = CACHEDIR + "newstrengthmap"
 # ========================board value related================================
 BOARDVALUE = CACHEDIR + "boardvalue"
 
+# ========================state related======================================
+STATEKEY =  "statekeys"
+
 # ========================symbol======================================
 TAB = "\t"
 SPACE = " "
