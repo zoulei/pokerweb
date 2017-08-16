@@ -43,6 +43,8 @@ class prefloprangge:
             nearestkey = handsinfocommon.getnearestkey(thlevelkey,targetdoc.keys())
             targetdoc = targetdoc[str(nearestkey)]
 
+            # print "getrange : ",curturn,betlevel,ftlevelkey,stlevelkey,thlevelkey,action
+            # print "result : ",targetdoc[action],targetfield,lowkey,nearestkey
             return targetdoc[action]
         except:
             print "getrange error."
@@ -809,6 +811,12 @@ class HandsInfo:
                 if handsdata[idx]!= None:
                     return idx - 1
 
+    def getstatekey(self, turn, actionidx):
+        return self.m_handsinfo[Constant.STATEKEY][turn - 2][actionidx]
+
+    def getaction(self,turn, actionidx):
+        return self.getspecificturnbetdata()[actionidx]
+
     def getspecificturnbetdata(self,turn):
         return self.m_handsinfo["data"][turn]
 
@@ -959,6 +967,8 @@ def testgetprefloprange():
     joinrate = rangeobj.getrange(1,1,3,1,30,"call")
     print rangeobj.gethandsinfoinrange(joinrate)
     print "joinrate:    ",joinrate
+
+    print rangeobj.getrange(1, 2, 8, 2, 45, "raise")
 
 if __name__ == "__main__":
     testgetprefloprange()

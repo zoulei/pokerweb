@@ -14,9 +14,11 @@ class WinrateEngine(HandsInfo):
 
     def initprefloprange(self):
         prefloprange = self.m_cumuinfo.m_prefloprange
+        # print "prefloprange : ", prefloprange
+        # print "inpoolstate : ", self.m_cumuinfo.m_inpoolstate
         for pos, rangenum in enumerate(prefloprange):
             if self.m_cumuinfo.m_inpoolstate[pos] != 0:
-                self.m_range.append( self.m_cumuinfo.m_handsrangeobj.gethandsinrange(rangenum) )
+                self.m_range.append(self.m_cumuinfo.m_handsrangeobj.gethandsinrange(rangenum) )
             else:
                 self.m_range.append(self.m_cumuinfo.m_handsrangeobj.gethandsinrange(0))
 
@@ -74,6 +76,7 @@ class WinrateEngine(HandsInfo):
             return [curwinrate, nextturnwinrate]
         else:
             # not wrriten yet
+            print "oplen : ",len(ophands)
             raise
 
     def updatecumuinfo(self,round1,actionidx):
@@ -94,10 +97,12 @@ class WinrateEngine(HandsInfo):
 
         if round1 > 1:
             if result:
-                f = open(Constant.CACHEDIR + "tmpstate", "a")
+                statekey = self.getstatekey(round1,actionidx)
+                statekey = statekey.replace(";","___")
+                statekey = statekey.replace(",","_")
+                f = open(Constant.CACHEDIR + statekey, "a")
                 f.write(Constant.TAB.join([str(v) for v in [round(curwinrate,3), round(nextwinrate,3), self.m_cumuinfo.m_lastattack,self.getid()]])+"\n")
                 f.close()
-
 
     def test(self):
         self.traversepreflop()
@@ -116,8 +121,8 @@ class WinrateCalculater(TraverseHands):
             return True
         if preflopgeneralinfo["remain"] != 2:
             return True
-        if handsinfo[Constant.STATEKEY][0][0] != "2;;2,1,2":
-            return True
+        # if handsinfo[Constant.STATEKEY][0][0] != "2;;2,1,2":
+        #     return True
         return False
 
     def mainfunc(self, handsinfo):
@@ -125,4 +130,4 @@ class WinrateCalculater(TraverseHands):
         engine.test()
 
 if __name__ == "__main__":
-    WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT).traverse()
+    WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="").traverse()
