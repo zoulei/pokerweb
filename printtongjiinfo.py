@@ -117,5 +117,5 @@ if __name__ == "__main__":
     # payoffdis()
     # printdatalen6()
     #  printcombinationinfo()
-    preflopftdata()
-    # printhandsinfo(sys.argv[1])
+    # preflopftdata()
+    printhandsinfo(sys.argv[1])
