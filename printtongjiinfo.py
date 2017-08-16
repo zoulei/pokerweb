@@ -2,6 +2,7 @@ import DBOperater
 import Constant
 import pprint
 import handsinfocommon
+import sys
 
 def totalplayer():
     result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":"player"})
@@ -119,4 +120,4 @@ if __name__ == "__main__":
     # prefloprepaireddata()
     #  printcombinationinfo()
     # preflopftdata()
-    printhandsinfo("35357006093039820170329213216")
+    printhandsinfo(sys.argv[1])
