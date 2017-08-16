@@ -44,8 +44,9 @@ def permutation(n,r):
 
 def getnearestlowkey(querykey, keylist):
     keylist = [int(v) for v in keylist]
+    keylist.sort(reverse=True)
     querykey = int(querykey)
-    for key in keylist[::-1]:
+    for key in keylist:
         if querykey >= key:
             return key
 
