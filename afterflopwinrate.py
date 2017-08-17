@@ -3,6 +3,7 @@ from handsengine import HandsInfo
 from TraverseHands import TraverseHands
 import Constant
 import hunlgame
+import traceback
 
 class WinrateEngine(HandsInfo):
     def __init__(self,handsinfo):
@@ -56,18 +57,18 @@ class WinrateEngine(HandsInfo):
             if handsinrange:
                 ophands.append(handsinrange)
 
-        print "handsid : ",self.m_handsinfo["_id"]
-        print "handslen : ",len(myhands),len(ophands)
+        # print "handsid : ",self.m_handsinfo["_id"]
+        # print "handslen : ",len(myhands),len(ophands)
 
         if len(ophands) == 1:
             curboard = self.getcurboard()
             # curboard[1] = hunlgame.Card(0, 3)
-            print "board : "
-            for v in curboard:
-                print v
-            print "pos : ", pos
-            print "myhand : ",myhands[0]
-            print "hand len : ", len(myhands),len(ophands[0])
+            # print "board : "
+            # for v in curboard:
+            #     print v
+            # print "pos : ", pos
+            # print "myhand : ",myhands[0]
+            # print "hand len : ", len(myhands),len(ophands[0])
 
             winratecalculator = hunlgame.SoloWinrateCalculator(curboard, myhands, ophands[0],debug=False)
             curwinrate = winratecalculator.calmywinrate()
@@ -82,14 +83,14 @@ class WinrateEngine(HandsInfo):
     def updatecumuinfo(self,round1,actionidx):
         if round1 > 1:
             curstatestr = self.m_statekeys[round1 - 2][actionidx]
-            print "curstatestr : ", curstatestr
-            print "joinrate: ", self.m_cumuinfo.m_prefloprange
-            print "round-actionidx:",round1,actionidx
+            # print "curstatestr : ", curstatestr
+            # print "joinrate: ", self.m_cumuinfo.m_prefloprange
+            # print "round-actionidx:",round1,actionidx
             result = self.calrealwinrate(self.m_cumuinfo.m_nextplayer)
             if result:
                 curwinrate,nextwinrate = result
-                print "---------",[curwinrate,nextwinrate]
-                print "---------diff : ",  nextwinrate - curwinrate
+                # print "---------",[curwinrate,nextwinrate]
+                # print "---------diff : ",  nextwinrate - curwinrate
 
         HandsInfo.updatecumuinfo(self,round1,actionidx)
         if round1 == 1 and self.m_cumuinfo.m_curturnover:
@@ -109,7 +110,7 @@ class WinrateEngine(HandsInfo):
         self.updatecumuinfo(2,0)
         # self.updatecumuinfo(2, 1)
         # raw_input()
-        print "\n\n\n"
+        # print "\n\n\n"
 
 class WinrateCalculater(TraverseHands):
     def filter(self, handsinfo):
@@ -127,7 +128,13 @@ class WinrateCalculater(TraverseHands):
 
     def mainfunc(self, handsinfo):
         engine = WinrateEngine(handsinfo)
-        engine.test()
+        try:
+            engine.test()
+        except:
+            print handsinfo["_id"]
+            traceback.print_exc()
+            print "123"
+
 
 if __name__ == "__main__":
     WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="").traverse()
