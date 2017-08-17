@@ -48,7 +48,36 @@ class CheckHand(TraverseHands):
             self.m_cnt += 1
             print "\n\n"
 
+class ReadcardCheck(HandsInfo):
+    def check(self):
+        pvhands = self.getprivatehands()
+        board = self.getboardcard()
+
+        cardlist = []
+        for card in board:
+            cardlist.append(card)
+        for hand in pvhands:
+            if not hand:
+                continue
+            for card in hand.get():
+                if card in cardlist:
+                    # true means read card error
+                    return True
+                else:
+                    cardlist.append(card)
+        return False
+
+class CheckReadcard(TraverseHands):
+    def filter(self, handsinfo):
+        return not ReadcardCheck(handsinfo).check()
+
+    def mainfunc(self, handsinfo):
+        handsinfo["showcard"] = -5
+
+        # DBOperater.ReplaceOne(self.m_db, self.m_clt, {"_id": handsinfo["_id"]}, handsinfo)
+
 if __name__ == "__main__":
-    v = CheckHand(Constant.HANDSDB, Constant.TJHANDSCLT)
-    v.traverse()
-    print v.m_cnt
+    # v = CheckHand(Constant.HANDSDB, Constant.TJHANDSCLT)
+    # v.traverse()
+    # print v.m_cnt
+    CheckReadcard(Constant.HANDSDB, Constant.TJHANDSCLT, handsid="").traverse()

@@ -774,6 +774,9 @@ class HandsInfo:
         board = self.getboard()
         self.m_board = [hunlgame.Card(s - 1,v) for s,v in board]
 
+    def getboardcard(self):
+        return self.m_board
+
     def getplayerquantity(self):
         return self.m_playerquantitiy
 

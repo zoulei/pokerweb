@@ -130,4 +130,4 @@ class WinrateCalculater(TraverseHands):
         engine.test()
 
 if __name__ == "__main__":
-    WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="").traverse()
+    WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="35357006093039820170322124220").traverse()
