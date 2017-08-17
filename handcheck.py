@@ -72,9 +72,10 @@ class CheckReadcard(TraverseHands):
         return not ReadcardCheck(handsinfo).check()
 
     def mainfunc(self, handsinfo):
+        print handsinfo["_id"]
         handsinfo["showcard"] = -5
 
-        # DBOperater.ReplaceOne(self.m_db, self.m_clt, {"_id": handsinfo["_id"]}, handsinfo)
+        DBOperater.ReplaceOne(self.m_db, self.m_clt, {"_id": handsinfo["_id"]}, handsinfo)
 
 if __name__ == "__main__":
     # v = CheckHand(Constant.HANDSDB, Constant.TJHANDSCLT)
