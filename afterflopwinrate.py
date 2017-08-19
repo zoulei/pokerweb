@@ -97,13 +97,15 @@ class WinrateEngine(HandsInfo):
             self.initprefloprange()
 
         if round1 > 1:
+            statekey = self.getstatekey(round1,actionidx)
+            statekey = statekey.replace(";","___")
+            statekey = statekey.replace(",","_")
+            f = open(Constant.CACHEDIR + statekey, "a")
             if result:
-                statekey = self.getstatekey(round1,actionidx)
-                statekey = statekey.replace(";","___")
-                statekey = statekey.replace(",","_")
-                f = open(Constant.CACHEDIR + statekey, "a")
                 f.write(Constant.TAB.join([str(v) for v in [round(curwinrate,3), round(nextwinrate,3), self.m_cumuinfo.m_lastattack,self.getid()]])+"\n")
-                f.close()
+            else:
+                f.write(Constant.TAB.join([str(v) for v in [-1, -1, self.m_cumuinfo.m_lastattack,self.getid()]])+"\n")
+            f.close()
 
     def test(self):
         self.traversepreflop()
