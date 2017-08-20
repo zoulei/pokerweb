@@ -14,5 +14,10 @@ def tongjilabel(fname):
 
     handsinfocommon.pp.pprint(tjdict)
 
+    totalitem = sum(tjdict.values())
+    for key in tjdict.keys():
+        tjdict[key] = round(tjdict[key] * 1.0 / totalitem,3)
+    handsinfocommon.pp.pprint(tjdict)
+
 if __name__ == "__main__":
     tongjilabel(sys.argv[1])
