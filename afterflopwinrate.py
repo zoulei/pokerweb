@@ -117,7 +117,7 @@ class WinrateEngine(HandsInfo):
 class WinrateCalculater(TraverseHands):
     def filter(self, handsinfo):
         showcard = handsinfo["showcard"]
-        if not showcard > 0:
+        if not (showcard >= 0 or showcard == -3):
             return True
         preflopgeneralinfo = handsinfo["preflopgeneralstate"]
         if preflopgeneralinfo["allin"] > 0:
@@ -132,10 +132,12 @@ class WinrateCalculater(TraverseHands):
         engine = WinrateEngine(handsinfo)
         try:
             engine.test()
+        except KeyboardInterrupt:
+            exit()
         except:
             print handsinfo["_id"]
             traceback.print_exc()
-            print "123"
+
 
 
 if __name__ == "__main__":
