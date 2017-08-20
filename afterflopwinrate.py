@@ -47,8 +47,10 @@ class WinrateEngine(HandsInfo):
         curhand = self.gethand(pos)
         # print "hand : ",self.gethand(self.m_cumuinfo.getrealpos(pos))
         if not curhand:
-            return
-        myhands = [curhand,]
+            myhands = self.m_range[pos]
+            # return
+        else:
+            myhands = [curhand,]
         ophands = []
         for idx in xrange(len(self.m_range)):
             if idx == pos:
@@ -81,31 +83,35 @@ class WinrateEngine(HandsInfo):
             raise
 
     def updatecumuinfo(self,round1,actionidx):
+        HandsInfo.updatecumuinfo(self,round1,actionidx)
+        if round1 == 1 and self.m_cumuinfo.m_curturnover:
+            self.initprefloprange()
+
         if round1 > 1:
             curstatestr = self.m_statekeys[round1 - 2][actionidx]
             # print "curstatestr : ", curstatestr
             # print "joinrate: ", self.m_cumuinfo.m_prefloprange
             # print "round-actionidx:",round1,actionidx
             result = self.calrealwinrate(self.m_cumuinfo.m_nextplayer)
-            if result:
-                curwinrate,nextwinrate = result
+            # if result:
+            curwinrate,nextwinrate = result
                 # print "---------",[curwinrate,nextwinrate]
                 # print "---------diff : ",  nextwinrate - curwinrate
 
-        HandsInfo.updatecumuinfo(self,round1,actionidx)
-        if round1 == 1 and self.m_cumuinfo.m_curturnover:
-            self.initprefloprange()
-
-        if round1 > 1:
+        # if round1 > 1:
             statekey = self.getstatekey(round1,actionidx)
             statekey = statekey.replace(";","___")
             statekey = statekey.replace(",","_")
             f = open(Constant.CACHEDIR + statekey, "a")
-            if result:
-                f.write(Constant.TAB.join([str(v) for v in [round(curwinrate,3), round(nextwinrate,3), self.m_cumuinfo.m_lastattack,self.getid()]])+"\n")
-            else:
-                f.write(Constant.TAB.join([str(v) for v in [-1, -1, self.m_cumuinfo.m_lastattack,self.getid()]])+"\n")
+            f1 = open(Constant.CACHEDIR + statekey + "_showcard", "a")
+            # if result:
+            if self.gethand(self.m_cumuinfo.m_nextplayer):
+                f1.write(Constant.TAB.join([str(v) for v in [round(curwinrate,3), round(nextwinrate,3), self.m_cumuinfo.m_lastattack,self.getid()]])+"\n")
+            f.write(Constant.TAB.join([str(v) for v in [round(curwinrate,3), round(nextwinrate,3), self.m_cumuinfo.m_lastattack,self.getid()]])+"\n")
+            # else:
+            #     f.write(Constant.TAB.join([str(v) for v in [-1, -1, self.m_cumuinfo.m_lastattack,self.getid()]])+"\n")
             f.close()
+            f1.close()
 
     def test(self):
         self.traversepreflop()
@@ -141,4 +147,4 @@ class WinrateCalculater(TraverseHands):
 
 
 if __name__ == "__main__":
-    WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="").traverse()
+    WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="35357006093039820170308113943").traverse()
