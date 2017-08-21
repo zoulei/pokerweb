@@ -14,6 +14,11 @@ def Connect():
     if not client:
         client = MongoClient("mongodb://"+DBUSERNAME+":"+DBPWD+"@"+MONGOHOST+":"+str(MONGOPORT)+"/?authSource="+AUTHDBNAME,connect=False)
 
+def Disconnect():
+    global client
+    client.close()
+    client = None
+
 #store data to mongodb
 def StoreData(db,clt,data):
     return client[db][clt].insert(data)

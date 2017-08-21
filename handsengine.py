@@ -771,8 +771,13 @@ class HandsInfo:
             self.m_privatehands[pos] = privatehands[realpos - 1]
 
     def initboard(self):
+        self.m_board = []
         board = self.getboard()
-        self.m_board = [hunlgame.Card(s - 1,v) for s,v in board]
+        for symbol, value in board:
+            if symbol == 0:
+                self.m_board.append(None)
+            else:
+                self.m_board.append(hunlgame.Card(symbol - 1,value))
 
     def getboardcard(self):
         return self.m_board

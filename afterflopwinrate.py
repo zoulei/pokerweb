@@ -71,7 +71,8 @@ class WinrateEngine(HandsInfo):
             # print "pos : ", pos
             # print "myhand : ",myhands[0]
             # print "hand len : ", len(myhands),len(ophands[0])
-
+            if not curboard[-1]:
+                return
             winratecalculator = hunlgame.SoloWinrateCalculator(curboard, myhands, ophands[0],debug=False)
             curwinrate = winratecalculator.calmywinrate()
             nextturnwinrate = winratecalculator.calnextturnwinrate()
@@ -80,7 +81,7 @@ class WinrateEngine(HandsInfo):
         else:
             # not wrriten yet
             print "oplen : ",len(ophands)
-            raise
+            return
 
     def updatecumuinfo(self,round1,actionidx):
         HandsInfo.updatecumuinfo(self,round1,actionidx)
@@ -88,11 +89,12 @@ class WinrateEngine(HandsInfo):
             self.initprefloprange()
 
         if round1 > 1:
-            curstatestr = self.m_statekeys[round1 - 2][actionidx]
             # print "curstatestr : ", curstatestr
             # print "joinrate: ", self.m_cumuinfo.m_prefloprange
             # print "round-actionidx:",round1,actionidx
             result = self.calrealwinrate(self.m_cumuinfo.m_nextplayer)
+            if not result:
+                return
             # if result:
             curwinrate,nextwinrate = result
                 # print "---------",[curwinrate,nextwinrate]
@@ -134,17 +136,30 @@ class WinrateCalculater(TraverseHands):
         #     return True
         return False
 
-    def mainfunc(self, handsinfo):
+    def traverse(self):
+        self.traverse_(0)
+
+    def mainfunc(self,handsinfo):
         engine = WinrateEngine(handsinfo)
         try:
             engine.test()
         except KeyboardInterrupt:
-            exit()
+            raise
         except:
             print handsinfo["_id"]
             traceback.print_exc()
 
+def mainfunc( handsinfo):
+    engine = WinrateEngine(handsinfo)
+    try:
+        engine.test()
+    except KeyboardInterrupt:
+        raise
+    except:
+        print handsinfo["_id"]
+        traceback.print_exc()
+
 
 
 if __name__ == "__main__":
-    WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="35357006093039820170308113943").traverse()
+    WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="").traverse()
