@@ -4,6 +4,7 @@ from TraverseHands import TraverseHands
 import Constant
 import hunlgame
 import traceback
+import time
 
 class WinrateEngine(HandsInfo):
     def __init__(self,handsinfo):
@@ -137,7 +138,19 @@ class WinrateCalculater(TraverseHands):
         return False
 
     def traverse(self):
+        start = time.time()
         self.traverse_(0)
+        end = time.time()
+        self.m_elapsedtime = end - start
+        day = int(self.m_elapsedtime)/ (24 * 3600)
+        hour = int(self.m_elapsedtime)% (24 * 3600)/3600
+        min = int(self.m_elapsedtime)%  3600/60
+        sec = int(self.m_elapsedtime)%  60
+        print "processeddata : ", self.m_processeddata
+        print "elapsedtime : ", day, "D", hour,"H", min, "M", sec, "S"
+        print "elapsedtime : ", self.m_elapsedtime
+        # self.traverse_(1)
+        # self.traverse_(2)
 
     def mainfunc(self,handsinfo):
         engine = WinrateEngine(handsinfo)
