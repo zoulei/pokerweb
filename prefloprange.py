@@ -433,6 +433,7 @@ class TestRangeAccuracy(HandsInfo):
             if pvhand in self.m_rangeengine.gethandsinrange(joinrate):
                 correct += 1
             else:
+                print self.m_handsinfo["_id"], pos
                 wrong += 1
         return list([correct, wrong])
 
