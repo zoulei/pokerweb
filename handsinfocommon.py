@@ -1,6 +1,10 @@
 import pprint
 import math
 import hunlgame
+import copy
+
+# ==================debug related===========================
+pp = pprint.PrettyPrinter(indent= 4)
 # change the raw data format collected to hunlgame format
 def getboard(handsdata):
     infolen = len(handsdata)
@@ -57,8 +61,12 @@ def getnearestkey(querykey,keylist):
     targetkey = keylist[difflist.index(min(difflist))]
     return targetkey
 
-# ==================debug related===========================
-pp = pprint.PrettyPrinter(indent= 4)
+def printdictbypercentage(targetdict):
+    newdict = copy.deepcopy(targetdict)
+    total = sum(newdict.values()) * 1.0
+    for key in newdict.keys():
+        newdict[key] /= total
+    pp.pprint(newdict)
 
 # ================== action statistics dict related ===========================
 def completedict(rawdoc, * keys):

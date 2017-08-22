@@ -750,6 +750,7 @@ class HandsInfo:
     def getid(self):
         return self.m_handsinfo["_id"]
 
+    # relativepos
     def initprivatehand(self):
         privateinfo = self.getprivatecardinfo()
         self.m_privatehands = [None] * 10

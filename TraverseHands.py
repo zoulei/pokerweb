@@ -7,18 +7,22 @@ import multiprocessing
 import os
 import signal
 import time
+import handsengine
 
 class TraverseHands:
     # def __init__(self,db,clt,handsnum = 0):
-    def __init__(self, db, clt, func = None, handsid = ""):
+    def __init__(self, db, clt, func = None, handsid = "", step = 10000, sync = False):
         self.m_db = db
         self.m_clt = clt
         self.m_func = func
         self.m_handsid = handsid
+        self.m_step = step
+        self.m_sync = sync
         # self.m_limit = handsnum
         self.m_processeddata = 0
 
         self.m_elapsedtime = 0
+
 
     def traverse(self):
         start = time.time()
@@ -30,7 +34,7 @@ class TraverseHands:
         doclen = result.count()
         print "traverse document length : ",doclen
 
-        iternum = doclen / 10000 + 1
+        iternum = doclen / self.m_step + 1
         for idx in xrange(iternum):
             print "traverse : ",idx
             self.traverse_(idx)
@@ -57,10 +61,10 @@ class TraverseHands:
         cnt = 0
         for handsinfo in result:
             cnt += 1
-            if cnt < idx * 10000:
+            if cnt < idx * self.m_step:
                 continue
 
-            if cnt >= (idx + 1) * 10000:
+            if cnt >= (idx + 1) * self.m_step:
                 break
 
             if cnt % 1000 == 0:
@@ -68,10 +72,11 @@ class TraverseHands:
 
             if not self.filter(handsinfo):
                 doclist.append(copy.deepcopy(handsinfo))
+                # doclist.append(handsinfo)
         # DBOperater.Disconnect()
         self.m_processeddata += len(doclist)
 
-        if self.m_func:
+        if self.m_func and not self.m_sync:
             # print "async"
             self.asyncmain(doclist)
         else:
@@ -100,7 +105,10 @@ class TraverseHands:
             if not self.filter(handsinfo):
                 self.m_processeddata += 1
                 try:
-                    self.mainfunc(handsinfo)
+                    if self.m_func:
+                        self.m_func(handsinfo)
+                    else:
+                        self.mainfunc(handsinfo)
                 except  KeyboardInterrupt:
                     exit()
                 except:
@@ -115,6 +123,10 @@ class TraverseHands:
     def mainfunc(self, handsinfo):
         return "mainfunc of TraverseHands: "+handsinfo["_id"]
         pass
+
+class TraverseValidHands(TraverseHands):
+    def filter(self, handsinfo):
+        return not handsengine.HandsInfo(handsinfo).isvalid()
 
 def mainfunc( handsinfo):
     time.sleep(20)

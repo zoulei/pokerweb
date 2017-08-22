@@ -6,6 +6,8 @@ import believeinterval
 import math
 import tongjihandsinfo
 from handsengine import HandsInfo
+from TraverseHands import TraverseValidHands
+import handsengine
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -413,9 +415,46 @@ def tongjiftmain_(idx):
     for handsinfo in doclist:
         Preflopstatemachine(handsinfo)
 
-if __name__ == "__main__":
-    removepreflopdoc()
+class TestRangeAccuracy(HandsInfo):
+    def __init__(self,handsinfo):
+        HandsInfo.__init__(self, handsinfo)
 
-    tongjiftmain()
-    tongjijoinrate()
-    repairjoinrate()
+        self.m_rangeengine = handsengine.prefloprangge()
+
+    def test(self):
+        self.traversepreflop()
+
+        correct = 0
+        wrong = 0
+        for pos, pvhand in enumerate(self.getprivatehands()):
+            if not pvhand:
+                continue
+            joinrate = self.m_cumuinfo.m_prefloprange[pos]
+            if pvhand in self.m_rangeengine.gethandsinrange(joinrate):
+                correct += 1
+            else:
+                wrong += 1
+        return list([correct, wrong])
+
+rangeaccuracydict= {"correct":0,"wrong":0}
+
+def mainfunc(handsinfo):
+    global rangeaccuracydict
+    correct, wrong = TestRangeAccuracy(handsinfo).test()
+    rangeaccuracydict["correct"] += correct
+    rangeaccuracydict["wrong"] += wrong
+
+def testprefloprangemain():
+    TraverseValidHands(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",sync=True, step=10000).traverse()
+    handsinfocommon.pp.pprint(rangeaccuracydict)
+    handsinfocommon.printdictbypercentage(rangeaccuracydict)
+
+if __name__ == "__main__":
+    # removepreflopdoc()
+    #
+    # tongjiftmain()
+    # tongjijoinrate()
+    # repairjoinrate()
+
+    testprefloprangemain()
+
