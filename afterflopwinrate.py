@@ -65,13 +65,18 @@ class WinrateEngine(HandsInfo):
 
         if len(ophands) == 1:
             curboard = self.getcurboard()
-            # curboard[1] = hunlgame.Card(0, 3)
+            #
+            # curboard[-1] = hunlgame.Card(2, 12)
+            # curboard[0] = hunlgame.Card(3, 13)
+            # curboard[1] = hunlgame.Card(1, 8)
+            #
             # print "board : "
             # for v in curboard:
             #     print v
             # print "pos : ", pos
             # print "myhand : ",myhands[0]
             # print "hand len : ", len(myhands),len(ophands[0])
+
             if not curboard[-1]:
                 return
             winratecalculator = hunlgame.SoloWinrateCalculator(curboard, myhands, ophands[0],debug=False)
@@ -98,6 +103,8 @@ class WinrateEngine(HandsInfo):
                 return
             # if result:
             curwinrate,nextwinrate = result
+            # print "result: ",result
+            # return
                 # print "---------",[curwinrate,nextwinrate]
                 # print "---------diff : ",  nextwinrate - curwinrate
 
