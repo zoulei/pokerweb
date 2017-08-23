@@ -70,6 +70,14 @@ class prefloprangge:
             handslist.extend(hunlgame.Cardsengine.shorthandstoallhands(handsstr))
         return handslist
 
+    def gethandsjoinrate(self, hand):
+        targethandstr = hand.shortstr()
+        for handstr, joinrate in self.m_handsjoinrate:
+            if targethandstr == handstr:
+                return joinrate
+        print "targethand : ",targethandstr
+        raise
+
 # this class do not consider the real seat number
 class CumuInfo:
     def __init__(self, handsinfo):

@@ -433,7 +433,8 @@ class TestRangeAccuracy(HandsInfo):
             if pvhand in self.m_rangeengine.gethandsinrange(joinrate):
                 correct += 1
             else:
-                print self.m_handsinfo["_id"], pos
+                realjoinrate = self.m_rangeengine.gethandsjoinrate(pvhand)
+                print self.m_handsinfo["_id"], pos, round(joinrate,3), pvhand, realjoinrate, round(realjoinrate / joinrate, 4)
                 wrong += 1
         return list([correct, wrong])
 
@@ -446,7 +447,7 @@ def mainfunc(handsinfo):
     rangeaccuracydict["wrong"] += wrong
 
 def testprefloprangemain():
-    TraverseValidHands(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",sync=True, step=10000).traverse()
+    TraverseValidHands(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",sync=True, step=100).traverse()
     handsinfocommon.pp.pprint(rangeaccuracydict)
     handsinfocommon.printdictbypercentage(rangeaccuracydict)
 
