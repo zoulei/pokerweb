@@ -430,6 +430,7 @@ class TestRangeAccuracy(HandsInfo):
             if not pvhand:
                 continue
             joinrate = self.m_cumuinfo.m_prefloprange[pos]
+            joinrate += 0.00001
             if pvhand in self.m_rangeengine.gethandsinrange(joinrate):
                 correct += 1
             else:
