@@ -5,6 +5,9 @@ import Constant
 import hunlgame
 import traceback
 import time
+import threading
+
+lock = threading.Lock()
 
 class WinrateEngine(HandsInfo):
     def __init__(self,handsinfo):
@@ -48,8 +51,8 @@ class WinrateEngine(HandsInfo):
         curhand = self.gethand(pos)
         # print "hand : ",self.gethand(self.m_cumuinfo.getrealpos(pos))
         if not curhand:
-            myhands = self.m_range[pos]
-            # return
+            # myhands = self.m_range[pos]
+            return
         else:
             myhands = [curhand,]
         ophands = []
@@ -65,9 +68,9 @@ class WinrateEngine(HandsInfo):
 
         if len(ophands) == 1:
             curboard = self.getcurboard()
-            #
-            # curboard[-1] = hunlgame.Card(2, 12)
-            # curboard[0] = hunlgame.Card(3, 13)
+
+            # curboard[-1] = hunlgame.Card(2, 4)
+            # curboard[0] = hunlgame.Card(3, 4)
             # curboard[1] = hunlgame.Card(1, 8)
             #
             # print "board : "
@@ -90,6 +93,7 @@ class WinrateEngine(HandsInfo):
             return
 
     def updatecumuinfo(self,round1,actionidx):
+        global lock
         HandsInfo.updatecumuinfo(self,round1,actionidx)
         if round1 == 1 and self.m_cumuinfo.m_curturnover:
             self.initprefloprange()
@@ -98,11 +102,11 @@ class WinrateEngine(HandsInfo):
             # print "curstatestr : ", curstatestr
             # print "joinrate: ", self.m_cumuinfo.m_prefloprange
             # print "round-actionidx:",round1,actionidx
-            result = self.calrealwinrate(self.m_cumuinfo.m_nextplayer)
-            if not result:
-                return
+            result = self.calrealwinrate(self.m_cumuinfo.m_lastplayer)
+            # if not result:
+            #     return
             # if result:
-            curwinrate,nextwinrate = result
+
             # print "result: ",result
             # return
                 # print "---------",[curwinrate,nextwinrate]
@@ -112,16 +116,22 @@ class WinrateEngine(HandsInfo):
             statekey = self.getstatekey(round1,actionidx)
             statekey = statekey.replace(";","___")
             statekey = statekey.replace(",","_")
+
+            lock.acquire()
             f = open(Constant.CACHEDIR + statekey, "a")
-            f1 = open(Constant.CACHEDIR + statekey + "_showcard", "a")
-            # if result:
-            if self.gethand(self.m_cumuinfo.m_nextplayer):
-                f1.write(Constant.TAB.join([str(v) for v in [round(curwinrate,3), round(nextwinrate,3), self.m_cumuinfo.m_lastattack,self.getid()]])+"\n")
-            f.write(Constant.TAB.join([str(v) for v in [round(curwinrate,3), round(nextwinrate,3), self.m_cumuinfo.m_lastattack,self.getid()]])+"\n")
+            # f1 = open(Constant.CACHEDIR + statekey + "_showcard", "a")
+            if result:
+            # if self.gethand(self.m_cumuinfo.m_lastplayer):
+                curwinrate, nextwinrate = result
+                # f1.write(Constant.TAB.join([str(v) for v in [round(curwinrate,3), round(nextwinrate,3), self.m_cumuinfo.m_lastattack,self.getid()]])+"\n")
+                f.write(Constant.TAB.join([str(v) for v in [round(curwinrate,3), round(nextwinrate-curwinrate,3), self.m_cumuinfo.m_lastattack,self.getid()]])+"\n")
+            else:
+                f.write(Constant.TAB.join([str(v) for v in [-1, -1, self.m_cumuinfo.m_lastattack,self.getid()]]) + "\n")
             # else:
             #     f.write(Constant.TAB.join([str(v) for v in [-1, -1, self.m_cumuinfo.m_lastattack,self.getid()]])+"\n")
             f.close()
-            f1.close()
+            # f1.close()
+            lock.release()
 
     def test(self):
         self.traversepreflop()
@@ -143,21 +153,6 @@ class WinrateCalculater(TraverseHands):
         # if handsinfo[Constant.STATEKEY][0][0] != "2;;2,1,2":
         #     return True
         return False
-
-    def traverse(self):
-        start = time.time()
-        self.traverse_(0)
-        end = time.time()
-        self.m_elapsedtime = end - start
-        day = int(self.m_elapsedtime)/ (24 * 3600)
-        hour = int(self.m_elapsedtime)% (24 * 3600)/3600
-        min = int(self.m_elapsedtime)%  3600/60
-        sec = int(self.m_elapsedtime)%  60
-        print "processeddata : ", self.m_processeddata
-        print "elapsedtime : ", day, "D", hour,"H", min, "M", sec, "S"
-        print "elapsedtime : ", self.m_elapsedtime
-        # self.traverse_(1)
-        # self.traverse_(2)
 
     def mainfunc(self,handsinfo):
         engine = WinrateEngine(handsinfo)
@@ -182,4 +177,4 @@ def mainfunc( handsinfo):
 
 
 if __name__ == "__main__":
-    WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="").traverse()
+    WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",sync=False).traverse()
