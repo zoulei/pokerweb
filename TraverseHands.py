@@ -102,20 +102,20 @@ class TraverseHands:
 
     def syncmain(self,doclist):
         for handsinfo in doclist:
-            if not self.filter(handsinfo):
-                self.m_processeddata += 1
-                try:
-                    if self.m_func:
-                        self.m_func(handsinfo)
-                    else:
-                        self.mainfunc(handsinfo)
-                except  KeyboardInterrupt:
-                    exit()
-                except:
-                    print "===============error=============="
-                    print "error : ", handsinfo["_id"]
-                    handsinfocommon.pp.pprint(handsinfo)
-                    raise
+            # if not self.filter(handsinfo):
+            self.m_processeddata += 1
+            try:
+                if self.m_func:
+                    self.m_func(handsinfo)
+                else:
+                    self.mainfunc(handsinfo)
+            except  KeyboardInterrupt:
+                exit()
+            except:
+                print "===============error=============="
+                print "error : ", handsinfo["_id"]
+                handsinfocommon.pp.pprint(handsinfo)
+                raise
 
     def filter(self, handsinfo):
         return False
