@@ -106,6 +106,9 @@ SCORERANGE = 50 # lower, pair gets priority
 
 NEWSTRENGTHMAP = CACHEDIR + "newstrengthmap"
 
+    # ----------------------next turn strength histogram----------------
+HANDSTRENGTHSLOT = 0.04
+
 # ========================board value related================================
 BOARDVALUE = CACHEDIR + "boardvalue"
 

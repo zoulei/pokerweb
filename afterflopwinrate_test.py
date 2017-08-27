@@ -6,8 +6,23 @@ import hunlgame
 import traceback
 import time
 import threading
+import math
 
 lock = threading.Lock()
+
+class WinrateHistogram:
+    def __init__(self, winratedata):
+        self.initdata(winratedata)
+
+    def initdata(self, winratedata):
+        slotnum = math.ceil(1 / Constant.HANDSTRENGTHSLOT) + 1
+        self.m_data = [0] * slotnum
+        for winrate in winratedata:
+            self.m_data[math.ceil( (1 - winrate) / Constant.HANDSTRENGTHSLOT )] += 1
+
+    def __sub__(self, other):
+        pass
+
 
 class WinrateEngine(HandsInfo):
     def __init__(self,handsinfo):
@@ -70,8 +85,8 @@ class WinrateEngine(HandsInfo):
         curboard = self.getcurboard()
 
         curboard[-1] = hunlgame.Card(2, 4)
-        curboard[0] = hunlgame.Card(2, 11)
-        curboard[1] = hunlgame.Card(1, 8)
+        curboard[0] = hunlgame.Card(1, 11)
+        curboard[1] = hunlgame.Card(2, 8)
 
         print "board : "
         for v in curboard:
@@ -93,9 +108,24 @@ class WinrateEngine(HandsInfo):
                 winratecalculator = hunlgame.SoloWinrateCalculator(curboard, tmphands, ophands[0],debug=False)
                 curwinrate = winratecalculator.calmywinrate()
                 nextturnwinrate = winratecalculator.calnextturnwinrate()
+                nextturnstackwinrate = winratecalculator.calnextturnstackwinrate()
                 printstr = Constant.TAB.join([str(v) for v in [hand, round(curwinrate,3), round(nextturnwinrate - curwinrate, 3)]])
                 printdata.append([printstr, curwinrate, nextturnwinrate])
-                # f = open(Constant.CACHEDIR + "winrate448","a")
+
+                f = open(Constant.CACHEDIR + str(hand),"w")
+                f.write(self.m_handsinfo["_id"] + "\n")
+                f.write("curwinrate : "+str(curwinrate)+"\n")
+                f.write("board : "+"\n")
+                for v in curboard:
+                    f.write(str(v) + "\n")
+                f.write("pos : " + str(pos) + "\n")
+                f.write("range : " + str(self.m_cumuinfo.m_prefloprange) + "\n")
+
+                for board, winrate in nextturnstackwinrate:
+                    for card in board:
+                        f.write(str(card) + " ")
+                    f.write(Constant.TAB + str(winrate) + "\n")
+                f.close()
                 # f.write(Constant.TAB.join([str(v) for v in [hand, round(curwinrate,3), round(nextturnwinrate - curwinrate, 3)]]) + "\n")
                 # print hand, round(curwinrate, 3), round(nextturnwinrate - curwinrate, 3)
                 # nextturnwinrate = 0
@@ -105,9 +135,9 @@ class WinrateEngine(HandsInfo):
                 print "oplen : ",len(ophands)
                 return
 
-        printdata.sort(key=lambda v:v[1],reverse=True)
-        for data in printdata:
-            print data[0]
+        # printdata.sort(key=lambda v:v[1],reverse=True)
+        # for data in printdata:
+        #     print data[0]
 
     def updatecumuinfo(self,round1,actionidx):
         global lock

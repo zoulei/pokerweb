@@ -8,24 +8,25 @@ def EMD():
 
     for i in range(0,5):
         # a[i][1] = i+1
-        a[i][1] = 1
+        a[i][1] = i + 1
 
     a[0][0] = 1
-    a[1][0] = 1
-    a[2][0] = 0
-    a[3][0] = 0
-    a[4][0] = 1
+    a[1][0] = 2
+    a[2][0] = 3
+    a[3][0] = 4
+    a[4][0] = 5
 
-    b = np.zeros((4,2))
+    b = np.zeros((5,2))
 
-    for i in range(0,4):
+    for i in range(0,5):
         # b[i][1] = i+1
-        b[i][1] =1
+        b[i][1] = i + 1
 
-    b[0][0] = 0
-    b[1][0] = 1
-    b[2][0] = 0
-    b[3][0] = 1
+    b[0][0] = 5
+    b[1][0] = 5
+    b[2][0] = 5
+    b[3][0] = 5
+    b[4][0] = 5
 
     # Convert from numpy array to CV_32FC1 Mat
     a64 = cv.fromarray(a)
@@ -56,3 +57,6 @@ def compare(histogram1,histogram2):
             continue
         if histogram1[key] != histogram2[key]:
             print key," : ",histogram1[key],histogram2[key]
+
+if __name__ == "__main__":
+    EMD()
