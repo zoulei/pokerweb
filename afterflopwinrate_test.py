@@ -7,11 +7,13 @@ import traceback
 import time
 import threading
 import math
+import earthmover
 
 lock = threading.Lock()
 
 class WinrateHistogram:
     def __init__(self, winratedata):
+        winratedata.sort(reverse=True)
         self.initdata(winratedata)
 
     def initdata(self, winratedata):
@@ -21,8 +23,7 @@ class WinrateHistogram:
             self.m_data[math.ceil( (1 - winrate) / Constant.HANDSTRENGTHSLOT )] += 1
 
     def __sub__(self, other):
-        pass
-
+        return earthmover.EMD(self.m_data,other.m_data)
 
 class WinrateEngine(HandsInfo):
     def __init__(self,handsinfo):
@@ -101,6 +102,7 @@ class WinrateEngine(HandsInfo):
 
         printdata = []
 
+        handhistogram = []
         for hand in myhands:
             tmphands = [hand,]
 
@@ -109,6 +111,8 @@ class WinrateEngine(HandsInfo):
                 curwinrate = winratecalculator.calmywinrate()
                 nextturnwinrate = winratecalculator.calnextturnwinrate()
                 nextturnstackwinrate = winratecalculator.calnextturnstackwinrate()
+                winratehistogram = [v[1] for v in nextturnstackwinrate]
+                handhistogram.append([hand,WinrateHistogram(winratehistogram)])
                 printstr = Constant.TAB.join([str(v) for v in [hand, round(curwinrate,3), round(nextturnwinrate - curwinrate, 3)]])
                 printdata.append([printstr, curwinrate, nextturnwinrate])
 
