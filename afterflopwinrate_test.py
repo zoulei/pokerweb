@@ -18,12 +18,19 @@ class WinrateHistogram:
 
     def initdata(self, winratedata):
         slotnum = math.ceil(1 / Constant.HANDSTRENGTHSLOT) + 1
-        self.m_data = [0] * slotnum
+        self.m_data = [0] * int(slotnum)
         for winrate in winratedata:
-            self.m_data[math.ceil( (1 - winrate) / Constant.HANDSTRENGTHSLOT )] += 1
+            self.m_data[int(math.ceil( (1 - winrate) / Constant.HANDSTRENGTHSLOT ) )] += 1
 
     def __sub__(self, other):
-        return earthmover.EMD(self.m_data,other.m_data)
+        try:
+            return earthmover.EMD(self.m_data,other.m_data)
+        except:
+            print "WinrateHistogram error : "
+            print self.m_data
+            print other.m_data
+            raise
+
 
 class WinrateEngine(HandsInfo):
     def __init__(self,handsinfo):
@@ -100,8 +107,6 @@ class WinrateEngine(HandsInfo):
         if not curboard[-1]:
             return
 
-        printdata = []
-
         handhistogram = []
         for hand in myhands:
             tmphands = [hand,]
@@ -112,24 +117,25 @@ class WinrateEngine(HandsInfo):
                 nextturnwinrate = winratecalculator.calnextturnwinrate()
                 nextturnstackwinrate = winratecalculator.calnextturnstackwinrate()
                 winratehistogram = [v[1] for v in nextturnstackwinrate]
-                handhistogram.append([hand,WinrateHistogram(winratehistogram)])
-                printstr = Constant.TAB.join([str(v) for v in [hand, round(curwinrate,3), round(nextturnwinrate - curwinrate, 3)]])
-                printdata.append([printstr, curwinrate, nextturnwinrate])
+                if winratehistogram:
+                    handhistogram.append([hand,curwinrate,WinrateHistogram(winratehistogram)])
+                # printstr = Constant.TAB.join([str(v) for v in [hand, round(curwinrate,3), round(nextturnwinrate - curwinrate, 3)]])
+                # printdata.append([printstr, curwinrate, nextturnwinrate])
 
-                f = open(Constant.CACHEDIR + str(hand),"w")
-                f.write(self.m_handsinfo["_id"] + "\n")
-                f.write("curwinrate : "+str(curwinrate)+"\n")
-                f.write("board : "+"\n")
-                for v in curboard:
-                    f.write(str(v) + "\n")
-                f.write("pos : " + str(pos) + "\n")
-                f.write("range : " + str(self.m_cumuinfo.m_prefloprange) + "\n")
-
-                for board, winrate in nextturnstackwinrate:
-                    for card in board:
-                        f.write(str(card) + " ")
-                    f.write(Constant.TAB + str(winrate) + "\n")
-                f.close()
+                # f = open(Constant.CACHEDIR + str(hand),"w")
+                # f.write(self.m_handsinfo["_id"] + "\n")
+                # f.write("curwinrate : "+str(curwinrate)+"\n")
+                # f.write("board : "+"\n")
+                # for v in curboard:
+                #     f.write(str(v) + "\n")
+                # f.write("pos : " + str(pos) + "\n")
+                # f.write("range : " + str(self.m_cumuinfo.m_prefloprange) + "\n")
+                #
+                # for board, winrate in nextturnstackwinrate:
+                #     for card in board:
+                #         f.write(str(card) + " ")
+                #     f.write(Constant.TAB + str(winrate) + "\n")
+                # f.close()
                 # f.write(Constant.TAB.join([str(v) for v in [hand, round(curwinrate,3), round(nextturnwinrate - curwinrate, 3)]]) + "\n")
                 # print hand, round(curwinrate, 3), round(nextturnwinrate - curwinrate, 3)
                 # nextturnwinrate = 0
@@ -142,6 +148,19 @@ class WinrateEngine(HandsInfo):
         # printdata.sort(key=lambda v:v[1],reverse=True)
         # for data in printdata:
         #     print data[0]
+
+        myhandlen = len(handhistogram)
+        for i in xrange(myhandlen):
+            printdata = []
+            for j in xrange(i + 1, myhandlen):
+                handi,winratei,hisi = handhistogram[i]
+                handj,winratej,hisj = handhistogram[j]
+                printdata.append([handi,winratei,handj,winratej,hisi-hisj])
+                # print handi," : ",handj,"      ",hisi-hisj
+            printdata.sort(key=lambda v:v[4])
+            for handi,winratei,handj,winratej,similarity in printdata:
+                print handi," : ",handj,"   --   ",winratei," : ",winratej,"      ",similarity
+            raw_input("=================================")
 
     def updatecumuinfo(self,round1,actionidx):
         global lock
