@@ -70,6 +70,20 @@ class WinrateEngine(HandsInfo):
     def calnextwinrate(self):
         return self.calwinrate(self.m_cumuinfo.m_nextplayer)
 
+    def getbasehistogram(self, ophands):
+        board = []
+        board.append(hunlgame.Card(2, 2))
+        board.append(hunlgame.Card(1, 11))
+        board.append(hunlgame.Card(2, 6))
+
+        hand = hunlgame.generateHands("ASJS")
+        winratecalculator = hunlgame.SoloWinrateCalculator(board, [hand,], ophands[0], debug=False)
+        curwinrate = winratecalculator.calmywinrate()
+        # nextturnwinrate = winratecalculator.calnextturnwinrate()
+        nextturnstackwinrate = winratecalculator.calnextturnstackwinrate()
+        winratehistogram = [v[1] for v in nextturnstackwinrate]
+        return [hand,curwinrate,WinrateHistogram(winratehistogram)]
+
     def calrealwinrate(self, pos):
         # realpos = self.m_cumuinfo.getrealpos(pos)
         curhand = self.gethand(pos)
@@ -107,47 +121,24 @@ class WinrateEngine(HandsInfo):
         if not curboard[-1]:
             return
 
-        handhistogram = []
+        handhistogram = [self.getbasehistogram(ophands)]
         for hand in myhands:
             tmphands = [hand,]
 
             if len(ophands) == 1:
                 winratecalculator = hunlgame.SoloWinrateCalculator(curboard, tmphands, ophands[0],debug=False)
                 curwinrate = winratecalculator.calmywinrate()
-                nextturnwinrate = winratecalculator.calnextturnwinrate()
+                # nextturnwinrate = winratecalculator.calnextturnwinrate()
                 nextturnstackwinrate = winratecalculator.calnextturnstackwinrate()
                 winratehistogram = [v[1] for v in nextturnstackwinrate]
                 if winratehistogram:
                     handhistogram.append([hand,curwinrate,WinrateHistogram(winratehistogram)])
-                # printstr = Constant.TAB.join([str(v) for v in [hand, round(curwinrate,3), round(nextturnwinrate - curwinrate, 3)]])
-                # printdata.append([printstr, curwinrate, nextturnwinrate])
-
-                # f = open(Constant.CACHEDIR + str(hand),"w")
-                # f.write(self.m_handsinfo["_id"] + "\n")
-                # f.write("curwinrate : "+str(curwinrate)+"\n")
-                # f.write("board : "+"\n")
-                # for v in curboard:
-                #     f.write(str(v) + "\n")
-                # f.write("pos : " + str(pos) + "\n")
-                # f.write("range : " + str(self.m_cumuinfo.m_prefloprange) + "\n")
-                #
-                # for board, winrate in nextturnstackwinrate:
-                #     for card in board:
-                #         f.write(str(card) + " ")
-                #     f.write(Constant.TAB + str(winrate) + "\n")
-                # f.close()
-                # f.write(Constant.TAB.join([str(v) for v in [hand, round(curwinrate,3), round(nextturnwinrate - curwinrate, 3)]]) + "\n")
-                # print hand, round(curwinrate, 3), round(nextturnwinrate - curwinrate, 3)
-                # nextturnwinrate = 0
-                # return [curwinrate, nextturnwinrate]
             else:
                 # not wrriten yet
                 print "oplen : ",len(ophands)
                 return
 
-        # printdata.sort(key=lambda v:v[1],reverse=True)
-        # for data in printdata:
-        #     print data[0]
+        # baseline
 
         myhandlen = len(handhistogram)
         for i in xrange(myhandlen):
