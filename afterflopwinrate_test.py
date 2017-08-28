@@ -82,6 +82,14 @@ class WinrateEngine(HandsInfo):
         # nextturnwinrate = winratecalculator.calnextturnwinrate()
         nextturnstackwinrate = winratecalculator.calnextturnstackwinrate()
         winratehistogram = [v[1] for v in nextturnstackwinrate]
+        f = open(Constant.CACHEDIR + "tmp","w")
+        for board, wr in nextturnstackwinrate:
+            writestr = ""
+            for card in board:
+                writestr += str(card) + " "
+            writestr += " " + str(wr) + "\n"
+            f.write(writestr)
+        f.close()
         return [hand,curwinrate,WinrateHistogram(winratehistogram)]
 
     def calrealwinrate(self, pos):
