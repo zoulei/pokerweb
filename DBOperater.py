@@ -21,15 +21,27 @@ def Disconnect():
 
 #store data to mongodb
 def StoreData(db,clt,data):
+    global client
+    if not client:
+        Connect()
     return client[db][clt].insert(data)
 
 def DeleteData(db,clt,query):
+    global client
+    if not client:
+        Connect()
     return client[db][clt].delete_many(query)
 
 def Find(db,clt,query):
+    global client
+    if not client:
+        Connect()
     return client[db][clt].find(query)
 
 def ReplaceOne(db,clt,query,newdoc,upsert = False):
+    global client
+    if not client:
+        Connect()
     return client[db][clt].replace_one(query,newdoc,upsert)
 
 Connect()
