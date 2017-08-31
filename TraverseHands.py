@@ -50,7 +50,7 @@ class TraverseHands:
         print "elapsedtime : ", self.m_elapsedtime
 
     def traverse_(self, idx):
-        # DBOperater.Connect()
+        DBOperater.Connect()
         if not self.m_handsid:
             result = DBOperater.Find(Constant.HANDSDB, Constant.TJHANDSCLT, {})
         else:
@@ -72,12 +72,11 @@ class TraverseHands:
 
             if not self.filter(handsinfo):
                 doclist.append(copy.deepcopy(handsinfo))
-                # doclist.append(handsinfo)
-        # DBOperater.Disconnect()
         self.m_processeddata += len(doclist)
 
         if self.m_func and not self.m_sync:
             # print "async"
+            DBOperater.Disconnect()
             self.asyncmain(doclist)
         else:
             # print "sync"
@@ -102,8 +101,6 @@ class TraverseHands:
 
     def syncmain(self,doclist):
         for handsinfo in doclist:
-            # if not self.filter(handsinfo):
-            self.m_processeddata += 1
             try:
                 if self.m_func:
                     self.m_func(handsinfo)
