@@ -4,8 +4,8 @@ import math
 from pyemd import emd
 
 # Initialize a and b numpy arrays with coordinates and weights
-def EMD(histogram1, histogram2, distancematrix = []):
-    if distancematrix:
+def EMD(histogram1, histogram2, distancematrix = None):
+    if distancematrix is not None:
         return EMD_(histogram1,histogram2,distancematrix)
     hislen = len(histogram1)
     a = np.zeros( (hislen,2))

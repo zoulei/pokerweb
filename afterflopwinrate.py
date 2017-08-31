@@ -9,11 +9,12 @@ import threading
 import math
 import earthmover
 import json
+import numpy as np
 
 lock = threading.Lock()
 
 class WinrateHistogram:
-    def __init__(self, winratedata = [], winratestr = ""):
+    def __init__(self, winratedata = None, winratestr = ""):
         winratedata.sort(reverse=True)
         if winratestr:
             self.m_data = json.loads(winratestr)
@@ -33,6 +34,7 @@ class WinrateHistogram:
             print "WinrateHistogram error : "
             print self.m_data
             print other.m_data
+            traceback.print_exc()
             raise
 
     def __str__(self):
@@ -41,7 +43,22 @@ class WinrateHistogram:
 
 class BoardHistogram:
     def __init__(self, winratehistogramlist):
-        pass
+        self.m_winratedata = winratehistogramlist
+
+    def __sub__(self, other):
+        # print len(self.m_winratedata), len(other.m_winratedata)
+        # assert len(self.m_winratedata) == len(other.m_winratedata)
+        mylen = len(self.m_winratedata)
+        otlen = len(other.m_winratedata)
+        totallen = mylen + otlen
+        fh = [1.0/mylen] * mylen + [0] * otlen
+        sh = [0] * mylen + [1.0/otlen] * otlen
+        dm = np.zeros( (totallen,totallen),dtype=float)
+        for xidx in xrange(mylen):
+            for yidx in xrange(mylen,totallen):
+                # print len(self.m_winratedata), xidx, len(other.m_winratedata),yidx-totallen,xidx,yidx
+                dm[xidx][yidx] = self.m_winratedata[xidx] - other.m_winratedata[yidx - mylen]
+        return earthmover.EMD(fh,sh,dm)
 
 class WinrateEngine(HandsInfo):
     def __init__(self,handsinfo):
@@ -91,6 +108,7 @@ class WinrateEngine(HandsInfo):
         # print "myhand : ",tmphands[0]
         print "hand len : ", len(myhands),len(ophands[0])
         print "range : ", self.m_cumuinfo.m_prefloprange
+        print "inpool : ", self.m_cumuinfo.m_inpoolstate
 
     # test function
     def printhistogramdiff(self,handhistogram):
@@ -227,6 +245,7 @@ class BoardIdentifierEngine(WinrateEngine):
         return handhistogram
 
     def calrealwinrate(self, pos):
+
         myhands = self.m_range[pos]
         ophands = []
         for idx in xrange(len(self.m_range)):
@@ -235,9 +254,17 @@ class BoardIdentifierEngine(WinrateEngine):
             handsinrange = self.m_range[idx]
             if handsinrange:
                 ophands.append(handsinrange)
-
+        self.printdebuginfo(pos,myhands,ophands)
         boardhistogram = []
+        cnt = 0
+        import random
         for curboard in hunlgame.Cardsengine().generateallflop():
+            cnt += 1
+            print cnt
+            # if cnt > 2:
+            #     break
+            if random.random() < 0.9995:
+                continue
             handhistogram = []
             for hand in myhands:
                 tmphands = [hand,]
@@ -253,8 +280,22 @@ class BoardIdentifierEngine(WinrateEngine):
                     # not wrriten yet
                     print "oplen : ",len(ophands)
                     return
-            boardhistogram.append([curboard, handhistogram])
+            boardhistogram.append([curboard, BoardHistogram([v[2] for v in handhistogram] )])
 
+        for fboard, fboardhis in boardhistogram:
+            printdata = []
+            for sboard, sboardhis in boardhistogram:
+                printdata.append([sboard,fboardhis - sboardhis])
+            printdata.sort(key=lambda v:v[1])
+            print "="*10,hunlgame.Board(fboard),"="*10
+            for board, diff in printdata:
+                print hunlgame.Board(board), "\t",diff
+            raw_input("----------------")
+
+class TestBoardIdentifier(TraverseHands):
+    def mainfunc(self, handsinfo):
+        BoardIdentifierEngine(handsinfo).test()
 
 if __name__ == "__main__":
-    WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",sync=False).traverse()
+    # WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="35357006093039820170311203722",sync=False).traverse()
+    TestBoardIdentifier(Constant.HANDSDB,Constant.TJHANDSCLT,func=None,handsid="35357006093039820170311203722",sync=False).traverse()
