@@ -1,9 +1,12 @@
 from cv2 import *
 import numpy as np
 import math
+from pyemd import emd
 
 # Initialize a and b numpy arrays with coordinates and weights
-def EMD(histogram1, histogram2):
+def EMD(histogram1, histogram2, distancematrix = []):
+    if distancematrix:
+        return EMD_(histogram1,histogram2,distancematrix)
     hislen = len(histogram1)
     a = np.zeros( (hislen,2))
     # a = np.zeros((5,2))
@@ -32,6 +35,18 @@ def EMD(histogram1, histogram2):
     # Calculate Earth Mover's
     return cv.CalcEMD2(a32,b32,cv.CV_DIST_L2)
 
+def EMD_(histogram1, histogram2, distancematrix):
+    fh = np.array(histogram1,dtype=float)
+    fhsum = sum(fh)
+    fh = np.vectorize(lambda t:t / fhsum)(fh)
+    sh = np.array(histogram2,dtype=float)
+    shsum = sum(sh)
+    sh = np.vectorize(lambda t:t / shsum)(sh)
+
+    dm = np.array(distancematrix)
+    return emd(fh,sh,dm)
+
+
 def simplediff(histogram1, histogram2):
     totaldif = 0
     for key in histogram1:
@@ -40,12 +55,43 @@ def simplediff(histogram1, histogram2):
         totaldif += abs(histogram1[key] - histogram2[key])
     return totaldif
 
-def compare(histogram1,histogram2):
-    for key in histogram1:
-        if abs(histogram1[key] - histogram2[key]) < 100:
-            continue
-        if histogram1[key] != histogram2[key]:
-            print key," : ",histogram1[key],histogram2[key]
+# def compare(histogram1,histogram2):
+#     for key in histogram1:
+#         if abs(histogram1[key] - histogram2[key]) < 100:
+#             continue
+#         if histogram1[key] != histogram2[key]:
+#             print key," : ",histogram1[key],histogram2[key]
+#
+def testpyemd():
+    fh = np.array([2,2,2,2,2],dtype=float)
+    sumvalue = fh.sum()
+    fh = np.vectorize(lambda t:t / sumvalue)(fh)
+    sh = np.array([2.0,2,2,1,3])
+    sh = np.vectorize(lambda t:t / sumvalue)(sh)
+    dm = np.array([
+        [0.0,1,2,3,4],
+        [1.0,0,1,2,3],
+        [2.0,1,0,1,2],
+        [3.0,2,1,0,1],
+        [4.0,3,2,1,0],
+    ])
+    print emd(fh,sh,dm)
+
+def testpyemd1():
+    first_histogram = np.array([0.0, 2.0])
+    second_histogram = np.array([0.0, 2.0])
+    distance_matrix = np.array([[0.0, 1],
+                            [1.0, 0]])
+    print emd(first_histogram, second_histogram, distance_matrix)
 
 if __name__ == "__main__":
-    EMD([2,2,2,1,3],[2,2,2,2,2])
+    print EMD([2,2,2,1,3],[2,2,2,2,2],[
+        [0.0,1,2,3,4],
+        [1.0,0,1,2,3],
+        [2.0,1,0,1,2],
+        [3.0,2,1,0,1],
+        [4.0,3,2,1,0],
+    ])
+    testpyemd()
+    print EMD([0,1],[5,3])
+    testpyemd1()

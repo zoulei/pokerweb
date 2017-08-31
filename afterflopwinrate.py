@@ -39,6 +39,10 @@ class WinrateHistogram:
         return json.dumps(self.m_data)
         # return str(self.m_data)
 
+class BoardHistogram:
+    def __init__(self, winratehistogramlist):
+        pass
+
 class WinrateEngine(HandsInfo):
     def __init__(self,handsinfo):
         HandsInfo.__init__(self,handsinfo)
@@ -53,25 +57,6 @@ class WinrateEngine(HandsInfo):
                 self.m_range.append(self.m_cumuinfo.m_handsrangeobj.gethandsinrange(rangenum) )
             else:
                 self.m_range.append(self.m_cumuinfo.m_handsrangeobj.gethandsinrange(0))
-
-    # pos is relativepos
-    def calwinrate(self, pos):
-        myhands = self.m_range[pos]
-        ophands = []
-        for idx in xrange(len(self.m_range)):
-            if idx == pos:
-                continue
-            handsinrange = self.m_range[idx]
-            if handsinrange:
-                ophands.append(handsinrange)
-        if len(ophands) == 1:
-            winratecalculator = hunlgame.SoloWinrateCalculator(self.getcurboard(), myhands, ophands[0])
-            curwinrate = winratecalculator.calmywinrate()
-            nextturnwinrate = winratecalculator.calnextturnwinrate()
-            return [curwinrate, nextturnwinrate]
-
-    def calnextwinrate(self):
-        return self.calwinrate(self.m_cumuinfo.m_nextplayer)
 
     # test function
     def getbasehistogram(self, ophands):
@@ -151,7 +136,6 @@ class WinrateEngine(HandsInfo):
             if len(ophands) == 1:
                 winratecalculator = hunlgame.SoloWinrateCalculator(curboard, tmphands, ophands[0],debug=False)
                 curwinrate = winratecalculator.calmywinrate()
-                # nextturnwinrate = winratecalculator.calnextturnwinrate()
                 nextturnstackwinrate = winratecalculator.calnextturnstackwinrate()
                 winratehistogram = [v[1] for v in nextturnstackwinrate]
                 if winratehistogram:
@@ -181,7 +165,7 @@ class WinrateEngine(HandsInfo):
 
             # lock.acquire()
             f = open(Constant.CACHEDIR + statekey, "a")
-            if result:
+            if result and len(result) == 1:
                 hand, curwinrate, winratehisobj = result[0]
                 f.write(Constant.TAB.join([str(v) for v in [round(curwinrate,3), self.m_cumuinfo.m_lastattack,self.getid(),winratehisobj]])+"\n")
             else:
@@ -207,16 +191,6 @@ class WinrateCalculater(TraverseHands):
         #     return True
         return False
 
-    def mainfunc(self,handsinfo):
-        engine = WinrateEngine(handsinfo)
-        try:
-            engine.test()
-        except KeyboardInterrupt:
-            raise
-        except:
-            print handsinfo["_id"]
-            traceback.print_exc()
-
 def mainfunc( handsinfo):
     engine = WinrateEngine(handsinfo)
     try:
@@ -227,5 +201,60 @@ def mainfunc( handsinfo):
         print handsinfo["_id"]
         traceback.print_exc()
 
+class BoardIdentifierEngine(WinrateEngine):
+    def getbasehistogram(self, ophands):
+        curboard = []
+        curboard.append(hunlgame.Card(2, 2))
+        curboard.append(hunlgame.Card(1, 11))
+        curboard.append(hunlgame.Card(2, 6))
+
+        # hand = hunlgame.generateHands("ASJS")
+        handhistogram = []
+        for hand in self.m_range[self.m_cumuinfo.m_lastplayer]:
+            tmphands = [hand,]
+
+            if len(ophands) == 1:
+                winratecalculator = hunlgame.SoloWinrateCalculator(curboard, tmphands, ophands[0],debug=False)
+                curwinrate = winratecalculator.calmywinrate()
+                nextturnstackwinrate = winratecalculator.calnextturnstackwinrate()
+                winratehistogram = [v[1] for v in nextturnstackwinrate]
+                if winratehistogram:
+                    handhistogram.append([hand,curwinrate,WinrateHistogram(winratehistogram)])
+            else:
+                # not wrriten yet
+                print "oplen : ",len(ophands)
+                return
+        return handhistogram
+
+    def calrealwinrate(self, pos):
+        myhands = self.m_range[pos]
+        ophands = []
+        for idx in xrange(len(self.m_range)):
+            if idx == pos:
+                continue
+            handsinrange = self.m_range[idx]
+            if handsinrange:
+                ophands.append(handsinrange)
+
+        boardhistogram = []
+        for curboard in hunlgame.Cardsengine().generateallflop():
+            handhistogram = []
+            for hand in myhands:
+                tmphands = [hand,]
+
+                if len(ophands) == 1:
+                    winratecalculator = hunlgame.SoloWinrateCalculator(curboard, tmphands, ophands[0],debug=False)
+                    curwinrate = winratecalculator.calmywinrate()
+                    nextturnstackwinrate = winratecalculator.calnextturnstackwinrate()
+                    winratehistogram = [v[1] for v in nextturnstackwinrate]
+                    if winratehistogram:
+                        handhistogram.append([hand,curwinrate,WinrateHistogram(winratehistogram)])
+                else:
+                    # not wrriten yet
+                    print "oplen : ",len(ophands)
+                    return
+            boardhistogram.append([curboard, handhistogram])
+
+
 if __name__ == "__main__":
-    WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",sync=True).traverse()
+    WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",sync=False).traverse()
