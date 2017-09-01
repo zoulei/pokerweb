@@ -10,6 +10,9 @@ import math
 import earthmover
 import json
 import numpy as np
+import signal
+import multiprocessing
+import random
 
 lock = threading.Lock()
 
@@ -244,8 +247,9 @@ class BoardIdentifierEngine(WinrateEngine):
                 return
         return handhistogram
 
-    def calrealwinrate(self, pos):
 
+
+    def calrealwinrate(self, pos):
         myhands = self.m_range[pos]
         ophands = []
         for idx in xrange(len(self.m_range)):
@@ -256,30 +260,30 @@ class BoardIdentifierEngine(WinrateEngine):
                 ophands.append(handsinrange)
         self.printdebuginfo(pos,myhands,ophands)
         boardhistogram = []
-        cnt = 0
-        import random
-        for curboard in hunlgame.Cardsengine().generateallflop():
-            cnt += 1
-            print cnt
-            # if cnt > 2:
-            #     break
-            if random.random() < 0.9995:
-                continue
-            handhistogram = []
-            for hand in myhands:
-                tmphands = [hand,]
 
-                if len(ophands) == 1:
-                    winratecalculator = hunlgame.SoloWinrateCalculator(curboard, tmphands, ophands[0],debug=False)
-                    curwinrate = winratecalculator.calmywinrate()
-                    nextturnstackwinrate = winratecalculator.calnextturnstackwinrate()
-                    winratehistogram = [v[1] for v in nextturnstackwinrate]
-                    if winratehistogram:
-                        handhistogram.append([hand,curwinrate,WinrateHistogram(winratehistogram)])
-                else:
-                    # not wrriten yet
-                    print "oplen : ",len(ophands)
-                    return
+        paralist = []
+        for curboard in hunlgame.Cardsengine().generateallflop():
+            if random.random() < 0.99:
+                continue
+            paralist.append([curboard,myhands,ophands])
+
+        original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
+        pool = multiprocessing.Pool(Constant.THREADNUM)
+        signal.signal(signal.SIGINT, original_sigint_handler)
+        try:
+            # result = self.m_pool.map_async(self.mainfunc, doclist)
+            result = pool.map_async(calhistogramforboard, paralist)
+            result.get(99999999)  # Without the timeout this blocking call ignores all signals.
+        except KeyboardInterrupt:
+            pool.terminate()
+            pool.close()
+            pool.join()
+            exit()
+        else:
+            pool.close()
+        pool.join()
+
+        for curboard, handhistogram in result.get():
             boardhistogram.append([curboard, BoardHistogram([v[2] for v in handhistogram] )])
 
         for fboard, fboardhis in boardhistogram:
@@ -292,10 +296,30 @@ class BoardIdentifierEngine(WinrateEngine):
                 print hunlgame.Board(board), "\t",diff
             raw_input("----------------")
 
+# @ staticmethod
+def calhistogramforboard(para):
+    curboard, myhands, ophands = para
+    handhistogram = []
+    for hand in myhands:
+        tmphands = [hand,]
+
+        if len(ophands) == 1:
+            winratecalculator = hunlgame.SoloWinrateCalculator(curboard, tmphands, ophands[0],debug=False)
+            curwinrate = winratecalculator.calmywinrate()
+            nextturnstackwinrate = winratecalculator.calnextturnstackwinrate()
+            winratehistogram = [v[1] for v in nextturnstackwinrate]
+            if winratehistogram:
+                handhistogram.append([hand,curwinrate,WinrateHistogram(winratehistogram)])
+        else:
+            # not wrriten yet
+            print "oplen : ",len(ophands)
+            return
+    return [curboard,handhistogram]
+
 class TestBoardIdentifier(TraverseHands):
     def mainfunc(self, handsinfo):
         BoardIdentifierEngine(handsinfo).test()
 
 if __name__ == "__main__":
     # WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="35357006093039820170311203722",sync=False).traverse()
-    TestBoardIdentifier(Constant.HANDSDB,Constant.TJHANDSCLT,func=None,handsid="35357006093039820170311203722",sync=False).traverse()
+    TestBoardIdentifier(Constant.HANDSDB,Constant.TJHANDSCLT,func=None,handsid="35357006093039820170311203722",sync=True).traverse()
