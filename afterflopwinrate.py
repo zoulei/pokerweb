@@ -285,16 +285,16 @@ class BoardIdentifierEngine(WinrateEngine):
 
         for curboard, handhistogram in result.get():
             boardhistogram.append([curboard, BoardHistogram([v[2] for v in handhistogram] )])
-
-        for fboard, fboardhis in boardhistogram:
-            printdata = []
-            for sboard, sboardhis in boardhistogram:
-                printdata.append([sboard,fboardhis - sboardhis])
-            printdata.sort(key=lambda v:v[1])
-            print "="*10,hunlgame.Board(fboard),"="*10
-            for board, diff in printdata:
-                print hunlgame.Board(board), "\t",diff
-            raw_input("----------------")
+        print "len:",len(boardhistogram)
+        # for fboard, fboardhis in boardhistogram:
+        #     printdata = []
+        #     for sboard, sboardhis in boardhistogram:
+        #         printdata.append([sboard,fboardhis - sboardhis])
+        #     printdata.sort(key=lambda v:v[1])
+        #     print "="*10,hunlgame.Board(fboard),"="*10
+        #     for board, diff in printdata:
+        #         print hunlgame.Board(board), "\t",diff
+        #     raw_input("----------------")
 
 # @ staticmethod
 def calhistogramforboard(para):
