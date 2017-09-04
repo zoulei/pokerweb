@@ -11,12 +11,14 @@ import handsengine
 
 class TraverseHands:
     # def __init__(self,db,clt,handsnum = 0):
-    def __init__(self, db, clt, func = None, handsid = "", step = 10000, sync = False):
+    def __init__(self, db, clt, func = None, handsid = "", step = 10000, start = 0, end = 0, sync = False):
         self.m_db = db
         self.m_clt = clt
         self.m_func = func
         self.m_handsid = handsid
         self.m_step = step
+        self.m_start = start
+        self.m_end = end
         self.m_sync = sync
         # self.m_limit = handsnum
         self.m_processeddata = 0
@@ -36,8 +38,12 @@ class TraverseHands:
 
         iternum = doclen / self.m_step + 1
         for idx in xrange(iternum):
-            print "traverse : ",idx
-            self.traverse_(idx)
+            if not self.m_end and idx > self.m_end:
+                break
+
+            if idx >= self.m_start:
+                print "traverse : ",idx
+                self.traverse_(idx)
 
         end = time.time()
         self.m_elapsedtime = end - start
