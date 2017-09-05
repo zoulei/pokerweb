@@ -556,7 +556,17 @@ class BoardIdentifier(TraverseHands):
             pickle.dump(boardhisobjlist, open(fullboardhisfname,"wb"))
 
 def mainfuncboardidentifier(handsinfo):
-    BoardIdentifierEngine(handsinfo).test()
+    try:
+        BoardIdentifierEngine(handsinfo).test()
+    except:
+        f = open(Constant.CACHEDIR + "errorlog","a")
+        f.write("="*10+"\n")
+        f.write(handsinfo["_id"]+"\n")
+        f.write(str(traceback.format_exc())+"\n")
+        f.close()
+        print handsinfo["_id"]
+        traceback.print_exc()
+        raise
 
 if __name__ == "__main__":
     # WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="35357006093039820170311203722",sync=False).traverse()
@@ -564,4 +574,4 @@ if __name__ == "__main__":
     #
     # testreadpickleinfo()
 
-    BoardIdentifier(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfuncboardidentifier,handsid="",step=4000,start=0,end=1,sync=False).traverse()
+    BoardIdentifier(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfuncboardidentifier,handsid="",step=400,start=0,end=1,sync=False).traverse()
