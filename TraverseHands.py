@@ -38,7 +38,7 @@ class TraverseHands:
 
         iternum = doclen / self.m_step + 1
         for idx in xrange(iternum):
-            if not self.m_end and idx > self.m_end:
+            if self.m_end and idx >= self.m_end:
                 break
 
             if idx >= self.m_start:
