@@ -505,9 +505,9 @@ def testreadpickleinfo():
 
 class BoardIdentifier(TraverseHands):
     def filter(self, handsinfo):
-        # showcard = handsinfo["showcard"]
-        # if not (showcard >= 0 or showcard == -3):
-        #     return True
+        showcard = handsinfo["showcard"]
+        if not (showcard >= 0 or showcard == -3):
+            return True
         preflopgeneralinfo = handsinfo["preflopgeneralstate"]
         if preflopgeneralinfo["allin"] > 0:
             return True
