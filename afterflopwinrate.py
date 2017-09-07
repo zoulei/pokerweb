@@ -575,4 +575,4 @@ if __name__ == "__main__":
     # testreadpickleinfo()
 
     # speed 400 4 hour
-    BoardIdentifier(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfuncboardidentifier,handsid="",step=1200,start=0,end=1,sync=False).traverse()
+    BoardIdentifier(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfuncboardidentifier,handsid="",step=2000,start=0,end=1,sync=False).traverse()
