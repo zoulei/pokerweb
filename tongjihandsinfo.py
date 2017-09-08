@@ -106,7 +106,7 @@ def calpayoff(showcard, seppotresult,inpoolstate,gameinvest ,handsdata = []):
                 payofflist[idx] = - value
             else:
                 payofflist[idx] = sum(gameinvest) - value
-        return payofflist
+        return [payofflist,1]
 
     # show card, compare card strength
     inpoolnum = 0
@@ -124,7 +124,7 @@ def calpayoff(showcard, seppotresult,inpoolstate,gameinvest ,handsdata = []):
             winner = readwinner(privatecard)
             if not winner:
                 # read winner fail
-                return []
+                return [[],1]
 
             payofflist = [0]*10
             for idx, value in enumerate(gameinvest):
@@ -134,10 +134,10 @@ def calpayoff(showcard, seppotresult,inpoolstate,gameinvest ,handsdata = []):
                 else:
                     # fold
                     payofflist[idx] = - value
-            return payofflist
+            return [payofflist,1]
         else:
             # sep pot, but donot read hand card, cannot calculate
-            return []
+            return [[],1]
 
     # start to compare card
     payofflist = [0]*10
@@ -155,7 +155,7 @@ def calpayoff(showcard, seppotresult,inpoolstate,gameinvest ,handsdata = []):
         for pos in winner:
             payofflist[pos] += (potsize / len(winner))
 
-    return payofflist
+    return [payofflist,len(winner)]
 
 def calinvest(invest,actiondict,inpool,anti,bbvalue,handsdata,inpoolstate):
     remainplayer = len(inpool)
@@ -352,18 +352,18 @@ def tongjiinfo(handsinfo,bbvalue,anti):
 
     seppotresult = seppot(gameinvest,inpoolstate)
 
-    payofflist = calpayoff(showcard,seppotresult,inpoolstate,gameinvest,handsdata)
+    payofflist,winnerlen = calpayoff(showcard,seppotresult,inpoolstate,gameinvest,handsdata)
     if not payofflist:
         # cannot calculate payoff, this hand must be abandoned, mainly because fail to record show card
         print "empty payoff:",handsinfo["_id"]
         pass
         return -3
 
-    if sum(payofflist) != 0:
+    if sum(payofflist) != 0 and abs(sum(payofflist) ) >= winnerlen:
         # cannot calculate payoff, this hand must be abandoned, check specific reason
         pass
+        print payofflist
         print "sum not zero:",handsinfo ["_id"]
-
         return -1
 
     handsinfo["payoff"] = json.dumps(payofflist[1:])
