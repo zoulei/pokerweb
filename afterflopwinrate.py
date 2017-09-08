@@ -31,7 +31,10 @@ class FnameManager:
         if not statekey.endswith(".boardtmp"):
             return
         dotidx = statekey.find(".")
-        return statekey[:dotidx]
+        statekey = statekey[:dotidx]
+        statekey = statekey.replace("___",";")
+        statekey = statekey.replace("_",",")
+        return statekey
 
     def generateboardhisfname(self, statekey):
         statekey = statekey.replace(";","___")
@@ -39,9 +42,45 @@ class FnameManager:
         statekey +=  ".board"
         return statekey
 
+    def getboardhisfnamerawstatekey(self, statekey):
+        dotidx = statekey.find(".")
+        statekey = statekey[:dotidx]
+        statekey = statekey.replace("___",";")
+        statekey = statekey.replace("_",",")
+        return statekey
+
+    def generatehandhistempfname(self,statekey, handid):
+        statekey = statekey.replace(";","___")
+        statekey = statekey.replace(",","_")
+        statekey += "." + handid + ".handtmp"
+        return statekey
+
+    def gethandhistempfnamerawstatekey(self, statekey):
+        if not statekey.endswith(".handtmp"):
+            return
+        dotidx = statekey.find(".")
+        statekey = statekey[:dotidx]
+        statekey = statekey.replace("___",";")
+        statekey = statekey.replace("_",",")
+        return statekey
+
+    def generatehandhisfname(self, statekey):
+        statekey = statekey.replace(";","___")
+        statekey = statekey.replace(",","_")
+        # statekey +=  ".board"
+        return statekey
+
+    def gethandhisfnamerawstatekey(self, statekey):
+        # dotidx = statekey.find(".")
+        # statekey = statekey[:dotidx]
+        statekey = statekey.replace("___",";")
+        statekey = statekey.replace("_",",")
+        return statekey
+
 class WinrateHistogram:
-    def __init__(self, winratedata = None, winratestr = ""):
+    def __init__(self, winratedata = None, handinfo = None, winratestr = ""):
         winratedata.sort(reverse=True)
+        self.m_handinfo = handinfo
         if winratestr:
             self.m_data = json.loads(winratestr)
         else:
@@ -52,6 +91,19 @@ class WinrateHistogram:
         self.m_data = [0] * int(slotnum)
         for winrate in winratedata:
             self.m_data[int(math.ceil( (1 - winrate) / Constant.HANDSTRENGTHSLOT ) )] += 1
+
+    def like(self,other):
+        if abs(self.getcurwinrate() - other.getcurwinrate()) > Constant.CURWINRATETHRE:
+            return False
+        if self - other > Constant.HISTOGRAMTHRE:
+            return False
+        return True
+
+    def getcurwinrate(self):
+        return self.m_handinfo["winrate"]
+
+    def getattack(self):
+        return self.m_handinfo["attack"]
 
     def __sub__(self, other):
         try:
@@ -229,23 +281,36 @@ class WinrateEngine(HandsInfo):
             return
 
         # handhistogram = [self.getbasehistogram(ophands)]
-        handhistogram = []
-        for hand in myhands:
-            tmphands = [hand,]
+        # handhistogram = []
+        # for hand in myhands:
 
-            if len(ophands) == 1:
-                winratecalculator = hunlgame.SoloWinrateCalculator(curboard, tmphands, ophands[0],debug=False)
-                curwinrate = winratecalculator.calmywinrate()
-                nextturnstackwinrate = winratecalculator.calnextturnstackwinrate()
-                winratehistogram = [v[1] for v in nextturnstackwinrate]
-                if winratehistogram:
-                    handhistogram.append([hand,curwinrate,WinrateHistogram(winratehistogram)])
-            else:
-                # not wrriten yet
-                print "oplen : ",len(ophands)
-                return
 
-        return handhistogram
+        tmphands = [curhand,]
+
+        if len(ophands) == 1:
+            winratecalculator = hunlgame.SoloWinrateCalculator(curboard, tmphands, ophands[0],debug=False)
+            curwinrate = winratecalculator.calmywinrate()
+            nextturnstackwinrate = winratecalculator.calnextturnstackwinrate()
+            winratehistogram = [v[1] for v in nextturnstackwinrate]
+
+            handinfo = {
+                "id" : self.getid(),
+                "board" : curboard,
+                "pos" : pos,
+                "range" : self.m_cumuinfo.m_prefloprange,
+                "inpool" : self.m_cumuinfo.m_inpoolstate,
+                "hand" : curhand,
+                "winrate" : curwinrate,
+                "attack"  : self.m_cumuinfo.m_lastattack,
+            }
+
+            if winratehistogram:
+                return WinrateHistogram(winratehistogram,handinfo)
+        else:
+            # not wrriten yet
+            print "oplen : ",len(ophands)
+            return
+
         # baseline
 
         # self.printhistogramdiff(handhistogram)
@@ -259,18 +324,24 @@ class WinrateEngine(HandsInfo):
         if round1 > 1:
             result = self.calrealwinrate(self.m_cumuinfo.m_lastplayer)
 
-            statekey = self.getstatekey(round1,actionidx)
-            statekey = statekey.replace(";","___")
-            statekey = statekey.replace(",","_")
+
 
             # lock.acquire()
-            f = open(Constant.CACHEDIR + statekey, "a")
-            if result and len(result) == 1:
-                hand, curwinrate, winratehisobj = result[0]
-                f.write(Constant.TAB.join([str(v) for v in [round(curwinrate,3), self.m_cumuinfo.m_lastattack,self.getid(),winratehisobj]])+"\n")
-            else:
-                f.write(Constant.TAB.join([str(v) for v in [-1, self.m_cumuinfo.m_lastattack,self.getid(), -1]]) + "\n")
-            f.close()
+            # f = open(Constant.CACHEDIR + statekey, "a")
+            if result is not None:
+                tmpfileobj = FnameManager()
+
+                statekey = self.getstatekey(round1,actionidx)
+                statekey = tmpfileobj.generatehandhistempfname(statekey,self.getid())
+                lock.acquire()
+                pickle.dump(result,open(Constant.CACHEDIR + statekey,"wb"))
+                lock.release()
+            # if result and len(result) == 1:
+            #     hand, curwinrate, winratehisobj = result[0]
+            #     f.write(Constant.TAB.join([str(v) for v in [round(curwinrate,3), self.m_cumuinfo.m_lastattack,self.getid(),winratehisobj]])+"\n")
+            # else:
+            #     f.write(Constant.TAB.join([str(v) for v in [-1, self.m_cumuinfo.m_lastattack,self.getid(), -1]]) + "\n")
+            # f.close()
             # lock.release()
 
     def test(self):
@@ -290,6 +361,43 @@ class WinrateCalculater(TraverseHands):
         # if handsinfo[Constant.STATEKEY][0][0] != "2;;2,1,2":
         #     return True
         return False
+
+    def traverse(self):
+        TraverseHands.traverse(self)
+        self.dumpboardhis()
+
+    def dumpboardhis(self):
+        print "start to dump tmp file"
+        filelist = os.listdir(Constant.CACHEDIR)
+        fnamedict = {}
+        tmpfnameobj = FnameManager()
+        for fname in filelist:
+            statekey = tmpfnameobj.gethandhistempfnamerawstatekey(fname)
+            if not statekey:
+                continue
+            if statekey not in fnamedict:
+                fnamedict[statekey] = []
+            fnamedict[statekey].append(fname)
+
+        # load boardhistogram from temp file
+        for statekey in fnamedict.keys():
+            fnamelist = fnamedict[statekey]
+            targetlist = []
+            for fname in fnamelist:
+                targetlist.append(pickle.load(open(Constant.CACHEDIR + fname,"rb")))
+                os.remove(Constant.CACHEDIR + fname)
+            fnamedict[statekey] = targetlist
+
+        # load boardhistogram from file
+        for statekey in fnamedict.keys():
+            boardhisfname = tmpfnameobj.generatehandhisfname(statekey)
+            boardhisobjlist = []
+            fullboardhisfname = Constant.CACHEDIR + boardhisfname
+            if os.path.exists(fullboardhisfname):
+                boardhisobjlist = pickle.load(open(fullboardhisfname,"rb"))
+            boardhisobjlist.extend(fnamedict[statekey])
+
+            pickle.dump(boardhisobjlist, open(fullboardhisfname,"wb"))
 
 def mainfunc( handsinfo):
     engine = WinrateEngine(handsinfo)
@@ -336,7 +444,8 @@ class BoardIdentifierEngine(WinrateEngine):
             "board" : curboard,
             "pos" : pos,
             "range" : self.m_cumuinfo.m_prefloprange,
-            "inpool" : self.m_cumuinfo.m_inpoolstate
+            "inpool" : self.m_cumuinfo.m_inpoolstate,
+            "attack" : self.m_cumuinfo.m_lastattack
         }
 
         return BoardHistogram(handhistogram, handinfo)
@@ -568,11 +677,17 @@ def mainfuncboardidentifier(handsinfo):
         traceback.print_exc()
         raise
 
+def calhandstrengthmain():
+    for idx in xrange(20):
+        WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",step=10000,start=idx,end=idx+1,sync=False).traverse()
+
 if __name__ == "__main__":
-    # WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="35357006093039820170311203722",sync=False).traverse()
+    # WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",sync=False).traverse()
+    calhandstrengthmain()
+
     # TestBoardIdentifier(Constant.HANDSDB,Constant.TJHANDSCLT,func=None,handsid="35357006093039820170308194049",sync=False).traverse()
     #
     # testreadpickleinfo()
 
     # speed 400 4 hour
-    BoardIdentifier(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfuncboardidentifier,handsid="",step=2000,start=0,end=1,sync=False).traverse()
+    # BoardIdentifier(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfuncboardidentifier,handsid="",step=2000,start=0,end=1,sync=False).traverse()

@@ -124,5 +124,9 @@ DOT = ","
 SBPOS = 9
 BBPOS = 8
 
+# =========================nearest state related=========================
+CURWINRATETHRE = 0.05
+HISTOGRAMTHRE = 1
+
 # =========================other==========================================
 THREADNUM = 15
