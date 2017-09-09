@@ -21,6 +21,9 @@ class NearestQueryResult:
         for key in self.m_attackdict.keys():
             self.m_attackratedict[key] = self.m_attackdict[key] / docsum
 
+    def getattackrate(self,attack):
+        return self.m_attackratedict.get(attack,0)
+
 class HandQueryResult:
     def __init__(self, queryresultobjlist, handlist, handratelist = None):
         self.m_queryresult = queryresultobjlist
@@ -32,7 +35,14 @@ class HandQueryResult:
             self.m_handratelist = handratelist
 
     def getrange(self, attack):
-        pass
+        newhandrate = [0] * len(self.m_queryresult)
+        for idx in xrange(len(self.m_queryresult)):
+            queryresultobj = self.m_queryresult[idx]
+            handrate = self.m_handratelist[idx]
+
+            newhandrate[idx] = queryresultobj.getattackrate(attack) * handrate
+
+        return newhandrate
 
 class NearestQueryEngine:
     def __init__(self):
@@ -53,3 +63,4 @@ class NearestQueryEngine:
             if queryobj.like(winratehisobj):
                 resulthisobj.append(winratehisobj)
         return resulthisobj
+
