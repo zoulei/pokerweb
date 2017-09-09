@@ -351,7 +351,7 @@ class WinrateEngine(HandsInfo):
 class WinrateCalculater(TraverseHands):
     def filter(self, handsinfo):
         showcard = handsinfo["showcard"]
-        if not (showcard >= 0 or showcard == -3):
+        if not (showcard > 0 or showcard == -3):
             return True
         preflopgeneralinfo = handsinfo["preflopgeneralstate"]
         if preflopgeneralinfo["allin"] > 0:
