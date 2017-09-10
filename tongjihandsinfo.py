@@ -18,13 +18,24 @@ def nextplayer(inpoolstate,curplayer):
 
 # no matter if some one all in
 def virtualnextplayer(inpoolstate,curplayer):
+    nplayer = []
     for i in xrange(curplayer - 1,0,-1):
-        if inpoolstate[i] != 0:
-            return i
+        if inpoolstate[i] == 2:
+            nplayer.append(i)
+        elif inpoolstate[i] == 1:
+            if len(nplayer) > 0:
+                return nplayer
+            else:
+                return [i]
     for i in xrange(len(inpoolstate) - 1,curplayer ,-1):
-        if inpoolstate[i] != 0:
-            return i
-    return 0
+        if inpoolstate[i] == 2:
+            nplayer.append(i)
+        elif inpoolstate[i] == 1:
+            if len(nplayer) > 0:
+                return nplayer
+            else:
+                return [i]
+    return [0,]
 
 def isprivatecardvalid(privatecard,inpoolstate):
     for idx, state in enumerate(inpoolstate):
@@ -134,7 +145,7 @@ def calpayoff(showcard, seppotresult,inpoolstate,gameinvest ,handsdata = []):
                 else:
                     # fold
                     payofflist[idx] = - value
-            return [payofflist,1]
+            return [payofflist,len(winner)]
         else:
             # sep pot, but donot read hand card, cannot calculate
             return [[],1]
@@ -144,18 +155,25 @@ def calpayoff(showcard, seppotresult,inpoolstate,gameinvest ,handsdata = []):
     for idx,value in enumerate(gameinvest):
         payofflist[idx] = - value
 
+    maxwinner = 0
     for potinfo in seppotresult:
         competitor = potinfo[0]
         potsize = potinfo[1]
         newprivatecard = extractprivatecard(competitor,privatecard)
         winner = hunlgame.getwinner(board,newprivatecard,-1)
+        # print "winner : ", winner
+        # for v in board:
+        #     print v
+        # for v in newprivatecard:
+        #     print v
         for idx in xrange(len(winner)):
             winner[idx] = competitor[winner[idx]]
 
         for pos in winner:
             payofflist[pos] += (potsize / len(winner))
-
-    return [payofflist,len(winner)]
+        if len(winner) > maxwinner:
+            maxwinner = len(winner)
+    return [payofflist,maxwinner]
 
 def calinvest(invest,actiondict,inpool,anti,bbvalue,handsdata,inpoolstate):
     remainplayer = len(inpool)
@@ -202,7 +220,7 @@ def calinvest(invest,actiondict,inpool,anti,bbvalue,handsdata,inpoolstate):
 
         # enumerate each action
         for actioninfo in currounddata:
-            if virtualnextplayer(inpoolstate, curplayer) == raiser:
+            if raiser in virtualnextplayer(inpoolstate, curplayer) :
                 #error, should have end this turn, this checks the case when extra actin is recorded
                 print "extra action"
                 return -1
@@ -283,7 +301,8 @@ def calinvest(invest,actiondict,inpool,anti,bbvalue,handsdata,inpoolstate):
 
                 isactionvalid = True
 
-            if virtualnextplayer(inpoolstate, curplayer) == raiser:
+            # print "raiser:",virtualnextplayer(inpoolstate, curplayer), raiser,virtualnextplayer(inpoolstate, curplayer) == raiser
+            if raiser in virtualnextplayer(inpoolstate, curplayer) or nextplayer(inpoolstate, curplayer) == raiser:
                 # this turn end
                 pass
 
@@ -362,7 +381,7 @@ def tongjiinfo(handsinfo,bbvalue,anti):
     if sum(payofflist) != 0 and abs(sum(payofflist) ) >= winnerlen:
         # cannot calculate payoff, this hand must be abandoned, check specific reason
         pass
-        print payofflist
+        print payofflist,abs(sum(payofflist) ), winnerlen,abs(sum(payofflist) ) >= winnerlen
         print "sum not zero:",handsinfo ["_id"]
         return -1
 
@@ -429,6 +448,7 @@ def tongjicumuinfo(handsinfo):
 
     # update total win
 def tongjimain():
+    # result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{"_id":"35357006093039820170327094755"})
     result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
     doclen =  result.count()
 
@@ -437,6 +457,7 @@ def tongjimain():
         tongjimain_(idx)
 
 def tongjimain_(idx):
+    # result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{"_id":"35357006093039820170327094755"})
     result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
 
     wronghands  = 0

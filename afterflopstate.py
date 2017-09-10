@@ -242,6 +242,7 @@ def calpreflopgeneralstatemain_(idx):
             handsinfocommon.pp.pprint(handsinfo)
             raise
 
+# test function used to print data
 def tongjipreflopgeneralstate():
     result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,{})
 
@@ -331,6 +332,6 @@ class StateCalculater(TraverseHands):
 
 if __name__ == "__main__":
     # test()
-    # calpreflopgeneralstatemain()
+    calpreflopgeneralstatemain()
     # tongjipreflopgeneralstate()
     StateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT).traverse()

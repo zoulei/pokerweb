@@ -11,8 +11,8 @@ class PickleEngine:
         return pickle.load(open(fname,"rb"))
 
     @ staticmethod
-    def tempdump( obj, fname):
-        pickle.dump(obj, open(fname,"wb"))
+    def tempdump( obj, fname, directory = Constant.CACHEDIR):
+        pickle.dump(obj, open(directory + fname,"wb"))
 
     @ staticmethod
     def combine( getrawkeyfunc, getfnamefunc, directory = Constant.CACHEDIR):

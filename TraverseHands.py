@@ -76,8 +76,11 @@ class TraverseHands:
             if cnt % 1000 == 0:
                 print cnt
 
-            if not self.filter(handsinfo):
-                doclist.append(copy.deepcopy(handsinfo))
+            try:
+                if not self.filter(handsinfo):
+                    doclist.append(copy.deepcopy(handsinfo))
+            except:
+                print "error : ",handsinfo["_id"]
         self.m_processeddata += len(doclist)
 
         if self.m_func and not self.m_sync:

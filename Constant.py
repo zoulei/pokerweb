@@ -92,7 +92,8 @@ BB = 10
 ANTI = 2
 
 # ========================cache data related=============================
-CACHEDIR = "/mnt/mfs/users/zoul15/pokercachedata/"
+# CACHEDIR = "/mnt/mfs/users/zoul15/pokercachedata/"
+CACHEDIR = "/home/zoul15/temp/"
 AFTERFLOPSTATEHEADER = CACHEDIR + "afterflopstateheader"
 AFTERFLOPSTATEDATA = CACHEDIR + "afterflopstatedata"
 

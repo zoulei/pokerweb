@@ -453,11 +453,11 @@ def testprefloprangemain():
     handsinfocommon.printdictbypercentage(rangeaccuracydict)
 
 if __name__ == "__main__":
-    # removepreflopdoc()
-    #
-    # tongjiftmain()
-    # tongjijoinrate()
-    # repairjoinrate()
+    removepreflopdoc()
 
-    testprefloprangemain()
+    tongjiftmain()
+    tongjijoinrate()
+    repairjoinrate()
+
+    # testprefloprangemain()
 

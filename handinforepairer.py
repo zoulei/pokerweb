@@ -17,7 +17,7 @@ class StackRepairer(HandsInfo):
         self.traversealldata()
         DBOperater.ReplaceOne(self.m_db,self.m_clt,{"_id":self.m_handsinfo["_id"]},self.m_handsinfo)
         if self.m_handsinfo["repairstack"] == True:
-            handsinfocommon.pp.pprint(self.m_handsinfo)
+            # handsinfocommon.pp.pprint(self.m_handsinfo)
             return True
         return False
 
@@ -60,7 +60,7 @@ class LastAllinRepair(LastAllinErrorChecker):
             turncount = self.getturncount()
             self.m_handsinfo["data"][turncount][-1][-1] += remain
             self.m_handsinfo["repairlastallin"] = True
-            handsinfocommon.pp.pprint(self.m_handsinfo)
+            # handsinfocommon.pp.pprint(self.m_handsinfo)
             DBOperater.ReplaceOne(self.m_db, self.m_clt, {"_id": self.m_handsinfo["_id"]}, self.m_handsinfo)
             return True
         except:
@@ -99,9 +99,9 @@ class RepaireAllStack(TraverseHands):
 
 if __name__ == "__main__":
     # RepaireAllStack(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="35357006093039820170309212244").traverse()
-    # v = RepaireAllStack(Constant.HANDSDB, Constant.TJHANDSCLT)
-    # v.traverse()
-    # print v.m_cnt
+    v = RepaireAllStack(Constant.HANDSDB, Constant.TJHANDSCLT)
+    v.traverse()
+    print v.m_cnt
 
     v = RepaireLastAllin(Constant.HANDSDB, Constant.TJHANDSCLT)
     v.traverse()

@@ -74,7 +74,7 @@ class FTBetdataEngine(WinrateEngine):
         if betdata is None:
             return
 
-        PickleEngine.tempdump(betdata, FnameManager().generateftbetdatatempfname(self.getpreflopstatekey(), self.getid(),round1,actionidx))
+        PickleEngine.tempdump(betdata,  FnameManager().generateftbetdatatempfname(self.getpreflopstatekey(), self.getid(),round1,actionidx))
 
 class TraverseFTBetdata(TraverseHands):
     def filter(self, handsinfo):
@@ -101,6 +101,44 @@ def testbetinfo():
     for v in betinfolist:
         print v
 
+class BetinfoClassifier:
+    def __init__(self, datafname):
+        self.m_datafname = datafname
+        self.m_betvaluerange = [-1, 0, 1, 2, 3, 4]
+        self.m_classifyvalue = [0] * len(self.m_betvaluerange)
+
+    def classify(self):
+        self.m_data = PickleEngine.load(self.m_datafname)
+
+        for idx, betvalue in enumerate(self.m_betvaluerange[:-1]):
+            start = self.m_classifyvalue[idx]
+            leasterror = len(self.m_data)
+            leastvalue = start
+            for classifyvalue in xrange(start, 1, 0.01):
+                curerror = self.geterror(classifyvalue, betvalue)
+                if curerror < leasterror:
+                    leasterror = curerror
+                    leastvalue = classifyvalue
+            self.m_classifyvalue[idx + 1] = leastvalue
+
+        return self.m_classifyvalue
+
+    def geterror(self, classifyvalue, betvalue):
+        error = 0
+        for data in self.m_data:
+            if data.m_attack != betvalue:
+                continue
+            if data.m_winrate <= classifyvalue:
+                # in range
+                if not data.m_iswin:
+                    error += 1
+            else:
+                # out range
+                if data.m_iswin:
+                    error += 1
+        return error
+
 if __name__ == "__main__":
-    TraverseFTBetdata(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",sync=False).traverse()
+    TraverseFTBetdata(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",sync=False,step=100,start=0,end=1).traverse()
     testbetinfo()
+    # BetinfoClassifier(Constant.CACHEDIR + "")
