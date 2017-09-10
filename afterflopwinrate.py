@@ -21,6 +21,13 @@ import os
 lock = threading.Lock()
 
 class FnameManager:
+    def getfname(self, statekey):
+        dotidx = statekey.find(".")
+        statekey = statekey[:dotidx]
+        statekey = statekey.replace("___",";")
+        statekey = statekey.replace("_",",")
+        return statekey
+
     def generateboardhistempfname(self, statekey, handid):
         statekey = statekey.replace(";","___")
         statekey = statekey.replace(",","_")
@@ -43,11 +50,7 @@ class FnameManager:
         return statekey
 
     def getboardhisfnamerawstatekey(self, statekey):
-        dotidx = statekey.find(".")
-        statekey = statekey[:dotidx]
-        statekey = statekey.replace("___",";")
-        statekey = statekey.replace("_",",")
-        return statekey
+        self.getfname(statekey)
 
     def generatehandhistempfname(self,statekey, handid):
         statekey = statekey.replace(";","___")
@@ -76,6 +79,30 @@ class FnameManager:
         statekey = statekey.replace("___",";")
         statekey = statekey.replace("_",",")
         return statekey
+
+    def generateftbetdatatempfname(self,statekey, handid, turn, actionidx):
+        statekey = statekey.replace(";","___")
+        statekey = statekey.replace(",","_")
+        statekey += "." + str(turn * 100) + "." + str(actionidx) + "." + handid + ".ftbetdatatmp"
+        return statekey
+
+    def getftbetdatatempfnamerawstatekey(self, statekey):
+        if not statekey.endswith(".ftbetdatatmp"):
+            return
+        dotidx = statekey.find(".")
+        statekey = statekey[:dotidx]
+        statekey = statekey.replace("___",";")
+        statekey = statekey.replace("_",",")
+        return statekey
+
+    def generateftebetdatafname(self, statekey):
+        statekey = statekey.replace(";","___")
+        statekey = statekey.replace(",","_")
+        statekey +=  ".ftbetdata"
+        return statekey
+
+    def getftbetdatafnamerawstatekey(self, statekey):
+        self.getfname(statekey)
 
 class WinrateHistogram:
     def __init__(self, winratedata = None, handinfo = None, winratestr = ""):
@@ -677,13 +704,13 @@ def mainfuncboardidentifier(handsinfo):
         traceback.print_exc()
         raise
 
-def calhandstrengthmain():
-    for idx in xrange(20):
-        WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",step=10000,start=idx,end=idx+1,sync=False).traverse()
+# def calhandstrengthmain():
+#     for idx in xrange(20):
+#         WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",step=10000,start=idx,end=idx+1,sync=False).traverse()
 
 if __name__ == "__main__":
-    # WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",sync=False).traverse()
-    calhandstrengthmain()
+    WinrateCalculater(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",sync=False).traverse()
+    # calhandstrengthmain()
 
     # TestBoardIdentifier(Constant.HANDSDB,Constant.TJHANDSCLT,func=None,handsid="35357006093039820170308194049",sync=False).traverse()
     #

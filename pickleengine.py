@@ -11,7 +11,7 @@ class PickleEngine:
         pickle.dump(obj, open(fname,"wb"))
 
     @ staticmethod
-    def combine(self, ends, getrawkeyfunc, getfnamefunc, directory = Constant.CACHEDIR):
+    def combine(self, getrawkeyfunc, getfnamefunc, directory = Constant.CACHEDIR):
         filelist = os.listdir(directory)
         fnamedict = {}
         # tmpfnameobj = FnameManager()

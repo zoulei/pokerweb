@@ -828,6 +828,9 @@ class HandsInfo:
                 if handsdata[idx]!= None:
                     return idx - 1
 
+    def getpreflopstatekey(self):
+        return self.m_handsinfo[Constant.STATEKEY][0][0]
+
     def getstatekey(self, turn, actionidx):
         return self.m_handsinfo[Constant.STATEKEY][turn - 2][actionidx]
 
