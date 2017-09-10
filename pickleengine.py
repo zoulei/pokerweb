@@ -7,11 +7,15 @@ class PickleEngine:
         pass
 
     @ staticmethod
-    def tempdump(self, obj, fname):
+    def load(fname):
+        return pickle.load(open(fname,"rb"))
+
+    @ staticmethod
+    def tempdump( obj, fname):
         pickle.dump(obj, open(fname,"wb"))
 
     @ staticmethod
-    def combine(self, getrawkeyfunc, getfnamefunc, directory = Constant.CACHEDIR):
+    def combine( getrawkeyfunc, getfnamefunc, directory = Constant.CACHEDIR):
         filelist = os.listdir(directory)
         fnamedict = {}
         # tmpfnameobj = FnameManager()

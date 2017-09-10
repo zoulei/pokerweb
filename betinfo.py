@@ -12,6 +12,9 @@ class FirstTurnBetData:
         self.m_attack = attack
         self.m_iswin = iswin
 
+    def __str__(self):
+        return "\t".join([self.m_winrate,self.m_attack,self.m_iswin])
+
 class FTBetdataEngine(WinrateEngine):
     def __init__(self,handsinfo):
         WinrateEngine.__init__(self,handsinfo)
@@ -90,5 +93,11 @@ class TraverseFTBetdata(TraverseHands):
 def mainfunc(handsinfo):
     FTBetdataEngine(handsinfo).traversealldata()
 
+def testbetinfo():
+    betinfolist = PickleEngine.load(Constant.CACHEDIR + "")
+    for v in betinfolist:
+        print v
+
 if __name__ == "__main__":
     TraverseFTBetdata(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",sync=False).traverse()
+    testbetinfo()
