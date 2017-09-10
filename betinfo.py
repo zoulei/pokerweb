@@ -11,6 +11,9 @@ class FirstTurnBetData:
         self.m_winrate = winrate
         self.m_attack = attack
         self.m_iswin = iswin
+        if not attack and not iswin:
+            self.m_attack = -1
+            self.m_iswin = 1
 
     def __str__(self):
         return "\t".join([self.m_winrate,self.m_attack,self.m_iswin])
