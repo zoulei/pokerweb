@@ -5,7 +5,6 @@ import DBOperater
 import hunlgame
 import handsinfoexception
 
-
 class prefloprangge:
     def __init__(self):
         result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPREPAIRJOINRATEDOC})
@@ -360,7 +359,8 @@ class CumuInfo:
 
     def updatecurturnstate(self):
         # print self.m_handsinfo["_id"]
-        # print "raiser info : ",self.getnextplayer(),self.m_fakeraiser
+        # print "raiser info : ",self.getnextplayer(),self.m_fakeraiser,self.m_raiser
+
         if self.m_remainplayer == 1:
             self.m_curturnover = True
             return
@@ -467,6 +467,7 @@ class CumuInfo:
         return validraisevalue
 
     def updatestate(self,action,value):
+        # print "action:",action,value
         realvalue = value
         pos = self.m_nextplayer
 
@@ -488,6 +489,7 @@ class CumuInfo:
         else:
             self.m_lastattack = 0
 
+        # print "action:",action,value
         if action == 1 or action == -1:
             # curstate["fold"] += 1
             self.m_inpoolstate[pos] = 0
@@ -568,6 +570,8 @@ class CumuInfo:
             self.m_remainplayer = 1
             self.m_allinplayer = 0
             self.m_curturnover = True
+
+        # print "raiser:",self.m_raiser,self.m_fakeraiser
 
         # if self.m_stacksize[pos] < 0:
         #     print "stacksize less than 0 error :",self.m_handsinfo["_id"]
@@ -968,7 +972,6 @@ class HandsInfo:
 
     def getStack(self):
         return self.m_handsinfo["data"][0][3]
-
 
 def testgetprefloprange():
     rangeobj = prefloprangge()

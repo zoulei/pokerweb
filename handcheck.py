@@ -37,6 +37,8 @@ class CheckHand(TraverseHands):
                 print handsobj.m_cumuinfo.m_curturn,handsobj.m_cumuinfo.m_curturnover,handsobj.m_cumuinfo.m_remainplayer
                 print handsobj.m_cumuinfo.getlastactioner(),handsobj.m_cumuinfo.m_lastplayer
                 raise handsinfoexception.NotEnoughAction()
+        except KeyboardInterrupt:
+            raise
         except Exception as e:
             print handsobj.m_handsinfo["_id"]
             print "Exception : " + str(e)
@@ -78,7 +80,7 @@ class CheckReadcard(TraverseHands):
         DBOperater.ReplaceOne(self.m_db, self.m_clt, {"_id": handsinfo["_id"]}, handsinfo)
 
 if __name__ == "__main__":
-    # v = CheckHand(Constant.HANDSDB, Constant.TJHANDSCLT)
-    # v.traverse()
-    # print v.m_cnt
+    v = CheckHand(Constant.HANDSDB, Constant.TJHANDSCLT)
+    v.traverse()
+    print v.m_cnt
     CheckReadcard(Constant.HANDSDB, Constant.TJHANDSCLT, handsid="").traverse()

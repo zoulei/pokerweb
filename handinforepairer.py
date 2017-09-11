@@ -94,8 +94,11 @@ class RepaireAllStack(TraverseHands):
         return True
 
     def mainfunc(self,handsinfo):
-        if StackRepairer(handsinfo,self.m_db,self.m_clt).repairStack():
-            self.m_cnt += 1
+        try:
+            if StackRepairer(handsinfo,self.m_db,self.m_clt).repairStack():
+                self.m_cnt += 1
+        except:
+            pass
 
 if __name__ == "__main__":
     # RepaireAllStack(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="35357006093039820170309212244").traverse()

@@ -138,5 +138,10 @@ def mainfunc( handsinfo):
     time.sleep(20)
     return "mainfunc of TraverseHands: " + handsinfo["_id"]
 
+class TraverseHandsEngine(TraverseHands):
+    def mainfunc(self, handsinfo):
+        handsengine.HandsInfo(handsinfo).traversealldata()
+
 if __name__ == "__main__":
-    TraverseHands(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="").traverse()
+    # TraverseHands(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="").traverse()
+    TraverseHandsEngine(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="35357006093039820170327013640").traverse()
