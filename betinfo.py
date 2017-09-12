@@ -16,7 +16,7 @@ class FirstTurnBetData:
             self.m_iswin = 1
 
     def __str__(self):
-        return "\t".join([self.m_winrate,self.m_attack,self.m_iswin])
+        return "\t".join([str(v) for v in  [self.m_winrate,self.m_attack,self.m_iswin]])
 
 class FTBetdataEngine(WinrateEngine):
     def __init__(self,handsinfo):
@@ -97,7 +97,7 @@ def mainfunc(handsinfo):
     FTBetdataEngine(handsinfo).traversealldata()
 
 def testbetinfo():
-    betinfolist = PickleEngine.load(Constant.CACHEDIR + "")
+    betinfolist = PickleEngine.load(Constant.CACHEDIR + "2______2_1_2.ftbetdata")
     for v in betinfolist:
         print v
 
