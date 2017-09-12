@@ -5,6 +5,7 @@ import hunlgame
 import math
 from pickleengine import PickleEngine
 import Constant
+import traceback
 
 class FirstTurnBetData:
     def __init__(self, winrate, attack, iswin):
@@ -94,7 +95,14 @@ class TraverseFTBetdata(TraverseHands):
         PickleEngine.combine(fnamemanagerobj.getftbetdatatempfnamerawstatekey, fnamemanagerobj.generateftebetdatafname )
 
 def mainfunc(handsinfo):
-    FTBetdataEngine(handsinfo).traversealldata()
+    try:
+        FTBetdataEngine(handsinfo).traversealldata()
+    except KeyboardInterrupt:
+        raise
+    except:
+        print handsinfo["_id"]
+        traceback.print_exc()
+
 
 def testbetinfo():
     betinfolist = PickleEngine.load(Constant.CACHEDIR + "2______2_1_2.ftbetdata")
@@ -139,6 +147,6 @@ class BetinfoClassifier:
         return error
 
 if __name__ == "__main__":
-    TraverseFTBetdata(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",sync=False,step=100,start=0,end=1).traverse()
+    TraverseFTBetdata(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",sync=False,step=10000).traverse()
     testbetinfo()
     # BetinfoClassifier(Constant.CACHEDIR + "")
