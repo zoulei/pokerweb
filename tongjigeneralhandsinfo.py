@@ -1,5 +1,6 @@
 from TraverseHands import TraverseHands
 import Constant
+from handsengine import HandsInfo
 
 class Tongjiallhands(TraverseHands):
     def filter(self, handsinfo):
@@ -69,6 +70,13 @@ class Tongjirealshowcardsolopot(TraverseHands):
         if preflopgeneralinfo["allin"] > 0:
             return True
         if preflopgeneralinfo["remain"] != 2:
+            return True
+        pvhands = HandsInfo(handsinfo).getprivatehands()
+        cnt = 0
+        for v in pvhands:
+            if v is not None:
+                cnt += 1
+        if cnt != 2:
             return True
         # if handsinfo[Constant.STATEKEY][0][0] != "2;;2,1,2":
         #     return True

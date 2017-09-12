@@ -890,6 +890,13 @@ class HandsInfo:
             return []
         return self.m_board[:realturn + 1]
 
+    def getshowcardquantity(self):
+        cnt = 0
+        for v in self.getprivatehands():
+            if v is not None:
+                cnt += 1
+        return cnt
+
     def getprivatecardinfo(self):
         if self.m_showcard > 0 or self.m_showcard == -3:
             return self.m_handsinfo["data"][5]

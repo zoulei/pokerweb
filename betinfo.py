@@ -12,8 +12,8 @@ class FirstTurnBetData:
         self.m_winrate = winrate
         self.m_attack = attack
         self.m_iswin = iswin
-        if not attack and not iswin:
-            self.m_attack = -1
+        if attack == 1 and not iswin:
+            self.m_attack = 0
             self.m_iswin = 1
 
     def __str__(self):
@@ -22,7 +22,9 @@ class FirstTurnBetData:
 class FTBetdataEngine(WinrateEngine):
     def __init__(self,handsinfo):
         WinrateEngine.__init__(self,handsinfo)
-        self.m_attack = 0
+        self.m_attack = 1
+
+        # print handsinfo["_id"]
 
     def calbetdata(self):
         curboard = self.getcurboard()
@@ -55,7 +57,7 @@ class FTBetdataEngine(WinrateEngine):
 
     def updateattackinfo(self):
         tmpattack = self.m_cumuinfo.m_lastattack
-        while tmpattack > 2:
+        while tmpattack > 1:
             tmpattack -= 1
         if tmpattack:
             self.m_attack = math.ceil(self.m_attack) + tmpattack
@@ -67,13 +69,16 @@ class FTBetdataEngine(WinrateEngine):
 
         if round1 == 1:
             return
-        if self.m_cumuinfo.m_lastaction not in [2,4.2]:
+        if self.m_cumuinfo.m_lastaction not in [2,3,4.2]:
+            return
+        if self.m_cumuinfo.m_lastaction == 3 and self.m_attack != 1:
             return
 
         self.updateattackinfo()
         betdata = self.calbetdata()
         if betdata is None:
             return
+        # print betdata
 
         PickleEngine.tempdump(betdata,  FnameManager().generateftbetdatatempfname(self.getpreflopstatekey(), self.getid(),round1,actionidx))
 
@@ -85,6 +90,8 @@ class TraverseFTBetdata(TraverseHands):
         if preflopgeneralinfo["allin"] > 0:
             return True
         if preflopgeneralinfo["remain"] != 2:
+            return True
+        if HandsInfo(handsinfo).getshowcardquantity() != 2:
             return True
         return False
 
@@ -98,7 +105,7 @@ def mainfunc(handsinfo):
     try:
         FTBetdataEngine(handsinfo).traversealldata()
     except KeyboardInterrupt:
-        raise
+        exit()
     except:
         print handsinfo["_id"]
         traceback.print_exc()
@@ -108,6 +115,7 @@ def testbetinfo():
     betinfolist = PickleEngine.load(Constant.CACHEDIR + "2______2_1_2.ftbetdata")
     for v in betinfolist:
         print v
+    print len(betinfolist)
 
 class BetinfoClassifier:
     def __init__(self, datafname):
@@ -148,5 +156,5 @@ class BetinfoClassifier:
 
 if __name__ == "__main__":
     TraverseFTBetdata(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",sync=False,step=10000).traverse()
-    testbetinfo()
+    # testbetinfo()
     # BetinfoClassifier(Constant.CACHEDIR + "")
