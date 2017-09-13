@@ -12,9 +12,12 @@ class FirstTurnBetData:
         self.m_winrate = winrate
         self.m_attack = attack
         self.m_iswin = iswin
-        # if attack == 1:
-        #     self.m_attack = 0
-        #     self.m_iswin = 1
+        if attack == 1 and self.m_iswin == 1:
+            self.m_attack = 0
+            self.m_iswin = 1
+        elif attack == 1 and self.m_iswin == 0:
+            self.m_attack = -1
+            self.m_iswin = 1
 
     def __str__(self):
         return "\t".join([str(v) for v in  [self.m_winrate,self.m_attack,self.m_iswin]])
@@ -53,9 +56,7 @@ class FTBetdataEngine(WinrateEngine):
             winratecalculator = hunlgame.SoloWinrateCalculator(curboard, myhands, ophands[0],debug=False)
             curwinrate = winratecalculator.calmywinrate()
 
-            if self.m_attack == 1:
-                if curwinrate == 0 and iswin == 1:
-                    print self.getid()
+            if self.m_attack == 1 and iswin == 0:
                 return [FirstTurnBetData(curwinrate,0 ,iswin),FirstTurnBetData(curwinrate,-1 ,1 - iswin)]
 
             return [FirstTurnBetData(curwinrate,self.m_attack ,iswin),]
@@ -161,8 +162,9 @@ class BetinfoClassifier:
                 if curerror < leasterror:
                     leasterror = curerror
                     leastvalue = classifyvalue
-                classifyvalue += 0.01
                 print idx, curerror ,classifyvalue
+                classifyvalue += 0.01
+
             self.m_classifyvalue[idx + 1] = leastvalue
             print idx, leasterror, leastvalue
 
@@ -170,23 +172,34 @@ class BetinfoClassifier:
 
     def geterror(self, classifyvalue, betvalue):
         error = 0
+        e1 = 0
+        e2 = 0
+        e3 = 0
         for data in self.m_data:
             curattack = int(data.m_attack)
             if curattack > 4:
                 curattack = 4
-            if curattack != betvalue:
-                continue
-            if data.m_winrate <= classifyvalue:
-                # in range
-                if not data.m_iswin:
+            # if curattack != betvalue:
+            #     continue
+            if curattack == betvalue:
+                if data.m_winrate <= classifyvalue and data.m_iswin == 0:
+                    # include invalid data, classifyvalue too big
                     error += 1
-            else:
-                # out range
-                if data.m_iswin:
+                    e1 += 1
+                elif data.m_winrate > classifyvalue and data.m_iswin == 1:
+                    # did not include valid data, classifyvalue too small
                     error += 1
+                    e2 += 1
+            elif curattack > betvalue:
+                if data.m_winrate <= classifyvalue and data.m_iswin == 1:
+                    # include higher betvalue valid data, classifyvalue too big
+                    error += 1
+                    e3 += 1
+        print "e value : ",e1,e2,e3
+
         return error
 
 if __name__ == "__main__":
     TraverseFTBetdata(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",sync=False,step=10000).traverse()
-    # testbetinfo()
-    # print BetinfoClassifier(Constant.CACHEDIR + "2______2_1_2.ftbetdata").classify()
+    testbetinfo()
+    print BetinfoClassifier(Constant.CACHEDIR + "2______2_1_2.ftbetdata").classify()
