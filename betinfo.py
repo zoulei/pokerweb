@@ -12,9 +12,9 @@ class FirstTurnBetData:
         self.m_winrate = winrate
         self.m_attack = attack
         self.m_iswin = iswin
-        if attack == 1 and not iswin:
-            self.m_attack = 0
-            self.m_iswin = 1
+        # if attack == 1:
+        #     self.m_attack = 0
+        #     self.m_iswin = 1
 
     def __str__(self):
         return "\t".join([str(v) for v in  [self.m_winrate,self.m_attack,self.m_iswin]])
@@ -53,7 +53,12 @@ class FTBetdataEngine(WinrateEngine):
             winratecalculator = hunlgame.SoloWinrateCalculator(curboard, myhands, ophands[0],debug=False)
             curwinrate = winratecalculator.calmywinrate()
 
-            return FirstTurnBetData(curwinrate,self.m_attack ,iswin)
+            if self.m_attack == 1:
+                if curwinrate == 0 and iswin == 1:
+                    print self.getid()
+                return [FirstTurnBetData(curwinrate,0 ,iswin),FirstTurnBetData(curwinrate,-1 ,1 - iswin)]
+
+            return [FirstTurnBetData(curwinrate,self.m_attack ,iswin),]
 
     def updateattackinfo(self):
         tmpattack = self.m_cumuinfo.m_lastattack
@@ -79,8 +84,8 @@ class FTBetdataEngine(WinrateEngine):
         if betdata is None:
             return
         # print betdata
-
-        PickleEngine.tempdump(betdata,  FnameManager().generateftbetdatatempfname(self.getpreflopstatekey(), self.getid(),round1,actionidx))
+        for idx,v in enumerate(betdata):
+            PickleEngine.tempdump(v,  FnameManager().generateftbetdatatempfname(self.getpreflopstatekey(), self.getid(),round1+idx*10000,actionidx))
 
 class TraverseFTBetdata(TraverseHands):
     def filter(self, handsinfo):
@@ -113,15 +118,34 @@ def mainfunc(handsinfo):
 
 def testbetinfo():
     betinfolist = PickleEngine.load(Constant.CACHEDIR + "2______2_1_2.ftbetdata")
+    zerolist = []
     for v in betinfolist:
+        if v.m_attack == 0:
+            zerolist.append(v)
+    zerolist.sort(key=lambda v:v.m_winrate)
+    for v in zerolist:
         print v
     print len(betinfolist)
 
 class BetinfoClassifier:
     def __init__(self, datafname):
         self.m_datafname = datafname
-        self.m_betvaluerange = [-1, 0, 1, 2, 3, 4]
+        # self.initbetvaluerange()
+        self.m_betvaluerange = [-1, 0,1,2,3,4]
         self.m_classifyvalue = [0] * len(self.m_betvaluerange)
+
+    def initbetvaluerange(self):
+        self.m_data = PickleEngine.load(self.m_datafname)
+        betvalueset = set()
+        for v in self.m_data:
+            betvalueset.add(round(v.m_attack,4))
+
+        print betvalueset
+        betvalueset = list(betvalueset)
+        betvalueset.sort()
+        print betvalueset
+        self.m_betvaluerange = betvalueset
+
 
     def classify(self):
         self.m_data = PickleEngine.load(self.m_datafname)
@@ -130,19 +154,27 @@ class BetinfoClassifier:
             start = self.m_classifyvalue[idx]
             leasterror = len(self.m_data)
             leastvalue = start
-            for classifyvalue in xrange(start, 1, 0.01):
+            classifyvalue = start
+            while classifyvalue < 1:
+            # for classifyvalue in xrange(start, 1, 0.01):
                 curerror = self.geterror(classifyvalue, betvalue)
                 if curerror < leasterror:
                     leasterror = curerror
                     leastvalue = classifyvalue
+                classifyvalue += 0.01
+                print idx, curerror ,classifyvalue
             self.m_classifyvalue[idx + 1] = leastvalue
+            print idx, leasterror, leastvalue
 
         return self.m_classifyvalue
 
     def geterror(self, classifyvalue, betvalue):
         error = 0
         for data in self.m_data:
-            if data.m_attack != betvalue:
+            curattack = int(data.m_attack)
+            if curattack > 4:
+                curattack = 4
+            if curattack != betvalue:
                 continue
             if data.m_winrate <= classifyvalue:
                 # in range
@@ -157,4 +189,4 @@ class BetinfoClassifier:
 if __name__ == "__main__":
     TraverseFTBetdata(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",sync=False,step=10000).traverse()
     # testbetinfo()
-    # BetinfoClassifier(Constant.CACHEDIR + "")
+    # print BetinfoClassifier(Constant.CACHEDIR + "2______2_1_2.ftbetdata").classify()
