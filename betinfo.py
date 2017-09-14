@@ -154,12 +154,14 @@ class BetinfoClassifier:
         self.m_data = PickleEngine.load(self.m_datafname)
 
         for idx, betvalue in enumerate(self.m_betvaluerange[:-1]):
-            start = self.m_classifyvalue[idx]
+            # start = self.m_classifyvalue[idx]
+            start = 0
             leasterror = len(self.m_data)
             leastvalue = start
             classifyvalue = start
-            while classifyvalue < 1:
+            while classifyvalue <= 1.00001:
             # for classifyvalue in xrange(start, 1, 0.01):
+            #     curerror = self.geterror(classifyvalue, betvalue, self.m_classifyvalue[idx])
                 curerror = self.geterror(classifyvalue, betvalue)
                 if curerror < leasterror:
                     leasterror = curerror
@@ -172,7 +174,7 @@ class BetinfoClassifier:
 
         return self.m_classifyvalue
 
-    def geterror(self, classifyvalue, betvalue):
+    def geterror(self, classifyvalue, betvalue, winratelowerbound = 0):
         error = 0
         e1 = 0
         e2 = 0
@@ -186,7 +188,8 @@ class BetinfoClassifier:
                 curattack = 4
             # if curattack != betvalue:
             #     continue
-
+            if data.m_winrate <= winratelowerbound:
+                continue
             if curattack == betvalue:
                 if data.m_winrate <= classifyvalue and data.m_iswin == 0:
                     # include invalid data, classifyvalue too big
