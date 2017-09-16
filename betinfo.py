@@ -55,13 +55,13 @@ class FTBetdataEngine(WinrateEngine):
         if len(ophands) == 1:
             winratecalculator = hunlgame.SoloWinrateCalculator(curboard, myhands, ophands[0],debug=False)
             curwinrate = winratecalculator.calmywinrate()
+        else:
+            return
 
-            if self.m_attack == 1 and iswin == 0:
-                return [FirstTurnBetData(curwinrate,0 ,iswin),FirstTurnBetData(curwinrate,-1 ,1 - iswin)]
-            elif self.m_attack == 1 and iswin == 1:
-                return [FirstTurnBetData(curwinrate, 0 , iswin)]
-            else:
-                return [FirstTurnBetData(curwinrate,self.m_attack ,iswin),]
+        if self.m_attack == 1:
+            return FirstTurnBetData(curwinrate, 0 , iswin)
+        else:
+            return FirstTurnBetData(curwinrate,self.m_attack ,iswin)
 
     def updateattackinfo(self):
         tmpattack = self.m_cumuinfo.m_lastattack
@@ -87,8 +87,7 @@ class FTBetdataEngine(WinrateEngine):
         if betdata is None:
             return
         # print betdata
-        for idx,v in enumerate(betdata):
-            PickleEngine.tempdump(v,  FnameManager().generateftbetdatatempfname(self.getpreflopstatekey(), self.getid(),round1+idx*10000,actionidx))
+        PickleEngine.tempdump(betdata,  FnameManager().generateftbetdatatempfname(self.getpreflopstatekey(), self.getid(),round1,actionidx))
 
 class TraverseFTBetdata(TraverseHands):
     def filter(self, handsinfo):
@@ -134,7 +133,7 @@ class BetinfoClassifier:
     def __init__(self, datafname):
         self.m_datafname = datafname
         # self.initbetvaluerange()
-        self.m_betvaluerange = [-1, 0,1,2,3,4]
+        self.m_betvaluerange = [ -1 ,0,1,2,3,4]
         self.m_classifyvalue = [0] * len(self.m_betvaluerange)
 
     def initbetvaluerange(self):
@@ -153,7 +152,7 @@ class BetinfoClassifier:
     def classify(self):
         self.m_data = PickleEngine.load(self.m_datafname)
 
-        for idx, betvalue in enumerate(self.m_betvaluerange[:-1]):
+        for idx, betvalue in enumerate(self.m_betvaluerange[1:]):
             # start = self.m_classifyvalue[idx]
             start = 0
             leasterror = len(self.m_data)
@@ -174,7 +173,7 @@ class BetinfoClassifier:
 
         return self.m_classifyvalue
 
-    def geterror(self, classifyvalue, betvalue, winratelowerbound = 0):
+    def geterror(self, classifyvalue, betvalue, winratelowerbound = -1):
         error = 0
         e1 = 0
         e2 = 0
@@ -190,36 +189,41 @@ class BetinfoClassifier:
             #     continue
             if data.m_winrate <= winratelowerbound:
                 continue
-            if curattack == betvalue:
-                if data.m_winrate <= classifyvalue and data.m_iswin == 0:
-                    # include invalid data, classifyvalue too big
+            if curattack >= betvalue:
+                if data.m_winrate < classifyvalue and data.m_iswin == 1:
+                    # wrong data; not include valid data, classifyvalue too big
                     error += 1
                     e1 += 1
-                elif data.m_winrate <= classifyvalue and data.m_iswin == 1:
-                    # correct data
+                elif data.m_winrate < classifyvalue and data.m_iswin == 0:
+                    # correct data; exclude invalid data
                     e5 += 1
-                elif data.m_winrate > classifyvalue and data.m_iswin == 1:
-                    # did not include valid data, classifyvalue too small
-                    error += 1
+                elif data.m_winrate >= classifyvalue and data.m_iswin == 1:
+                    # correct data; include valid data
                     e2 += 1
-                elif data.m_winrate > classifyvalue and data.m_iswin == 0:
-                    # successfully remove rong data
-                    # error -= 1
-                    e4 += 1
-            elif curattack > betvalue:
-                if data.m_winrate <= classifyvalue and data.m_iswin == 1:
-                    # include higher betvalue valid data, classifyvalue too big
+            if curattack == betvalue:
+                if data.m_winrate >= classifyvalue and data.m_iswin == 0:
+                    # wrong data; include invalid data, classifyvalue too small
                     error += 1
+                    e4 += 1
+                elif data.m_winrate >= classifyvalue and data.m_iswin == 1:
                     e3 += 1
-                elif data.m_winrate > classifyvalue and data.m_iswin == 1:
-                    # successfully remove higher betvalue valid data
-                    e6 += 1
+            # elif curattack < betvalue:
+            #     if data.m_iswin == 0 and
         print "----------------------------------"
-        print "e value : ", "\tinclude invalid hands:",e1,"\tnot include valid data:",e2,\
-            "\tinclude higher valid data:",e3,"\tremove rong data:",e4,"\tinclude correct data:",e5,\
+        print "e value : ", "\tnot include valid hands:",e1,"\tinclude all valid data:",e2,\
+            "\tinclude valid data:",e3,"\tinvalid data:",e4,"\tinclude correct data:",e5,\
             "\thigher bet correct data:",e6
 
         return error
+
+def drawdata():
+    betdata = PickleEngine.load(Constant.CACHEDIR + "2______2_1_2.ftbetdata")
+    f = open(Constant.CACHEDIR + "2______2_1_2.ftbetdata.csv","w")
+    f.write("\t".join(["winrate","betvalue","iswin","count"])+"\n")
+    betvaluedict = {}
+    for v in betdata:
+        pass
+
 
 if __name__ == "__main__":
     # TraverseFTBetdata(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",sync=False,step=10000).traverse()
