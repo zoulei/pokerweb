@@ -38,6 +38,7 @@ def virtualnextplayer(inpoolstate,curplayer):
     return [0,]
 
 def isprivatecardvalid(privatecard,inpoolstate):
+    print "inpool:",inpoolstate
     for idx, state in enumerate(inpoolstate):
         if state != 0:
             hands = privatecard[idx - 1][0]
@@ -108,6 +109,7 @@ def seppot(gameinvest, inpoolstate):
     return potresult
 
 def calpayoff(showcard, seppotresult,inpoolstate,gameinvest ,handsdata = []):
+    print "gameinvest:",gameinvest
     if showcard != 1:
         # donot showcard
         payofflist = [0]* 10
@@ -448,8 +450,8 @@ def tongjicumuinfo(handsinfo):
 
     # update total win
 def tongjimain():
-    # result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{"_id":"35357006093039820170327094755"})
-    result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
+    result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{"_id":"35357006093039820170308111711"})
+    # result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
     doclen =  result.count()
 
     iternum = doclen / 10000 + 1
@@ -457,8 +459,8 @@ def tongjimain():
         tongjimain_(idx)
 
 def tongjimain_(idx):
-    # result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{"_id":"35357006093039820170327094755"})
-    result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
+    result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{"_id":"35357006093039820170308111711"})
+    # result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
 
     wronghands  = 0
     cnt = 0
@@ -483,9 +485,10 @@ def tongjimain_(idx):
             curid = rawhand["_id"]
 
             # store history hands data
-            DBOperater.ReplaceOne(Constant.HANDSDB,Constant.TJHANDSCLT,{"_id":curid},rawhand,True)
+            DBOperater.ReplaceOne(Constant.HANDSDB,Constant.TJHISHANDSCLT,{"_id":curid},rawhand,True)
 
             showcard = tongjiinfo(rawhand,Constant.BB,Constant.ANTI)
+
 
             if showcard not in showcardinfo:
                 showcardinfo[showcard] = 0
@@ -531,7 +534,7 @@ def main():
 if __name__ == "__main__":
     #main()
     #DBOperater.ReplaceOne(Constant.HANDSDB,Constant.CUMUCLT,{"_id":"player"},{"_id":"player","ts":12},True)
-    removecumuinfo()
-    removetjinfo()
+    # removecumuinfo()
+    # removetjinfo()
     tongjimain()
     #tongjicumuinfo(0)

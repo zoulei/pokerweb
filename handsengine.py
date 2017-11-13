@@ -165,7 +165,7 @@ class CumuInfo:
 
     # get realpos from relativepos
     def getrealpos(self, pos):
-        return self.getposmap()[pos]
+        return self.getposmap().get(pos,0)
 
     # relativepos to realpos
     def getposmap(self):
@@ -200,12 +200,20 @@ class CumuInfo:
         sbpos = realinpoolplayer[0]
         bbpos = realinpoolplayer[1]
 
+        # this stack size has subtracted anti and blind
         self.m_stacksize = [0] * 10
         self.m_stacksize[9] = stacksize[sbpos - 1]
         self.m_stacksize[8] = stacksize[bbpos - 1]
         for idx, realpos in enumerate(realinpoolplayer[::-1][:-2]):
             self.m_stacksize[idx + 1] = stacksize[realpos - 1]
+        # print "stack:",self.m_stacksize
 
+        # this is used to remember the initial stack when game start
+        self.m_initstack = copy.deepcopy(self.m_stacksize)
+        self.m_initstack[9] += self.m_bb / 2 + self.m_anti
+        self.m_initstack[8] += self.m_bb + self.m_anti
+        for idx, realpos in enumerate(realinpoolplayer[::-1][:-2]):
+            self.m_initstack[idx + 1] += self.m_anti
 
         # pot size
         self.m_pot = self.m_bb + self.m_bb/2 + self.m_anti * self.m_playerquantity
@@ -243,6 +251,9 @@ class CumuInfo:
         # bet history of the current turn
         self.m_bethistory = {Constant.BBPOS:self.m_bb, Constant.SBPOS:self.m_bb / 2}
 
+        # invest history
+        # self.m_invest = [0] * 10
+
         # real time state of every player
         # 0 means fold or not in game,
         # 1 means playing
@@ -254,6 +265,7 @@ class CumuInfo:
         # action sequence of pre flop
         self.m_preflopposlist = []
         self.initinpoolstate()
+        # self.initinvest()
 
         # the last player that have taken action
         self.m_lastplayer = 0
@@ -291,6 +303,13 @@ class CumuInfo:
         for pos in self.m_afterflopposlist:
             self.m_inpoolstate[pos] = 1
 
+    def initinvest(self):
+        for pos, state in enumerate(self.m_inpoolstate):
+            if state == 1:
+                self.m_invest[pos] += self.m_anti
+        self.m_invest[9] += self.m_bb / 2
+        self.m_invest[8] += self.m_bb
+
     def newturn(self):
         self.m_curturn += 1
         self.m_curturnover = False
@@ -315,8 +334,8 @@ class CumuInfo:
             for pos in poslist:
                 if self.m_inpoolstate[pos] == 1:
                     return pos
-                # if self.m_raiser == pos:
-                #     return pos
+                    # if self.m_raiser == pos:
+                    #     return pos
             else:
                 # every one all in or fold
                 return -1
@@ -360,6 +379,7 @@ class CumuInfo:
     def updatecurturnstate(self):
         # print self.m_handsinfo["_id"]
         # print "raiser info : ",self.getnextplayer(),self.m_fakeraiser,self.m_raiser
+        # print "stateinfo:",self.m_remainplayer, self.m_allinplayer,self.m_raiser,self.m_fakeraiser,self.getnextplayer()
 
         if self.m_remainplayer == 1:
             self.m_curturnover = True
@@ -458,6 +478,7 @@ class CumuInfo:
                 continue
             if self.m_inpoolstate[idx] == 1:
                 targetstack = self.m_bethistory.get(idx,0) + self.m_stacksize[idx]
+                # print "targetstack:",idx,targetstack
                 if targetstack >= value:
                     validraisevalue = value
                     break
@@ -478,6 +499,7 @@ class CumuInfo:
                 action = 6
         elif action == 4 and value > self.m_betvalue:
             value = self.calvalidraisevalue(pos, value)
+            # print "all in:",value, self.m_betvalue
             if value <= self.m_betvalue:
                 # all other has all in, invalid raiser
                 action = 6
@@ -571,11 +593,11 @@ class CumuInfo:
             self.m_allinplayer = 0
             self.m_curturnover = True
 
-        # print "raiser:",self.m_raiser,self.m_fakeraiser
+            # print "raiser:",self.m_raiser,self.m_fakeraiser
 
-        # if self.m_stacksize[pos] < 0:
-        #     print "stacksize less than 0 error :",self.m_handsinfo["_id"]
-        #     raise
+            # if self.m_stacksize[pos] < 0:
+            #     print "stacksize less than 0 error :",self.m_handsinfo["_id"]
+            #     raise
 
     # this function is called before the action is updated
     def calstatistics(self):
@@ -641,19 +663,19 @@ class CumuInfo:
                 break
 
         return {
-                "pos":pos,
-                "pot":self.m_pot,
-                "relativepos":relativepos,
-                "remain":self.m_remainplayer-self.m_allinplayer,
-                "allin":self.m_allinplayer,
-                "normalneedtobet":normalneedtobet,
-                "normalpayoff":normalpayoff,
-                "betbb":betbb,
-                "circle":self.m_circle,
-                "betlevel":self.m_betlevel,
-                "round":self.m_curturn,
-                "raiser":self.m_raiser,
-                }
+            "pos":pos,
+            "pot":self.m_pot,
+            "relativepos":relativepos,
+            "remain":self.m_remainplayer-self.m_allinplayer,
+            "allin":self.m_allinplayer,
+            "normalneedtobet":normalneedtobet,
+            "normalpayoff":normalpayoff,
+            "betbb":betbb,
+            "circle":self.m_circle,
+            "betlevel":self.m_betlevel,
+            "round":self.m_curturn,
+            "raiser":self.m_raiser,
+        }
 
     # update preflop state
     # preflop state include :
@@ -663,12 +685,12 @@ class CumuInfo:
             return
         if self.m_laststate["circle"] == 1 and self.m_laststate["betlevel"] < 3:
             newrange = self.m_handsrangeobj.getrange(self.m_laststate["circle"],self.m_laststate["betlevel"],
-                                          self.m_laststate["pos"],self.m_laststate["betbb"],self.m_laststate["normalpayoff"],
-                                          self.actiontransfer(self.m_lastaction) )
+                                                     self.m_laststate["pos"],self.m_laststate["betbb"],self.m_laststate["normalpayoff"],
+                                                     self.actiontransfer(self.m_lastaction) )
         else: # > 1
             newrange = self.m_handsrangeobj.getrange(self.m_laststate["circle"],self.m_laststate["betlevel"],
-                                          self.m_laststate["relativepos"],self.m_laststate["normalneedtobet"],self.m_laststate["normalpayoff"],
-                                          self.actiontransfer(self.m_lastaction) )
+                                                     self.m_laststate["relativepos"],self.m_laststate["normalneedtobet"],self.m_laststate["normalpayoff"],
+                                                     self.actiontransfer(self.m_lastaction) )
 
         if newrange:
             if not self.m_prefloprange[self.m_laststate["pos"]]:
@@ -721,9 +743,184 @@ class CumuInfo:
 
 
 
+    # these function is used to calculate payoff and most of the function is
+    # copied from tongjihandsinfo.py
+    def calinvest(self):
+        invest = [0] * 10
+        for idx in xrange(10):
+            invest[idx] = self.m_initstack[idx] - self.m_stacksize[idx]
+        return invest
 
+    def extractprivatecard(self,competitor, privatecard):
+        newprivatecard = []
+        for pos in competitor:
+            newprivatecard.append(privatecard[pos - 1][0])
+        return newprivatecard
 
+    def readwinner(self,privatecard):
+        winner = []
+        for idx,hands in enumerate(privatecard):
+            if hands[1] == 1:
+                winner.append(idx+1)
+        return winner
 
+    def seppot(self,gameinvest,inpoolstate):
+        potresult = []
+        inpoolinvest = {}
+        for idx, state in enumerate(inpoolstate):
+            if state != 0:
+                value = gameinvest[idx]
+                if value not in inpoolinvest:
+                    inpoolinvest[value] = []
+                inpoolinvest[value].append(idx)
+
+        inpoolinvestlist = inpoolinvest.keys()
+        inpoolinvestlist.sort()
+        inpoolinvestlist.insert(0,0)
+        for idx in xrange(len(inpoolinvestlist[1:])):
+            lowbound = inpoolinvestlist[idx]
+            upperbound = inpoolinvestlist[idx + 1]
+            newsep = [[],0]
+
+            for betvalue in inpoolinvestlist[idx + 1:]:
+                newsep[0].extend(inpoolinvest[betvalue])
+
+            for idx,value in enumerate(gameinvest):
+                if value <= lowbound:
+                    continue
+                if value > upperbound:
+                    newsep[1] += (upperbound - lowbound)
+                else:
+                    newsep[1] += (value - lowbound)
+
+            potresult.append(newsep)
+
+        return potresult
+
+    def isprivatecardvalid(self,privatecard,inpoolstate):
+        # print "inpoolstate:",inpoolstate
+        for idx, state in enumerate(inpoolstate):
+            if state != 0:
+                hands = privatecard[idx - 1][0]
+                for i in hands:
+                    for v in i:
+                        if v == 0:
+                            return False
+        return True
+
+    def calpayoff_(self):
+        showcard = self.m_handsinfo["showcard"]
+        inpoolstate = [0] * 10
+        for pos,state in enumerate(self.m_inpoolstate):
+            inpoolstate[self.getrealpos(pos)] = state
+
+        gameinvest = self.calinvest()
+        # gameinvest = gameinvest[:self.m_playerquantity - 1] + gameinvest[8:10] + [0] * (9 - self.m_playerquantity)
+        newgameinvest = [0] * 10
+        for pos,vest in enumerate(gameinvest):
+            newgameinvest[self.getrealpos(pos)] = vest
+        gameinvest = newgameinvest
+        print "gameinvest:",gameinvest
+        seppotresult = self.seppot(gameinvest,inpoolstate)
+
+        handsdata = self.m_handsinfo["data"]
+        if showcard != 1:
+            # donot showcard
+            payofflist = [0]* 10
+            for idx, value in enumerate(gameinvest):
+                if inpoolstate[idx] == 0:
+                    # fold
+                    payofflist[idx] = - value
+                else:
+                    payofflist[idx] = sum(gameinvest) - value
+            # self.m_payofflist = payofflist
+            return [payofflist,1]
+            # return [payofflist,1]
+
+        # show card, compare card strength
+        inpoolnum = 0
+        for value in inpoolstate:
+            if value != 0:
+                inpoolnum += 1
+
+        board = handsinfocommon.getboard(handsdata)
+        privatecard = handsdata[5]
+
+        if not self.isprivatecardvalid(privatecard, inpoolstate):
+            # read card fail, try to read the winner
+            if len(seppotresult) == 1:
+                # no side pot, we can read the winner directly
+                winner = self.readwinner(privatecard)
+                if not winner:
+                    # read winner fail
+                    raise
+                    # return [[],1]
+
+                payofflist = [0]*10
+                for idx, value in enumerate(gameinvest):
+                    if idx in winner:
+                        # winner
+                        payofflist[idx] = sum(gameinvest) / len(winner) - value
+                    else:
+                        # fold
+                        payofflist[idx] = - value
+                # self.m_payofflist = payofflist
+                return [payofflist,len(winner)]
+            else:
+                # sep pot, but donot read hand card, cannot calculate
+                raise
+                # return [[],1]
+
+        # start to compare card
+        payofflist = [0]*10
+        for idx,value in enumerate(gameinvest):
+            payofflist[idx] = - value
+
+        maxwinner = 0
+        # print "seppot:",seppotresult
+        for potinfo in seppotresult:
+            competitor = potinfo[0]
+            potsize = potinfo[1]
+            newprivatecard = self.extractprivatecard(competitor,privatecard)
+            winner = hunlgame.getwinner(board,newprivatecard,-1)
+            # print "winner : ", winner
+            # for v in board:
+            #     print v
+            # for v in newprivatecard:
+            #     print v
+            for idx in xrange(len(winner)):
+                winner[idx] = competitor[winner[idx]]
+
+            for pos in winner:
+                payofflist[pos] += (potsize / len(winner))
+            if len(winner) > maxwinner:
+                maxwinner = len(winner)
+
+        if not payofflist:
+            # cannot calculate payoff, this hand must be abandoned, mainly because fail to record show card
+            print "empty payoff:",self.m_handsinfo["_id"]
+            raise
+            # return -3
+
+        if sum(payofflist) != 0 and abs(sum(payofflist) ) >= maxwinner:
+            # cannot calculate payoff, this hand must be abandoned, check specific reason
+            pass
+            print payofflist,abs(sum(payofflist) ), maxwinner,abs(sum(payofflist) ) >= maxwinner
+            print "sum not zero:",self.m_handsinfo ["_id"]
+            raise
+            # return -1
+
+        return [payofflist,maxwinner]
+
+    def calpayoff(self):
+        payofflist,winnerlen = self.calpayoff_()
+        # print "llist:",payofflist
+        # self.m_payofflist = payofflist[:self.m_playerquantity - 1] + [0] * (9 - self.m_playerquantity) + payofflist[self.m_playerquantity-1:self.m_playerquantity+1]
+        self.m_payofflist = [0] * 10
+        for realpos, payoff in enumerate(payofflist):
+            # print "realpos:",realpos,self.m_reverseposmap.get(realpos,0), payoff
+            self.m_payofflist[self.m_reverseposmap.get(realpos,0)] = payoff
+        return winnerlen
 
 
 
@@ -795,13 +992,13 @@ class HandsInfo:
     def getboardcard(self):
         return self.m_board
 
-    def getplayerquantity(self):
-        return self.m_playerquantitiy
-
     def isvalid(self):
         if not (self.m_showcard >= 0 or self.m_showcard == -3):
             return False
         return True
+
+    def getplayerquantity(self):
+        return self.m_playerquantitiy
 
     # return how far does this game go for
     # 1 - 4 means preflop to river
@@ -957,6 +1154,14 @@ class HandsInfo:
         if len(self.getspecificturnbetdata(turncount)) != actionidx + 1:
             return False
         return True
+
+    def executenextaction(self):
+        lastturndata = self.getspecificturnbetdata(self.m_lastupdateturn)
+        if len(lastturndata) == self.m_lastupdateidx + 1:
+            # last turn is over
+            self.updatecumuinfo(self.m_lastupdateturn+1,0)
+        else:
+            self.updatecumuinfo(self.m_lastupdateturn,self.m_lastupdateidx+1)
 
     # actionidx starts from 0
     def updatecumuinfo(self,round,actionidx):
