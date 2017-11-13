@@ -250,8 +250,11 @@ class WinrateEngine(HandsInfo):
         return [hand,curwinrate,WinrateHistogram(winratehistogram)]
 
     # test function
-    def printdebuginfo(self,pos,myhands,ophands):
-        curboard = self.getcurboard()
+    def printdebuginfo(self,pos,myhands,ophands, board = None):
+        if board is not None:
+            curboard = board
+        else:
+            curboard = self.getcurboard()
         print "board : "
         for v in curboard:
             print v
