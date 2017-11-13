@@ -450,8 +450,8 @@ def tongjicumuinfo(handsinfo):
 
     # update total win
 def tongjimain():
-    result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{"_id":"35357006093039820170308111711"})
-    # result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
+    # result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{"_id":"35357006093039820170308111711"})
+    result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
     doclen =  result.count()
 
     iternum = doclen / 10000 + 1
@@ -459,8 +459,8 @@ def tongjimain():
         tongjimain_(idx)
 
 def tongjimain_(idx):
-    result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{"_id":"35357006093039820170308111711"})
-    # result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
+    # result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{"_id":"35357006093039820170308111711"})
+    result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
 
     wronghands  = 0
     cnt = 0
@@ -534,7 +534,7 @@ def main():
 if __name__ == "__main__":
     #main()
     #DBOperater.ReplaceOne(Constant.HANDSDB,Constant.CUMUCLT,{"_id":"player"},{"_id":"player","ts":12},True)
-    # removecumuinfo()
-    # removetjinfo()
+    removecumuinfo()
+    removetjinfo()
     tongjimain()
     #tongjicumuinfo(0)
