@@ -15,7 +15,8 @@
 # import shelve
 # import os
 
-
+from hunlgame import generateHands
+from hunlgame import Hands
 # print math.factorial(52) / math.factorial(2) / math.factorial(52 - 2)
 # print math.factorial(52) / math.factorial(3) / math.factorial(52 - 3)
 # print math.factorial(52) / math.factorial(4) / math.factorial(52 - 4)
@@ -504,6 +505,34 @@ def addjoinratetxt():
     f = open("data/handsrankrate","w")
     f.write(writeline)
     f.close()
+
+class PrivateHandRank:
+    def __init__(self):
+        self.m_rankdata = {}
+        self.initdata()
+
+    def initdata(self):
+        f = open("data/handsrank")
+        handsnum = 1326
+        for line in f:
+            if line[0] == line[1]:
+                handsnum -= 6
+                self.m_rankdata[line[:3]] = handsnum + 1
+            elif line[2] == "s":
+                handsnum -= 4
+                self.m_rankdata[line[:3]] = handsnum + 1
+            else:
+                handsnum -= 12
+                self.m_rankdata[line[:3]] = handsnum + 1
+
+    def getrank(self, hand):
+        if isinstance(hand,str):
+            if len(hand) == 3:
+                return self.m_rankdata[hand]
+            elif len(hand) == 5:
+                return self.m_rankdata[generateHands(hand[:2] + hand[3:5]).shortstr()]
+        elif isinstance(hand,Hands):
+            return self.m_rankdata[hand.shortstr()]
 
 if __name__ == "__main__":
     # test()
