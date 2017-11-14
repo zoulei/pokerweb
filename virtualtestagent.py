@@ -22,22 +22,30 @@ class VirtualTestAgent:
             curturndata = self.m_handsengine.getspecificturnbetdata(turnidx)
             for action, value in curturndata:
                 self.m_pokeragentlist[self.m_handsengine.m_cumuinfo.m_nextplayer].act(action, value)
+        if self.m_handsengine.m_cumuinfo.m_lastaction == 12:
+            for pos,state in enumerate(self.m_handsengine.m_cumuinfo.m_inpoolstate):
+                if self.m_handsengine.m_cumuinfo.m_lastplayer == pos:
+                    continue
+                if state < 1 and self.m_pokeragentlist[pos] != None:
+                    self.m_pokeragentlist[pos].act(1, 0)
 
         # get real payoff
         self.m_handsengine.m_cumuinfo.calpayoff()
-        self.m_realpayoff = copy.deepcopy(self.m_handsengine.m_payofflist)
+        self.m_realpayoff = copy.deepcopy(self.m_handsengine.m_cumuinfo.m_payofflist)
 
         # remove winner information
         privatecardinfo = self.m_handsengine.getprivatecardinfo()
-        for idx in xrange(len(privatecardinfo)):
-            privatecardinfo[idx][1] = 0
+        if privatecardinfo:
+            for idx in xrange(len(privatecardinfo)):
+                privatecardinfo[idx][1] = 0
 
         # test each agent, the result for each agent is a distribution of hand and EV
         for agent in self.m_pokeragentlist:
-            self.testagent(agent)
+            if agent is not None:
+                self.testagent(agent)
 
     def testposhand(self, pos, hand):
-        realpos = self.m_handsengine.getrealpos(pos)
+        realpos = self.m_handsengine.m_cumuinfo.getrealpos(pos)
         privatecardinfo = self.m_handsengine.getprivatecardinfo()
         realhand = copy.deepcopy(privatecardinfo[realpos - 1][0])
 
@@ -54,7 +62,8 @@ class VirtualTestAgent:
 
     def testagent(self,agent):
         self.m_testdis += HandsDisQuality(agent.m_distribution)
-        if self.m_handsengine.m_inpoolstate[agent.m_pos] == 0:
+        if self.m_handsengine.m_cumuinfo.m_inpoolstate[agent.m_pos] == 0 or \
+                (self.m_handsengine.m_cumuinfo.m_inpoolstate[agent.m_pos] > 0 and self.m_handsengine.m_showcard == 0):
             # this player has fold
             self.m_testEV += self.m_realpayoff[agent.m_pos]
         else:
@@ -77,11 +86,11 @@ class TestPayoff(TraverseValidHands):
             agentlist[pos] = HonestAgent(dealer,pos)
         testagent = VirtualTestAgent(dealer, agentlist)
         testagent.test()
+        print "---------------------------------"
         print handsinfo["_id"]
         print testagent.m_testEV
         print testagent.m_testdis.calequalquality()
         print testagent.m_testdis.calquality()
-        raise
 
 if __name__ == "__main__":
     TestPayoff(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="",step=1000).traverse()

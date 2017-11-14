@@ -820,7 +820,7 @@ class CumuInfo:
         for pos,vest in enumerate(gameinvest):
             newgameinvest[self.getrealpos(pos)] = vest
         gameinvest = newgameinvest
-        print "gameinvest:",gameinvest
+        # print "gameinvest:",gameinvest
         seppotresult = self.seppot(gameinvest,inpoolstate)
 
         handsdata = self.m_handsinfo["data"]
@@ -1078,6 +1078,12 @@ class HandsInfo:
                 # all in before river
                 if handsdata[idx]!= None:
                     return handsdata[idx]
+
+    def getturnboard(self,turnidx):
+        if turnidx == 1:
+            return []
+        else:
+            return self.m_board[:turnidx + 1]
 
     def getcurboard(self):
         realturn = self.m_cumuinfo.m_curturn

@@ -38,7 +38,7 @@ def virtualnextplayer(inpoolstate,curplayer):
     return [0,]
 
 def isprivatecardvalid(privatecard,inpoolstate):
-    print "inpool:",inpoolstate
+    # print "inpool:",inpoolstate
     for idx, state in enumerate(inpoolstate):
         if state != 0:
             hands = privatecard[idx - 1][0]
@@ -109,7 +109,7 @@ def seppot(gameinvest, inpoolstate):
     return potresult
 
 def calpayoff(showcard, seppotresult,inpoolstate,gameinvest ,handsdata = []):
-    print "gameinvest:",gameinvest
+    # print "gameinvest:",gameinvest
     if showcard != 1:
         # donot showcard
         payofflist = [0]* 10

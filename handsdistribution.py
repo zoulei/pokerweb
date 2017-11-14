@@ -27,13 +27,14 @@ class HandsDisQuality:
     def calquality(self):
         quantity = 0
         handrankengine = PrivateHandRank()
-        for hand, value in self.m_handsdis:
+        for hand, value in self.m_handsdis.items():
             quantity += self.f(handrankengine.getrank(hand),value )
         return quantity
 
     def calequalquality(self):
         handrankengine = PrivateHandRank()
         handrangeobj = HandsRange()
+        handrangeobj.addFullRange()
         quantity = 0
         prob = 1.0/ 1326
         for hand in handrangeobj.get():

@@ -1,5 +1,7 @@
 from hunlgame import HandsRange
 from privatecardsstrength import PrivateHandRank
+import handsinfocommon
+import hunlgame
 
 class HonestAgent:
     # game acts like a dealer
@@ -9,33 +11,39 @@ class HonestAgent:
         self.m_pos = pos
         self.m_myhand = myhand
 
+        self.m_checkavailable = False
         self.m_winrateengine = None
         self.m_distribution = {}
 
         self.m_lastactionturn = 0
+        self.initdistribution()
 
     # init my hands distribution based on my strategy
     # this distribution can be used to determine my hand
     # based on my strategy and action.
     def initdistribution(self):
         handrangeobj = HandsRange()
+        handrangeobj.addFullRange()
         handslist = handrangeobj.get()
         self.m_distribution = dict(zip(handslist, [1.0/len(handslist)]*len(handslist)))
 
     # update my hands distribution based on new public card
     def updatedistributionbyboard(self):
         board = self.m_dealer.getboard()
-
+        # print "curturn:",self.m_dealer.getcurrentturn()
+        # print "board:"
+        # for card in board:
+        #     print card
         # eliminate hands that is impossible according to public card
         if self.m_lastactionturn != self.m_dealer.getcurrentturn():
-            if self.m_dealer.getcurrentturn == 2:
+            if self.m_dealer.getcurrentturn() == 2:
                 # flop
                 for hand in self.m_distribution.keys():
                     for publiccard in board:
                         if publiccard in hand.get():
                             self.m_distribution[hand] = 0
                             break
-            elif self.m_dealer.getcurrentturn > 2:
+            elif self.m_dealer.getcurrentturn() > 2:
                 # turn and river
                 for hand in self.m_distribution.keys():
                     if board[-1] in hand.get():
@@ -49,14 +57,23 @@ class HonestAgent:
     # update distribution based on my action
     # action is 0 : fold, 1 : call, 2 : raise
     def updatedistributionbyaction(self, action, value):
+        if action in [2,4.2]:
+            action = 2
+        elif action == 1:
+            action = 0
+        elif action in [3,6,4.3]:
+            action = 1
+        elif action == 12:
+            return
         mother = 0
-
         responsedata = {}
+        # print "dis:"
+        # handsinfocommon.pp.pprint(self.m_distribution)
         for hand,prob in self.m_distribution.items():
             if prob == 0:
                 continue
             responsedata[hand] = self.getresponse(hand)
-            mother += self.getresponse(hand)[action] * prob
+            mother += responsedata[hand][action] * prob
 
         for hand,prob in self.m_distribution.items():
             if prob == 0:
@@ -67,8 +84,11 @@ class HonestAgent:
     def act(self, action, value):
         self.updatedistributionbyboard()
         self.m_lastactionturn = self.m_dealer.getcurrentturn()
+        self.m_checkavaible = self.m_dealer.checkavailable()
         self.m_dealer.updateaction(action,value)
-        self.updatedistributionbyaction(action, value)
+        # print "action, value:",action,value
+        # print self.m_dealer.m_handsengine.m_cumuinfo.m_curturn
+        self.updatedistributionbyaction(self.m_dealer.m_handsengine.m_cumuinfo.m_lastaction, value)
 
     # ask dealer for hand
     def askforhand(self):
@@ -87,9 +107,18 @@ class HonestAgent:
             virtualhand = self.m_myhand
 
         if self.m_dealer.getcurrentturn() > 1:
-            self.m_winrateengine = hunlgame.FPWinrateEngine(self.m_dealer.getboard(), virtualhand)
+
+            # try:
+            self.m_winrateengine = hunlgame.FPWinrateEngine(self.m_dealer.getturnboard(self.m_dealer.m_handsengine.m_cumuinfo.m_curturn), virtualhand)
             winrate = self.m_winrateengine.calmywinrate()
             isnuts = self.m_winrateengine.isnuts()
+            # except:
+            #     print "card:"
+            #     for card in self.m_dealer.getboard():
+            #         print card
+            #     print str(virtualhand)
+            #     print self.m_dealer.m_handsengine.m_cumuinfo.m_curturn
+            #     raise
         else:
             handrankengine = PrivateHandRank()
             rank = handrankengine.getrank(virtualhand)
@@ -112,7 +141,7 @@ class HonestAgent:
         raiserate = winrate * winrate * winrate
         callrate = winrate * winrate
         foldrate = 1 - raiserate - callrate
-        if self.m_dealer.checkavailable():
+        if self.m_checkavailable:
             return (0, foldrate + callrate, raiserate)
         else:
             return (foldrate,callrate, raiserate)
