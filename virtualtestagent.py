@@ -89,8 +89,12 @@ class TestPayoff(TraverseValidHands):
         print "---------------------------------"
         print handsinfo["_id"]
         print testagent.m_testEV
-        print testagent.m_testdis.calequalquality()
-        print testagent.m_testdis.calquality()
+        equalquality = testagent.m_testdis.calequalquality()
+        realquality = testagent.m_testdis.calquality()
+        print equalquality
+        print realquality
+        if equalquality > realquality:
+            print "==========================================================="
 
 if __name__ == "__main__":
     TestPayoff(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="",step=1000).traverse()
