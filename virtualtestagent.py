@@ -5,6 +5,7 @@ import copy
 from handsdistribution import HandsDisQuality
 from rullbasedagent import HonestAgent
 from TraverseHands import TraverseValidHands
+import handsinfocommon
 
 class VirtualTestAgent:
     def __init__(self, dealer, pokeragentlist):
@@ -43,6 +44,12 @@ class VirtualTestAgent:
         for agent in self.m_pokeragentlist:
             if agent is not None:
                 self.testagent(agent)
+                # if agent.m_pos == 1:
+                #     agent.printdata()
+                #     raw_input()
+
+        # normalize distribution
+        self.m_testdis.normalize()
 
     def testposhand(self, pos, hand):
         realpos = self.m_handsengine.m_cumuinfo.getrealpos(pos)
@@ -76,6 +83,12 @@ class TestPayoff(TraverseValidHands):
     def filter(self, handsinfo):
         if handsinfo.get("payoff",None) is None:
             return True
+        handagent = HandsInfo(handsinfo)
+        betdata = handagent.getpreflopbetdata()
+        # if len(betdata) != handagent.getplayerquantity() - 1:
+        #     for action, _ in betdata:
+        #         if action != 1:
+        #             return True
         return TraverseValidHands.filter(self,handsinfo)
 
     def mainfunc(self, handsinfo):
@@ -86,6 +99,7 @@ class TestPayoff(TraverseValidHands):
             agentlist[pos] = HonestAgent(dealer,pos)
         testagent = VirtualTestAgent(dealer, agentlist)
         testagent.test()
+        # testagent.m_testdis.printdata()
         print "---------------------------------"
         print handsinfo["_id"]
         print testagent.m_testEV
@@ -95,6 +109,7 @@ class TestPayoff(TraverseValidHands):
         print realquality
         if equalquality > realquality:
             print "==========================================================="
+        # raw_input()
 
 if __name__ == "__main__":
     TestPayoff(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="",step=1000).traverse()

@@ -44,5 +44,11 @@ class HandsDisQuality:
     def f(self, rank, value):
         return pow(rank, 2) * value
 
+    def printdata(self):
+        dislist = self.m_handsdis.items()
+        dislist.sort(key=lambda v:v[1],reverse=True)
+        for hand, value in dislist:
+            print hand, "\t",value
+
     # def getquality(self):
     #     pass
