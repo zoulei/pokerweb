@@ -84,6 +84,10 @@ def gameseq(device):
 def joingame(device,seq):
     return collecthands.joingame(device,seq)
 
+@app.route('/uploadhandsurl/<path:handsurl>')
+def uploadhandsurl(handsurl):
+    return collecthands.uploadhandsurl(handsurl)
+
 if __name__ == '__main__':
     #logging.info("start server")
     app.run(host='0.0.0.0',port = 80,debug = True)
