@@ -9,6 +9,7 @@ import json
 import os
 from werkzeug import secure_filename
 import urllib2
+import time
 
 # For a given file, return whether it's an allowed type or not
 def allowed_file(filename):
@@ -36,46 +37,36 @@ def uploadHandsInfo(request):
         DBOperater.StoreData(Constant.HANDSDB,Constant.RAWHANDSCLT,content)
     return "1"
 
-def gameseq(deviceID):
+def gameseq():
     result = DBOperater.Find(Constant.HANDSDB,Constant.GAMESEQCLT,{})
     result = list(result)
 
     if not len(result):
         return json.dumps([])
-
-    seqlist = []
+    today = time.gmtime().tm_day
+    lastupdatedate = result[0].get("update",None)
+    if lastupdatedate is None or lastupdatedate != today:
+        # new day, clear all data
+        DBOperater.ReplaceOne(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":"onlyone"},{"_id":"onlyone","data":[],"update":today},True)
+        return json.dumps([])
     seqdata = result[0]["data"]
+    return json.dumps(seqdata)
 
-    if deviceID in seqdata.keys():
-        del seqdata[deviceID]
-
-    for device in seqdata:
-        seqlist.append(seqdata[device])
-
-    DBOperater.DeleteData(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":"onlyone"})
-    DBOperater.StoreData(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":"onlyone","data":seqdata})
-    return json.dumps(seqlist)
-
-def joingame(deviceID,seq):
+def joingame(seq):
     seq = int(seq)
     result = DBOperater.Find(Constant.HANDSDB,Constant.GAMESEQCLT,{})
     result = list(result)
 
     if not len(result):
-        DBOperater.StoreData(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":"onlyone","data":{deviceID:seq}})
+        DBOperater.StoreData(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":"onlyone","data":[seq]})
         return "1"
 
     seqdata = result[0]["data"]
-    if deviceID in seqdata.keys():
-        del seqdata[deviceID]
+    if seq not in seqdata:
+        seqdata.append(seq)
 
-    for v in seqdata.values():
-        if v == seq:
-            return "0"
-
-    seqdata[deviceID] = seq
     DBOperater.DeleteData(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":"onlyone"})
-    DBOperater.StoreData(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":"onlyone","data":seqdata})
+    DBOperater.StoreData(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":"onlyone","data":seqdata,"update":time.gmtime().tm_day})
     return "1"
 
 class ReconstructHandsdata:

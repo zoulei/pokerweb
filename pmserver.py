@@ -76,9 +76,9 @@ def upload():
 def uploadhandsinfo():
     return collecthands.uploadHandsInfo(request)
 
-@app.route('/gameseq/<path:device>')
-def gameseq(device):
-    return collecthands.gameseq(device)
+@app.route('/gameseq')
+def gameseq():
+    return collecthands.gameseq()
 
 @app.route('/joingame/<path:device>/<int:seq>')
 def joingame(device,seq):
