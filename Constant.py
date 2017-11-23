@@ -17,6 +17,7 @@ TJHISHANDSCLT = "tjhishandsclt"
 TJHANDSCLT = "tjhandsclt"
 
 GAMESEQCLT = "gameseqclt"
+COLLECTGAMECLT = "collectgameclt"
 
 CUMUCLT = "cumuclt"
 

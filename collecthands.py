@@ -54,6 +54,15 @@ def gameseq():
 
 def joingame(seq):
     seq = int(seq)
+    result = DBOperater.Find(Constant.HANDSDB,Constant.COLLECTGAMECLT,{})
+    result = list(result)
+    if not len(result):
+        data = {}
+    else:
+        data = result[0].get("data")
+    data[str(seq)] = time.time()
+    DBOperater.ReplaceOne(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":"onlyone"},{"_id":"onlyone","data":data},True)
+
     result = DBOperater.Find(Constant.HANDSDB,Constant.GAMESEQCLT,{})
     result = list(result)
 
@@ -67,6 +76,32 @@ def joingame(seq):
 
     DBOperater.DeleteData(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":"onlyone"})
     DBOperater.StoreData(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":"onlyone","data":seqdata,"update":time.gmtime().tm_day})
+    return "1"
+
+def collectgamelist():
+    result = DBOperater.Find(Constant.HANDSDB,Constant.COLLECTGAMECLT,{})
+    result = list(result)
+
+    if not len(result):
+        return json.dumps([])
+
+    data = result[0].get("data")
+    # delete data of 24 hours ago
+    for key,value in data.items():
+        if time.time() - value > 3600 * 24:
+            del data[key]
+
+    DBOperater.ReplaceOne(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":"onlyone"},{"_id":"onlyone","data":data},True)
+    return json.dumps([int(v) for v in data.keys()])
+
+def completegamecollect(seq):
+    result = DBOperater.Find(Constant.HANDSDB,Constant.COLLECTGAMECLT,{})
+    result = list(result)
+
+    data = result[0].get("data")
+    del data[str(seq)]
+
+    DBOperater.ReplaceOne(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":"onlyone"},{"_id":"onlyone","data":data},True)
     return "1"
 
 class ReconstructHandsdata:
