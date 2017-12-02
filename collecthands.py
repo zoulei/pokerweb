@@ -43,7 +43,7 @@ def gameseq():
 
     if not len(result):
         return json.dumps([])
-    today = time.gmtime().tm_day
+    today = time.gmtime().tm_mday
     lastupdatedate = result[0].get("update",None)
     if lastupdatedate is None or lastupdatedate != today:
         # new day, clear all data
@@ -72,7 +72,7 @@ def joingame(seq):
 
     seqdata = result[0]["data"]
     if seq not in seqdata:
-        seqdata.append(seq)
+        seqdata[seq] =1
 
     DBOperater.DeleteData(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":"onlyone"})
     DBOperater.StoreData(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":"onlyone","data":seqdata,"update":time.gmtime().tm_day})
