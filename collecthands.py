@@ -117,7 +117,7 @@ class ReconstructHandsdata:
 
     def getrawhanddatastruct(self):
         handsdata = self.m_handsdata["STAGE"]
-        rawhandsdoc = {"_id":handsdata["TIME"] + " " + handsdata["ID"]}
+        rawhandsdoc = {"_id":str(handsdata["TIME"]) + " " + str(handsdata["ID"])}
         sb = handsdata["TABLE"]["SBLIND"]["CHIPS"]
         anti = handsdata["TABLE"]["ante"]
         playernum = len(handsdata["TABLE"]["SEAT"])
@@ -135,9 +135,9 @@ class ReconstructHandsdata:
             stack[idx + 1] = handsdata["TABLE"]["SEAT"][- idx - 1]["CHIPS"]
             name[idx + 1] = handsdata["TABLE"]["SEAT"][- idx - 1]["NAME"]
             idlist[idx + 1] = handsdata["TABLE"]["SEAT"][- idx - 1]["ID"]
-        rawhandsdoc["data"] = []
+        rawhandsdoc["data"] = {}
         rawhandsdata = rawhandsdoc["data"]
-        rawhandsdata["BB"] = sb * 2
+        rawhandsdata["BB"] = int(sb) * 2
         rawhandsdata["ante"] = anti
         rawhandsdata["PLAYQUANTITY"] = playernum
         rawhandsdata["STACK"] = stack
@@ -162,6 +162,8 @@ class ReconstructHandsdata:
         showcarddata = handsdata["SHOWDOWN"]["PLAYER"]
         pvcards = [None] * 10
         for showcardinfo in showcarddata:
+            if "CARD" not in showcardinfo:
+                break
             pvcardsstr = showcardinfo["CARD"]
             number = showcardinfo["NUMBER"]
             pvcards[self.number2pos(number)] = pvcardsstr
@@ -169,7 +171,19 @@ class ReconstructHandsdata:
 
         return rawhandsdoc
 
+def generateurl(rawurl):
+    tranmap =  {":":"0018fenghao",
+				"/":"0018zhexian",
+				".":"0018dot",
+				"?":"0018question",
+				"=":"0018equal",
+				"&":"0018with"}
+    for key, value in tranmap.items():
+        rawurl = rawurl.replace(value,key)
+    return rawurl
+
 def uploadhandsurl(handsurl):
+    handsurl = generateurl(handsurl)
     try:
         htmldoc = urllib2.urlopen(handsurl).read()
     except:
@@ -181,6 +195,13 @@ def uploadhandsurl(handsurl):
     handsdatastr = htmldoc[prefixidx+len(prefix):postfixidx]
     handsdata = json.loads(handsdatastr)
     handsdata = ReconstructHandsdata(handsdata).getrawhanddatastruct()
+    import pprint
+    pp = pprint.PrettyPrinter(indent=4)
+    pp.pprint(handsdata)
+    print "===================================="
     # DBOperater.StoreData(Constant.HANDSDB,Constant.RAWHANDSCLT,handsdata)
-    DBOperater.ReplaceOne(Constant.HANDSDB,Constant.RAWHANDSCLT,{"_id":handsdata["_id"]},handsdata,True)
+    #DBOperater.ReplaceOne(Constant.HANDSDB,Constant.RAWHANDSCLT,{"_id":handsdata["_id"]},handsdata,True)
     return "1"
+
+# if __name__ == "__main__":
+#     uploadhandsurl("http0018fenghao0018zhexian0018zhexianreplay0018dotpaiyou0018dotme0018fenghao80800018zhexianhandplayer0018zhexianreplay0018zhexian0018questionurl0018equalnew9492ecaf53d5d99072cb2fea860ed4a866e7337dff285bdec167db9f68bfd74177afbc0bb01945005689caa07c2c97eb917b5bc07d4b2ba5")
