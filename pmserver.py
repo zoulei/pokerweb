@@ -88,13 +88,17 @@ def joingame(seq):
 def collectgamelist():
     return collecthands.collectgamelist()
 
+@app.route('/collectgamehandidx/<int:seq>')
+def collectgamehandidx(seq):
+    return collecthands.collectgamehandidx(seq)
+
 @app.route('/completegamecollect/<int:seq>')
 def completegamecollect(seq):
     return collecthands.completegamecollect(seq)
 
-@app.route('/uploadhandsurl/<path:handsurl>')
-def uploadhandsurl(handsurl):
-    return collecthands.uploadhandsurl(handsurl)
+@app.route('/uploadhandsurl/<int:gameidx>/<int:handidx>/<path:handsurl>')
+def uploadhandsurl(gameidx,handidx,handsurl):
+    return collecthands.uploadhandsurl(gameidx,handidx,handsurl)
 
 if __name__ == '__main__':
     #logging.info("start server")

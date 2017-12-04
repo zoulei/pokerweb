@@ -60,7 +60,7 @@ def joingame(seq):
         data = {}
     else:
         data = result[0].get("data")
-    data[str(seq)] = time.time()
+    data[str(seq)] = [0,time.time()]
     DBOperater.ReplaceOne(Constant.HANDSDB,Constant.COLLECTGAMECLT,{"_id":"onlyone"},{"_id":"onlyone","data":data},True)
 
     # this deals with the join game information, add this seq to the joined game list
@@ -84,11 +84,19 @@ def collectgamelist():
     data = result[0].get("data")
     # delete data of 24 hours ago
     for key,value in data.items():
-        if time.time() - value > 3600 * 24:
+        if time.time() - value[1] > 3600 * 24:
             del data[key]
 
     DBOperater.ReplaceOne(Constant.HANDSDB,Constant.COLLECTGAMECLT,{"_id":"onlyone"},{"_id":"onlyone","data":data},True)
     return json.dumps([int(v) for v in data.keys()])
+
+def collectgamehandidx(seq):
+    result = DBOperater.Find(Constant.HANDSDB,Constant.COLLECTGAMECLT,{})
+    result = list(result)
+    if not len(result):
+        return "0"
+    data = result[0].get("data")
+    return str(data[str(seq)][0])
 
 def completegamecollect(seq):
     result = DBOperater.Find(Constant.HANDSDB,Constant.COLLECTGAMECLT,{})
@@ -182,25 +190,37 @@ def generateurl(rawurl):
         rawurl = rawurl.replace(value,key)
     return rawurl
 
-def uploadhandsurl(handsurl):
-    handsurl = generateurl(handsurl)
-    try:
-        htmldoc = urllib2.urlopen(handsurl).read()
-    except:
-        return "0"
-    prefix = "recordHelper.data = $.parseJSON('"
-    postfix = "');"
-    prefixidx = htmldoc.find(prefix)
-    postfixidx = htmldoc.find(postfix,prefixidx)
-    handsdatastr = htmldoc[prefixidx+len(prefix):postfixidx]
-    handsdata = json.loads(handsdatastr)
-    handsdata = ReconstructHandsdata(handsdata).getrawhanddatastruct()
-    import pprint
-    pp = pprint.PrettyPrinter(indent=4)
-    pp.pprint(handsdata)
-    print "===================================="
+def uploadhandsurl(gameidx,handidx,handsurl):
+    # handsurl = generateurl(handsurl)
+    # try:
+    #     htmldoc = urllib2.urlopen(handsurl).read()
+    # except:
+    #     return "0"
+    # prefix = "recordHelper.data = $.parseJSON('"
+    # postfix = "');"
+    # prefixidx = htmldoc.find(prefix)
+    # postfixidx = htmldoc.find(postfix,prefixidx)
+    # handsdatastr = htmldoc[prefixidx+len(prefix):postfixidx]
+    # handsdata = json.loads(handsdatastr)
+    # handsdata = ReconstructHandsdata(handsdata).getrawhanddatastruct()
+    # import pprint
+    # pp = pprint.PrettyPrinter(indent=4)
+    # pp.pprint(handsdata)
+    # print "===================================="
+
     # DBOperater.StoreData(Constant.HANDSDB,Constant.RAWHANDSCLT,handsdata)
     #DBOperater.ReplaceOne(Constant.HANDSDB,Constant.RAWHANDSCLT,{"_id":handsdata["_id"]},handsdata,True)
+
+    # update collect information
+    result = DBOperater.Find(Constant.HANDSDB,Constant.COLLECTGAMECLT,{})
+    result = list(result)
+    if not len(result):
+        data = {str(gameidx):[handidx,time.time()]}
+    else:
+        data = result[0].get("data")
+    data[str(gameidx)][0] = handidx
+    DBOperater.ReplaceOne(Constant.HANDSDB,Constant.COLLECTGAMECLT,{"_id":"onlyone"},{"_id":"onlyone","data":data},True)
+
     return "1"
 
 # if __name__ == "__main__":
