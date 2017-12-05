@@ -11,6 +11,8 @@ LOGINCLT = "loginclt"
 HANDSDB = "handsdb"
 HANDSCLT = "handsclt"
 
+
+TESTCLT = "testclt"
 RAWHANDSCLT = "rawhandsclt"
 HISHANDSCLT = "hishandsclt"
 TJHISHANDSCLT = "tjhishandsclt"

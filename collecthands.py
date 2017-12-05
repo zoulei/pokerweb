@@ -191,25 +191,24 @@ def generateurl(rawurl):
     return rawurl
 
 def uploadhandsurl(gameidx,handidx,handsurl):
-    # handsurl = generateurl(handsurl)
-    # try:
-    #     htmldoc = urllib2.urlopen(handsurl).read()
-    # except:
-    #     return "0"
-    # prefix = "recordHelper.data = $.parseJSON('"
-    # postfix = "');"
-    # prefixidx = htmldoc.find(prefix)
-    # postfixidx = htmldoc.find(postfix,prefixidx)
-    # handsdatastr = htmldoc[prefixidx+len(prefix):postfixidx]
-    # handsdata = json.loads(handsdatastr)
-    # handsdata = ReconstructHandsdata(handsdata).getrawhanddatastruct()
-    # import pprint
-    # pp = pprint.PrettyPrinter(indent=4)
-    # pp.pprint(handsdata)
-    # print "===================================="
+    handsurl = generateurl(handsurl)
+    try:
+        htmldoc = urllib2.urlopen(handsurl).read()
+    except:
+        return "0"
+    prefix = "recordHelper.data = $.parseJSON('"
+    postfix = "');"
+    prefixidx = htmldoc.find(prefix)
+    postfixidx = htmldoc.find(postfix,prefixidx)
+    handsdatastr = htmldoc[prefixidx+len(prefix):postfixidx]
+    handsdata = json.loads(handsdatastr)
+    handsdata = ReconstructHandsdata(handsdata).getrawhanddatastruct()
+    import pprint
+    pp = pprint.PrettyPrinter(indent=4)
+    pp.pprint(handsdata)
+    print "===================================="
 
-    # DBOperater.StoreData(Constant.HANDSDB,Constant.RAWHANDSCLT,handsdata)
-    #DBOperater.ReplaceOne(Constant.HANDSDB,Constant.RAWHANDSCLT,{"_id":handsdata["_id"]},handsdata,True)
+    DBOperater.ReplaceOne(Constant.HANDSDB,Constant.TESTCLT,{"_id":handsdata["_id"]},handsdata,True)
 
     # update collect information
     result = DBOperater.Find(Constant.HANDSDB,Constant.COLLECTGAMECLT,{})
