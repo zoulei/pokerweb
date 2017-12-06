@@ -154,6 +154,9 @@ class ReconstructHandsdata:
         rawhandsdata["BETDATA"] = {}
 
         betdata = handsdata["POKERCARD"]
+        import pprint
+        pp = pprint.PrettyPrinter(indent=4)
+        pp.pprint(self.m_handsdata)
         for turnidx, pokerturn in enumerate(["PREFLOP","FLOP","TURN","RIVER"]):
             if pokerturn not in betdata:
                 continue
@@ -162,10 +165,13 @@ class ReconstructHandsdata:
             for actiondata in curturnbetdata:
                 number = actiondata["NUMBER"]
                 action = actiondata["ACTION"]
+                if action == "showwait":
+                    continue
                 action,value = action.split(" ")
                 pos = self.number2pos(number)
                 newbetdata.append([pos,action,value])
-            rawhandsdata["BETDATA"][pokerturn] = newbetdata
+            if newbetdata:
+                rawhandsdata["BETDATA"][pokerturn] = newbetdata
 
         showcarddata = handsdata["SHOWDOWN"]["PLAYER"]
         pvcards = [None] * 10
