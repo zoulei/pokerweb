@@ -37,22 +37,24 @@ def uploadHandsInfo(request):
         DBOperater.StoreData(Constant.HANDSDB,Constant.RAWHANDSCLT,content)
     return "1"
 
-def gameseq():
-    result = DBOperater.Find(Constant.HANDSDB,Constant.GAMESEQCLT,{})
+
+
+
+def gameseq(phoneid):
+    result = DBOperater.Find(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":phoneid})
     result = list(result)
     if not len(result):
         return json.dumps([])
     data = result[0]["data"]
     now = time.time()
     for seq,realtime in data.items():
-        if now - realtime > 3600 * 24:
+        if now - realtime > 3600 * 15:
             del data[seq]
-    DBOperater.ReplaceOne(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":"onlyone"},{"_id":"onlyone","data":data},True)
+    DBOperater.ReplaceOne(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":phoneid},{"_id":phoneid,"data":data},True)
     return json.dumps([int(v) for v in data.keys()])
 
-def joingame(seq):
+def joingame(seq,phoneid):
     seq = int(seq)
-
     # this deals with the collect game information, add this seq to the to be collected list
     result = DBOperater.Find(Constant.HANDSDB,Constant.COLLECTGAMECLT,{})
     result = list(result)
@@ -60,21 +62,25 @@ def joingame(seq):
         data = {}
     else:
         data = result[0].get("data")
-    data[str(seq)] = [0,time.time()]
+    data[str(seq)] = {
+        "handidx":0,
+        "time":time.time(),
+        "phoneid":None
+    }
     DBOperater.ReplaceOne(Constant.HANDSDB,Constant.COLLECTGAMECLT,{"_id":"onlyone"},{"_id":"onlyone","data":data},True)
 
     # this deals with the join game information, add this seq to the joined game list
-    result = DBOperater.Find(Constant.HANDSDB,Constant.GAMESEQCLT,{})
+    result = DBOperater.Find(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":phoneid})
     result = list(result)
     if not len(result):
         data = {}
     else:
         data = result[0]["data"]
     data[str(seq)] = time.time()
-    DBOperater.ReplaceOne(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":"onlyone"},{"_id":"onlyone","data":data},True)
+    DBOperater.ReplaceOne(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":phoneid},{"_id":phoneid,"data":data},True)
     return "1"
 
-def collectgamelist():
+def collectgamelist(phoneid):
     result = DBOperater.Find(Constant.HANDSDB,Constant.COLLECTGAMECLT,{})
     result = list(result)
 
@@ -83,27 +89,40 @@ def collectgamelist():
 
     data = result[0].get("data")
     # delete data of 24 hours ago
-    for key,value in data.items():
-        if time.time() - value[1] > 3600 * 24:
-            del data[key]
+    for seq,gameinfo in data.items():
+        if time.time() - gameinfo["time"] > 3600 * 15:
+            del data[seq]
 
     DBOperater.ReplaceOne(Constant.HANDSDB,Constant.COLLECTGAMECLT,{"_id":"onlyone"},{"_id":"onlyone","data":data},True)
-    return json.dumps([int(v) for v in data.keys()])
+    return json.dumps([v[0] for v in data.items() if (v[1]["phoneid"] is None or v[1]["phoneid"] == phoneid)] )
 
-def collectgamehandidx(seq):
+def collectgamehandidx(seq,phoneid):
     result = DBOperater.Find(Constant.HANDSDB,Constant.COLLECTGAMECLT,{})
     result = list(result)
     if not len(result):
-        return "0"
-    data = result[0].get("data")
-    return str(data[str(seq)][0])
+        data = {
+            str(seq)    :   {
+                "handidx":0,
+                "time":time.time(),
+                "phoneid":phoneid
+            }
+        }
+    else:
+        data = result[0].get("data")
+    if data[str(seq)]["phoneid"] and data[str(seq)]["phoneid"] != phoneid:
+        # this hand has been occupied
+        return "-1"
+    else:
+        data[str(seq)]["phoneid"] = phoneid
+    DBOperater.ReplaceOne(Constant.HANDSDB,Constant.COLLECTGAMECLT,{"_id":"onlyone"},{"_id":"onlyone","data":data},True)
+    return str(data[str(seq)]["handidx"])
 
 def completegamecollect(seq):
     result = DBOperater.Find(Constant.HANDSDB,Constant.COLLECTGAMECLT,{})
     result = list(result)
 
     data = result[0].get("data")
-    if str(seq) in data:
+    if str(seq) in data.keys():
         del data[str(seq)]
 
     DBOperater.ReplaceOne(Constant.HANDSDB,Constant.COLLECTGAMECLT,{"_id":"onlyone"},{"_id":"onlyone","data":data},True)
@@ -223,7 +242,7 @@ def uploadhandsurl(gameidx,handidx,handsurl):
         data = {str(gameidx):[handidx,time.time()]}
     else:
         data = result[0].get("data")
-    data[str(gameidx)][0] = handidx
+    data[str(gameidx)]["handidx"] = handidx
     DBOperater.ReplaceOne(Constant.HANDSDB,Constant.COLLECTGAMECLT,{"_id":"onlyone"},{"_id":"onlyone","data":data},True)
 
     return "1"

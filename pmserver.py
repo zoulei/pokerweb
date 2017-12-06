@@ -76,21 +76,21 @@ def upload():
 def uploadhandsinfo():
     return collecthands.uploadHandsInfo(request)
 
-@app.route('/gameseq')
-def gameseq():
-    return collecthands.gameseq()
+@app.route('/gameseq/<path:phoneid>')
+def gameseq(phoneid):
+    return collecthands.gameseq(phoneid)
 
-@app.route('/joingame/<int:seq>')
-def joingame(seq):
-    return collecthands.joingame(seq)
+@app.route('/joingame/<int:seq>/<path:phoneid>')
+def joingame(seq,phoneid):
+    return collecthands.joingame(seq,phoneid)
 
-@app.route('/collectgamelist')
-def collectgamelist():
-    return collecthands.collectgamelist()
+@app.route('/collectgamelist/<path:phoneid>')
+def collectgamelist(phoneid):
+    return collecthands.collectgamelist(phoneid)
 
-@app.route('/collectgamehandidx/<int:seq>')
-def collectgamehandidx(seq):
-    return collecthands.collectgamehandidx(seq)
+@app.route('/collectgamehandidx/<int:seq>/<path:phoneid>')
+def collectgamehandidx(seq,phoneid):
+    return collecthands.collectgamehandidx(seq,phoneid)
 
 @app.route('/completegamecollect/<int:seq>')
 def completegamecollect(seq):
