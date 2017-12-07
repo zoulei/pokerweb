@@ -94,7 +94,7 @@ def collectgamelist(phoneid):
             del data[seq]
 
     DBOperater.ReplaceOne(Constant.HANDSDB,Constant.COLLECTGAMECLT,{"_id":"onlyone"},{"_id":"onlyone","data":data},True)
-    return json.dumps([v[0] for v in data.items() if (v[1]["phoneid"] is None or v[1]["phoneid"] == phoneid)] )
+    return json.dumps([int(v[0]) for v in data.items() if (v[1]["phoneid"] is None or v[1]["phoneid"] == phoneid)] )
 
 def collectgamehandidx(seq,phoneid):
     result = DBOperater.Find(Constant.HANDSDB,Constant.COLLECTGAMECLT,{})
