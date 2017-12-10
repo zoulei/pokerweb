@@ -149,8 +149,8 @@ class ReconstructHandsdata:
         anti = handsdata["TABLE"]["ante"]
         playernum = len(handsdata["TABLE"]["SEAT"])
         stack = [0] * 10
-        stack[9] = handsdata["TABLE"]["SEAT"][0]["CHIPS"]
-        stack[8] = handsdata["TABLE"]["SEAT"][1]["CHIPS"]
+        stack[9] = int(handsdata["TABLE"]["SEAT"][0]["CHIPS"])
+        stack[8] = int(handsdata["TABLE"]["SEAT"][1]["CHIPS"])
         name = [0] * 10
         name[9] = handsdata["TABLE"]["SEAT"][0]["NAME"]
         name[8] = handsdata["TABLE"]["SEAT"][1]["NAME"]
@@ -159,7 +159,7 @@ class ReconstructHandsdata:
         idlist[8] = handsdata["TABLE"]["SEAT"][1]["ID"]
 
         for idx in xrange(len(handsdata["TABLE"]["SEAT"]) - 2):
-            stack[idx + 1] = handsdata["TABLE"]["SEAT"][- idx - 1]["CHIPS"]
+            stack[idx + 1] = int(handsdata["TABLE"]["SEAT"][- idx - 1]["CHIPS"])
             name[idx + 1] = handsdata["TABLE"]["SEAT"][- idx - 1]["NAME"]
             idlist[idx + 1] = handsdata["TABLE"]["SEAT"][- idx - 1]["ID"]
         rawhandsdoc["data"] = {}
@@ -173,6 +173,7 @@ class ReconstructHandsdata:
         rawhandsdata["BETDATA"] = {}
 
         betdata = handsdata["POKERCARD"]
+        boarddata = ""
         # import pprint
         # pp = pprint.PrettyPrinter(indent=4)
         # pp.pprint(self.m_handsdata)
@@ -188,9 +189,11 @@ class ReconstructHandsdata:
                     continue
                 action,value = action.split(" ")
                 pos = self.number2pos(number)
-                newbetdata.append([pos,action,value])
+                newbetdata.append([pos,action,int(value)])
             if newbetdata:
                 rawhandsdata["BETDATA"][pokerturn] = newbetdata
+            if "CARD" in betdata[pokerturn]:
+                boarddata += " "+betdata[pokerturn]["CARD"]
 
         showcarddata = handsdata["SHOWDOWN"]["PLAYER"]
         pvcards = [None] * 10
@@ -201,6 +204,10 @@ class ReconstructHandsdata:
             number = showcardinfo["NUMBER"]
             pvcards[self.number2pos(number)] = pvcardsstr
         rawhandsdata["PVCARD"] = pvcards
+        if boarddata:
+            rawhandsdata["BOARD"] = boarddata[1:]
+        else:
+            rawhandsdata["BOARD"] = boarddata
 
         return rawhandsdoc
 
