@@ -228,10 +228,11 @@ def uploadhandsurl(gameidx,handidx,handsurl):
     handsdatastr = htmldoc[prefixidx+len(prefix):postfixidx]
     handsdata = json.loads(handsdatastr)
     handsdata = ReconstructHandsdata(handsdata).getrawhanddatastruct()
-    import pprint
-    pp = pprint.PrettyPrinter(indent=4)
-    pp.pprint(handsdata)
-    print "===================================="
+    handsdata["rawstr"] = handsdatastr
+    # import pprint
+    # pp = pprint.PrettyPrinter(indent=4)
+    # pp.pprint(handsdata)
+    # print "===================================="
 
     DBOperater.ReplaceOne(Constant.HANDSDB,Constant.TESTCLT,{"_id":handsdata["_id"]},handsdata,True)
 
