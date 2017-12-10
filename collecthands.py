@@ -173,9 +173,9 @@ class ReconstructHandsdata:
         rawhandsdata["BETDATA"] = {}
 
         betdata = handsdata["POKERCARD"]
-        import pprint
-        pp = pprint.PrettyPrinter(indent=4)
-        pp.pprint(self.m_handsdata)
+        # import pprint
+        # pp = pprint.PrettyPrinter(indent=4)
+        # pp.pprint(self.m_handsdata)
         for turnidx, pokerturn in enumerate(["PREFLOP","FLOP","TURN","RIVER"]):
             if pokerturn not in betdata:
                 continue
