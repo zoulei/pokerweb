@@ -108,13 +108,14 @@ def printdatalen6():
     print "sumhands :   ",sumhands
 
 def printhandsinfo(handsid):
-    result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,{"_id":handsid})
+    result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{"_id":handsid})
+    print "handsid:",handsid
     handsinfocommon.pp.pprint(result.next())
 
 def printplayerquantitydis():
     doclen = {}
     for idx in xrange(1,10):
-        result = DBOperater.Find(Constant.HANDSDB,Constant.TESTCLT,{"data.PLAYQUANTITY":idx})
+        result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{"data.PLAYQUANTITY":idx})
         doclen[idx] = result.count()
     totaldoc = sum(doclen.values())
     for key, value in doclen.items():
@@ -127,5 +128,5 @@ if __name__ == "__main__":
     # printdatalen6()
     #  printcombinationinfo()
     # preflopftdata()
-    # printhandsinfo(sys.argv[1])
-    printplayerquantitydis()
+    printhandsinfo(sys.argv[1])
+    # printplayerquantitydis()

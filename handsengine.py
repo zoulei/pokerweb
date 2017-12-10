@@ -937,7 +937,7 @@ class CumuInfo:
 class HandsInfo:
     def __init__(self, handsinfo):
         self.m_handsinfo = handsinfo
-        self.m_playerquantitiy = len(self.m_handsinfo["data"][0][2])
+        self.m_playerquantitiy = len(self.m_handsinfo["data"]["PLAYQUANTITY"])
 
         # -3 means fail to record showcard
         # -1 or -2 means record error, this hands is not usefull

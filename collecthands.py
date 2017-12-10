@@ -234,7 +234,7 @@ def uploadhandsurl(gameidx,handidx,handsurl):
     # pp.pprint(handsdata)
     # print "===================================="
 
-    DBOperater.ReplaceOne(Constant.HANDSDB,Constant.TESTCLT,{"_id":handsdata["_id"]},handsdata,True)
+    DBOperater.ReplaceOne(Constant.HANDSDB,Constant.HANDSCLT,{"_id":handsdata["_id"]},handsdata,True)
 
     # update collect information
     result = DBOperater.Find(Constant.HANDSDB,Constant.COLLECTGAMECLT,{})
