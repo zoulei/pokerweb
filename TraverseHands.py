@@ -147,16 +147,14 @@ class TestPayoff(TraverseValidHands):
         engine = handsengine.ReplayEngine(handsinfo)
         engine.traversealldata()
         engine.calpayoff()
-        payofflist = engine.m_payofflist
-        # payofflist = payofflist[:engine.m_cumuinfo.m_playerquantity - 1] + payofflist[8:10] + [0] * (9 - engine.m_cumuinfo.m_playerquantity)
-        newpayofflist = [0] * 10
-        for pos, value in enumerate(payofflist):
-            # print "info:", engine.m_cumuinfo.getrealpos(pos),value
-            newpayofflist[pos] = value
-        payofflist = newpayofflist[1:]
         handsinfocommon.pp.pprint(handsinfo)
         print "payofflist:",engine.m_payofflist
-        raw_input()
+        idx = 0
+        for v in engine.m_payofflist:
+            if v > 0:
+                idx += 1
+        if idx > 1:
+            raw_input()
 
         payoffdict = {
             "2017-12-09 23:01:43 87"  :   "[0, -2, -2, 169, -52, -2, -52, 0, -52, -7]",
@@ -167,4 +165,4 @@ class TestPayoff(TraverseValidHands):
 if __name__ == "__main__":
     # TraverseHands(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="").traverse()
     # TraverseHandsEngine(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="35357006093039820170327013640").traverse()
-    TestPayoff(Constant.HANDSDB,Constant.HANDSCLT,handsid="",step=10).traverse()
+    TestPayoff(Constant.HANDSDB,Constant.HANDSCLT,handsid="",step=100).traverse()

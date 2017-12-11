@@ -786,7 +786,8 @@ class ReplayEngine:
             competitor = potinfo[0]
             potsize = potinfo[1]
             newprivatecard = self.extractprivatecard(competitor,privatecard)
-            winner = hunlgame.getwinner(board,newprivatecard,-1)
+            winner = hunlgame.getwinner(board,newprivatecard)
+            print "winner:",winner
             for idx in xrange(len(winner)):
                 winner[idx] = competitor[winner[idx]]
 
