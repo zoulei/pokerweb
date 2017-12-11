@@ -30,9 +30,9 @@ class TraverseHands:
         start = time.time()
 
         if self.m_handsid:
-            result = DBOperater.Find(Constant.HANDSDB, Constant.TJHANDSCLT, {"_id":self.m_handsid})
+            result = DBOperater.Find(self.m_db, self.m_clt, {"_id":self.m_handsid})
         else:
-            result = DBOperater.Find(Constant.HANDSDB, Constant.TJHANDSCLT, {})
+            result = DBOperater.Find(self.m_db, self.m_clt, {})
         doclen = result.count()
         print "traverse document length : ",doclen
 
@@ -58,9 +58,9 @@ class TraverseHands:
     def traverse_(self, idx):
         DBOperater.Connect()
         if not self.m_handsid:
-            result = DBOperater.Find(Constant.HANDSDB, Constant.TJHANDSCLT, {})
+            result = DBOperater.Find(self.m_db, self.m_clt, {})
         else:
-            result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,
+            result = DBOperater.Find(self.m_db, self.m_clt,
                                 {"_id":self.m_handsid})
 
         doclist = []
@@ -132,7 +132,7 @@ class TraverseHands:
 
 class TraverseValidHands(TraverseHands):
     def filter(self, handsinfo):
-        return not handsengine.HandsInfo(handsinfo).isvalid()
+        return False
 
 def mainfunc( handsinfo):
     time.sleep(20)
@@ -140,34 +140,31 @@ def mainfunc( handsinfo):
 
 class TraverseHandsEngine(TraverseHands):
     def mainfunc(self, handsinfo):
-        handsengine.HandsInfo(handsinfo).traversealldata()
+        handsengine.ReplayEngine(handsinfo).traversealldata()
 
 class TestPayoff(TraverseValidHands):
-    def filter(self, handsinfo):
-        if handsinfo.get("payoff",None) is None:
-            return True
-        return TraverseValidHands.filter(handsinfo)
-
     def mainfunc(self, handsinfo):
-        engine = handsengine.HandsInfo(handsinfo)
+        engine = handsengine.ReplayEngine(handsinfo)
         engine.traversealldata()
-        engine.m_cumuinfo.calpayoff()
-        payofflist = engine.m_cumuinfo.m_payofflist
+        engine.calpayoff()
+        payofflist = engine.m_payofflist
         # payofflist = payofflist[:engine.m_cumuinfo.m_playerquantity - 1] + payofflist[8:10] + [0] * (9 - engine.m_cumuinfo.m_playerquantity)
         newpayofflist = [0] * 10
         for pos, value in enumerate(payofflist):
             # print "info:", engine.m_cumuinfo.getrealpos(pos),value
-            newpayofflist[engine.m_cumuinfo.getrealpos(pos)] = value
+            newpayofflist[pos] = value
         payofflist = newpayofflist[1:]
-        import json
+        handsinfocommon.pp.pprint(handsinfo)
+        print "payofflist:",engine.m_payofflist
+        raw_input()
 
-        if json.dumps(payofflist) != engine.m_handsinfo["payoff"]:
-            print "rawpayoff:",engine.m_cumuinfo.m_payofflist
-            print "payoff:",json.dumps(payofflist)
-            print "payoff1:",engine.m_handsinfo["payoff"]
-            raise
+        payoffdict = {
+            "2017-12-09 23:01:43 87"  :   "[0, -2, -2, 169, -52, -2, -52, 0, -52, -7]",
+            "2017-12-10 22:29:02 112" :   "[0, -2, -2, -2, -2, -92, -2, 0, 109, -7]"
+        }
+
 
 if __name__ == "__main__":
     # TraverseHands(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="").traverse()
     # TraverseHandsEngine(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="35357006093039820170327013640").traverse()
-    TestPayoff(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="",step=1000).traverse()
+    TestPayoff(Constant.HANDSDB,Constant.HANDSCLT,handsid="",step=10).traverse()
