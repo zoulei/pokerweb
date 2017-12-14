@@ -10,7 +10,7 @@ LOGINCLT = "loginclt"
 
 HANDSDB = "handsdb"
 HANDSCLT = "handsclt"
-
+STATEINFOHANDSCLT = "stateinfohandsclt"
 
 TESTCLT = "testclt"
 RAWHANDSCLT = "rawhandsclt"
