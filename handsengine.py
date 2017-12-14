@@ -385,6 +385,8 @@ class ReplayEngine:
             self.newturn()
         self.m_laststate = self.calstatistics()
         self.updatestate(actionpos,action,value)
+        if actionpos != self.m_nextplayer:
+            return
         self.m_lastplayer = self.m_nextplayer
         self.updatecurturnstate()
         self.m_nextplayer = self.getnextplayer()
@@ -394,11 +396,6 @@ class ReplayEngine:
         self.updateflopinformation()
         self.updateturninformation()
         self.updateriverinformation()
-        # print "===========]"
-        # print action,value
-        # print self.m_inpoolstate
-        # if not self.isgameover() and self.m_curturnover:
-        #     self.newturn()
 
     def updatecircle(self):
         if self.m_nextplayer == -1:
@@ -436,6 +433,10 @@ class ReplayEngine:
     def updatestate(self,actionpos,action,value):
         # print "action:",action,value
         pos = self.m_nextplayer
+        if pos != actionpos:
+            self.m_inpoolstate[actionpos] = 0
+            self.m_remainplayer -= 1
+            return
         self.m_stacksize[pos] -= value
         value += self.m_bethistory.get(pos,0)
         realvalue = value

@@ -153,8 +153,8 @@ class TestPayoff(TraverseValidHands):
         for v in engine.m_payofflist:
             if v > 0:
                 idx += 1
-        if idx > 1:
-            raw_input()
+        # if idx > 1:
+        #     raw_input()
 
         payoffdict = {
             "2017-12-09 23:01:43 87"  :   "[0, -2, -2, 169, -52, -2, -52, 0, -52, -7]",
@@ -165,4 +165,4 @@ class TestPayoff(TraverseValidHands):
 if __name__ == "__main__":
     # TraverseHands(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="").traverse()
     # TraverseHandsEngine(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="35357006093039820170327013640").traverse()
-    TestPayoff(Constant.HANDSDB,Constant.HANDSCLT,handsid="",step=100).traverse()
+    TestPayoff(Constant.HANDSDB,Constant.HANDSCLT,handsid="2017-12-10 22:39:25 123",step=1000).traverse()
