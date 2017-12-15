@@ -160,9 +160,10 @@ class TestPayoff(TraverseValidHands):
             "2017-12-09 23:01:43 87"  :   "[0, -2, -2, 169, -52, -2, -52, 0, -52, -7]",
             "2017-12-10 22:29:02 112" :   "[0, -2, -2, -2, -2, -92, -2, 0, 109, -7]"
         }
+        raw_input()
 
 
 if __name__ == "__main__":
     # TraverseHands(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="").traverse()
     # TraverseHandsEngine(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="35357006093039820170327013640").traverse()
-    TestPayoff(Constant.HANDSDB,Constant.HANDSCLT,handsid="2017-12-10 22:39:25 123",step=1000).traverse()
+    TestPayoff(Constant.HANDSDB,Constant.HANDSCLT,handsid="",step=1000).traverse()

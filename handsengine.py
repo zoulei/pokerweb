@@ -383,12 +383,15 @@ class ReplayEngine:
             print "remain small than 0"
             raise
 
+    def getposlist(self):
+        if self.m_curturn == 1 and not self.m_curturnover:
+            return self.m_preflopposlist
+        return self.m_afterflopposlist
+
     def update(self,actionpos,action,value):
         if self.isgameover():
             print "game has over"
             raise handsinfoexception.ExtraAction()
-        if self.m_curturnover:
-            self.newturn()
         self.m_laststate = self.calstatistics()
         self.updatestate(actionpos,action,value)
         if actionpos != self.m_nextplayer:
@@ -402,6 +405,8 @@ class ReplayEngine:
         self.updateflopinformation()
         self.updateturninformation()
         self.updateriverinformation()
+        if self.m_curturnover:
+            self.newturn()
 
     def updatecircle(self):
         if self.m_nextplayer == -1:
