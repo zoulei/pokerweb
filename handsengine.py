@@ -242,7 +242,6 @@ class ReplayEngine:
         # 1. player's range. 2. betlevel. 3. player number and relative pos. 4. raiser. 5. pot. 6. how many player all in.
         self.m_prefloprange = [0] * 10
 
-
     def initinpoolstate(self):
         self.m_inpoolstate = [0]*10
         self.m_preflopposlist = range(self.m_playerquantity - 2,0, -1) + [9,8]
@@ -310,6 +309,13 @@ class ReplayEngine:
         for pos in poslist[::-1]:
             if self.m_inpoolstate[pos] == 1:
                 return pos
+
+    # 1 means good position, 0 means bad position
+    def getrelativepostoopener(self,pos):
+        if self.getpreflopinfomation()["raiser"] > pos:
+            return 1
+        else:
+            return 0
 
     def islastactioner(self, lastplayer):
         if self.m_curturn == 1:
@@ -874,8 +880,6 @@ class ReplayEngine:
         self.update(*self.m_handsinfo.getspecificturnbetdata(round)[actionidx])
         self.m_lastupdateturn = round
         self.m_lastupdateidx = actionidx
-
-
 
 
 class HandsInfo:
