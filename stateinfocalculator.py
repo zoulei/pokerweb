@@ -56,3 +56,47 @@ class StateCalculator(ReplayEngine):
                 total += 1
         return total
 
+    # raiser's stack pot ratio
+    def getraiserstackpotratio(self):
+        myneedtobet = self.m_betvalue - self.m_bethistory[self.m_nextplayer]
+        raisermaxstack = 0
+        realpot = self.m_pot + myneedtobet
+        if self.m_raiser != 0:
+            poslist = range(self.m_raiser,0,-1) + range(9, self.m_raiser,-1)
+        else:
+            poslist = self.getposlist()
+        for pos in poslist:
+            if pos == self.m_nextplayer:
+                break
+            if self.m_inpoolstate[pos] == 0:
+                continue
+            if self.m_stacksize[pos] > raisermaxstack:
+                raisermaxstack = self.m_stacksize[pos]
+        if self.m_stacksize[self.m_nextplayer] - myneedtobet < raisermaxstack:
+            raisermaxstack = self.m_stacksize[self.m_nextplayer] - myneedtobet
+        if raisermaxstack < 0:
+            raisermaxstack = 0
+        return raisermaxstack * 1.0 / realpot
+
+    # players need to bet stack pot ratio
+    def getneedtobetstackratio(self):
+        myneedtobet = self.m_betvalue - self.m_bethistory[self.m_nextplayer]
+        realpot = self.m_pot + myneedtobet
+        targetmaxstack = []
+        if self.m_raiser != 0:
+            poslist = range(self.m_nextplayer -1,0,-1) + range(9, self.m_nextplayer - 1,-1)
+            posidx = poslist.index(self.m_raiser)
+        else:
+            poslist = self.getposlist()[::-1]
+            posidx = poslist.index(self.m_nextplayer)
+        for pos in poslist[:posidx]:
+            if self.m_inpoolstate[pos] != 1:
+                continue
+            targetneedtobet = self.m_betvalue - self.m_bethistory[pos]
+            targetrealpot = realpot + targetneedtobet
+            targetstacksize = min(self.m_stacksize[pos]-targetneedtobet,self.m_stacksize[self.m_nextplayer]-myneedtobet)
+            if targetstacksize < 0:
+                targetstacksize = 0
+            targetmaxstack.append(targetstacksize * 1.0 / targetrealpot)
+        targetmaxstack.sort()
+        return targetmaxstack
