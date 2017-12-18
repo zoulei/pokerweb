@@ -90,6 +90,11 @@ class ReplayEngine:
         self.reset()
 
         self.m_handsrangeobj = prefloprangge()
+        self.initinformation()
+
+    def initinformation(self):
+        self.m_laststate = self.calstatistics()
+        self.updatepreflopinformation()
 
     # this function is called after the preflop is over
     def getpreflopinfomation(self):
@@ -272,6 +277,11 @@ class ReplayEngine:
         self.m_invest[8] += self.m_bb
 
     def newturn(self):
+        self.updatepreflopinformation()
+        self.updateflopinformation()
+        self.updateturninformation()
+        self.updateriverinformation()
+
         self.m_curturn += 1
         self.m_curturnover = False
         self.m_raiser = 0
@@ -342,10 +352,6 @@ class ReplayEngine:
                 return False
 
     def updatecurturnstate(self):
-        # print self.m_handsinfo["_id"]
-        # print "raiser info : ",self.getnextplayer(),self.m_fakeraiser,self.m_raiser
-        # print "stateinfo:",self.m_remainplayer, self.m_allinplayer,self.m_raiser,self.m_fakeraiser,self.getnextplayer()
-
         if self.m_remainplayer == 1:
             self.m_curturnover = True
             return
@@ -407,17 +413,18 @@ class ReplayEngine:
             raise handsinfoexception.ExtraAction()
         self.m_laststate = self.calstatistics()
         self.updatestate(actionpos,action,value)
+        if actionpos == self.m_nextplayer:
+            self.m_lastplayer = self.m_nextplayer
+        self.updatecurturnstate()
         if actionpos != self.m_nextplayer:
             return
-        self.m_lastplayer = self.m_nextplayer
-        self.updatecurturnstate()
         self.m_nextplayer = self.getnextplayer()
         # print "player: ",self.m_lastplayer,self.m_nextplayer, action, value
         self.updatecircle()
         self.updateprefloprange()
-        self.updateflopinformation()
-        self.updateturninformation()
-        self.updateriverinformation()
+        # self.updateflopinformation()
+        # self.updateturninformation()
+        # self.updateriverinformation()
         if self.m_curturnover:
             self.newturn()
 
@@ -495,11 +502,12 @@ class ReplayEngine:
         else:
             self.m_lastattack = 0
 
-        attackvalue = value - self.m_betvalue
-        realpot = self.m_pot + self.m_betvalue - self.m_bethistory[pos]
-        attackrate = attackvalue * 1.0 / realpot
-        self.m_attack += attackrate
-        self.m_totalattack += attackrate
+        if action == 2 or (action == 4 and value - self.m_betvalue >= self.m_raisevalue):
+            attackvalue = value - self.m_betvalue
+            realpot = self.m_pot + self.m_betvalue - self.m_bethistory.get(pos,0)
+            attackrate = attackvalue * 1.0 / realpot
+            self.m_attack += attackrate
+            self.m_totalattack += attackrate
 
         # print "action:",action,value
         if action == 1 or action == -1:
@@ -606,7 +614,6 @@ class ReplayEngine:
                 betbb = int((bb + 0.5 * bb) / bb)
             else:
                 betbb = int((curturnstack + 0.5 * bb) / bb)
-
         else:
             needtobet = self.m_betvalue - self.m_bethistory.get(pos,0)
             if needtobet != 0:
@@ -648,6 +655,7 @@ class ReplayEngine:
             "allin":self.m_allinplayer,
             "normalneedtobet":normalneedtobet,
             "normalpayoff":normalpayoff,
+            "odds":payoffrate,
             "betbb":betbb,
             "circle":self.m_circle,
             "betlevel":self.m_betlevel,
@@ -675,6 +683,9 @@ class ReplayEngine:
                 self.m_prefloprange[self.m_laststate["pos"]] = 1
             self.m_prefloprange[self.m_laststate["pos"]] *= newrange
 
+    def updatepreflopinformation(self):
+        if self.m_laststate["round"] != 1:
+            return
         self.m_preflopraiser = self.m_raiser
         self.m_preflopbetlevel = self.m_betlevel
         self.m_preflopremain = self.m_remainplayer - self.m_allinplayer

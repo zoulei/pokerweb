@@ -134,3 +134,23 @@ HISTOGRAMTHRE = 1
 
 # =========================other==========================================
 THREADNUM = 15
+
+# =========================state related===================================
+ISOPENER = "isopener"
+HASOPENER = "hasopener"
+RELATIVETOOPENER = "relativetoopener"
+TURN = "turn"
+
+RELATIVEPOS = "relativepos"
+
+REMAINTOACT = "remaintoact"
+REMAINRAISER = "remainraiser"
+ODDS = "odds"
+POTSIZE = "potsize"
+INITIALPLAYERQUANTITY = "initialplayerquantity"
+RAISERSTACKVALUE = "raiserstackvalue"
+REMAINSTACKVALUE = "remainstackvalue"
+
+PREFLOPATTACKVALUE = "preflopattackvalue"
+CURRENTATTACKVALUE = "currentattackvalue"
+AFTERFLOPATTACKVALUE = "afterflopattackvalue"
