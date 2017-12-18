@@ -142,6 +142,12 @@ class TraverseHandsEngine(TraverseHands):
     def mainfunc(self, handsinfo):
         handsengine.ReplayEngine(handsinfo).traversealldata()
 
+class TraverseHandsWithReplayEngine(TraverseHands):
+    def filter(self, handsinfo):
+        if handsengine.HandsInfo(handsinfo).getplayerquantity() == 2:
+            return True
+        return False
+
 class TestPayoff(TraverseValidHands):
     def mainfunc(self, handsinfo):
         engine = handsengine.ReplayEngine(handsinfo)
@@ -166,4 +172,4 @@ class TestPayoff(TraverseValidHands):
 if __name__ == "__main__":
     # TraverseHands(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="").traverse()
     # TraverseHandsEngine(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="35357006093039820170327013640").traverse()
-    TestPayoff(Constant.HANDSDB,Constant.HANDSCLT,handsid="",step=1000).traverse()
+    TestPayoff(Constant.HANDSDB,Constant.HANDSCLT,handsid="2017-12-15 00:43:13 84",step=1000).traverse()

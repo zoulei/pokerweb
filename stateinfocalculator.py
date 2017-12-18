@@ -1,8 +1,10 @@
 from handsengine import ReplayEngine
-from TraverseHands import TraverseHands
+from TraverseHands import TraverseHandsWithReplayEngine
 import DBOperater
 import Constant
 import numpy
+import handsinfocommon
+import traceback
 
 class AfterflopState:
     def __init__(self,stateinfo):
@@ -62,6 +64,8 @@ class StateCalculator(ReplayEngine):
     # 1 means the best position, 0 means the worst position
     def relativepos(self,pos):
         total = self.m_remainplayer - self.m_allinplayer
+        if total == 1:
+            return 1
         step = 1.0 / (total - 1)
         initial = - step
         for inpoolpos,state in enumerate(self.m_inpoolstate):
@@ -190,9 +194,17 @@ class StateCalculator(ReplayEngine):
         if round > 1:
             statedata[Constant.PREFLOPATTACKVALUE] = self.getpreflopinfomation()["newattack"]
             statedata[Constant.AFTERFLOPATTACKVALUE] = self.m_totalattack - self.getpreflopinfomation()["newattack"]
-        ReplayEngine.updatecumuinfo(self,round,actionidx)
-        statedata[Constant.ODDS] = self.m_laststate["odds"]
-        [self.m_preflopstate,self.m_flopstate,self.m_turnstate,self.m_riverstate][round-1].append(statedata)
+        else:
+            statedata[Constant.PREFLOPATTACKVALUE] = 0
+            statedata[Constant.AFTERFLOPATTACKVALUE] = 0
+        actionpos = self.m_handsinfo.getspecificturnbetdata(round)[actionidx][0]
+        if actionpos != self.m_nextplayer:
+            [self.m_preflopstate,self.m_flopstate,self.m_turnstate,self.m_riverstate][round-1].append({})
+            ReplayEngine.updatecumuinfo(self,round,actionidx)
+        else:
+            ReplayEngine.updatecumuinfo(self,round,actionidx)
+            statedata[Constant.ODDS] = self.m_laststate["odds"]
+            [self.m_preflopstate,self.m_flopstate,self.m_turnstate,self.m_riverstate][round-1].append(statedata)
 
     def savestatedata(self):
         targetdoc = self.m_handsinfo.m_handsinfo["data"]
@@ -208,9 +220,17 @@ class StateCalculator(ReplayEngine):
         DBOperater.ReplaceOne(Constant.HANDSDB,Constant.STATEINFOHANDSCLT,{"_id":self.m_handsinfo.getid()},self.m_handsinfo.m_handsinfo,True)
 
 def mainfunc(handsinfo):
-    cal = StateCalculator(handsinfo)
-    cal.traversealldata()
-    cal.savestatedata()
+    try:
+        cal = StateCalculator(handsinfo)
+        cal.traversealldata()
+        cal.savestatedata()
+    except:
+        print "===============error=============="
+        print "error : ", handsinfo["_id"]
+        handsinfocommon.pp.pprint(handsinfo)
+        traceback.print_exc()
+        raise
 
 if __name__ == "__main__":
-    TraverseHands(Constant.HANDSDB,Constant.HANDSCLT,sync=True,func=mainfunc,handsid="2017-12-09 23:02:37 88").traverse()
+    # TraverseHandsWithReplayEngine(Constant.HANDSDB,Constant.HANDSCLT,sync=False,func=mainfunc,handsid="2017-12-10 23:32:41 255").traverse()
+    TraverseHandsWithReplayEngine(Constant.HANDSDB,Constant.HANDSCLT,sync=False,func=mainfunc,handsid="").traverse()

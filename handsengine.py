@@ -174,8 +174,6 @@ class ReplayEngine:
                 self.m_stacksize[idx] -= self.m_anti
         self.m_stacksize[8] -= self.m_bb
         self.m_stacksize[9] -= self.m_bb / 2
-        # print "stack:",self.m_stacksize
-
         # pot size
         self.m_pot = self.m_bb + self.m_bb/2 + self.m_anti * self.m_playerquantity
 
@@ -226,7 +224,6 @@ class ReplayEngine:
         # action sequence of pre flop
         self.m_preflopposlist = []
         self.initinpoolstate()
-        # self.initinvest()
 
         # the last player that have taken action
         self.m_lastplayer = 0
@@ -261,6 +258,16 @@ class ReplayEngine:
 
         self.m_attack = 0
         self.m_totalattack = 0
+
+        self.repairstackandpot()
+
+    def repairstackandpot(self):
+        for pos,stackvalue in enumerate(self.m_stacksize):
+            if stackvalue <= 0 and self.m_inpoolstate[pos] == 1:
+                self.m_pot += stackvalue
+                self.m_inpoolstate[pos] = 2
+                self.m_stacksize[pos] = 0
+                self.m_allinplayer += 1
 
     def initinpoolstate(self):
         self.m_inpoolstate = [0]*10
@@ -422,9 +429,6 @@ class ReplayEngine:
         # print "player: ",self.m_lastplayer,self.m_nextplayer, action, value
         self.updatecircle()
         self.updateprefloprange()
-        # self.updateflopinformation()
-        # self.updateturninformation()
-        # self.updateriverinformation()
         if self.m_curturnover:
             self.newturn()
 
