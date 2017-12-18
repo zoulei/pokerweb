@@ -6,38 +6,6 @@ import numpy
 import handsinfocommon
 import traceback
 
-class AfterflopState:
-    def __init__(self,stateinfo):
-        self.m_stateinfo = stateinfo
-
-    def similar(self, other):
-        for attr in [Constant.ISOPENER,Constant.HASOPENER,Constant.RELATIVETOOPENER]:
-            if self.m_stateinfo[attr] != other.m_stateinfo[attr]:
-                return 0
-        attrsimilar = []
-        for attr,weight in [[Constant.RELATIVEPOS,200],]:
-            cursimilar = 1 - (self.m_stateinfo[attr] - other.m_stateinfo[attr])
-            attrsimilar.append([cursimilar,weight])
-        for attr,maxima,weight in [[Constant.REMAINTOACT,0,50],[Constant.REMAINRAISER,0,50],[Constant.ODDS,10,100],
-                            [Constant.POTSIZE,200,100],[Constant.INITIALPLAYERQUANTITY,0,100],
-                            [Constant.RAISERSTACKVALUE,[7,3,3,2][self.m_stateinfo[Constant.TURN]-1],50],
-                            [Constant.REMAINSTACKVALUE,[7,3,3,2][self.m_stateinfo[Constant.TURN]-1],50]]:
-            maxvalue = max(self.m_stateinfo[attr],other.m_stateinfo[attr])
-            if maxima == 0:
-                maxima = maxvalue
-            minvalue = min(self.m_stateinfo[attr],other.m_stateinfo[attr],maxima)
-            maxvalue = min(maxvalue,maxima)
-            cursimilar = (minvalue+1)/(maxvalue+1)
-            attrsimilar.append([cursimilar,weight])
-        for attr,k,maxima,weight in [[Constant.PREFLOPATTACKVALUE,4,3,200],[Constant.CURRENTATTACKVALUE,4,3,200],
-                              [Constant.AFTERFLOPATTACKVALUE,4,3,200]]:
-            myvalue = min(self.m_stateinfo[attr],3)
-            othervalue = min(self.m_stateinfo[attr],3)
-            cursimilar = numpy.exp(-1 * k * abs(myvalue-othervalue))
-            attrsimilar.append([cursimilar,weight])
-        similar = 1.0 * sum([v[0]*v[1] for v in attrsimilar]) / sum([v[1] for v in attrsimilar])
-        return similar
-
 class StateCalculator(ReplayEngine):
     def __init__(self,handsinfo):
         ReplayEngine.__init__(self,handsinfo)
@@ -186,7 +154,7 @@ class StateCalculator(ReplayEngine):
         statedata[Constant.RELATIVEPOS] = self.relativepos(self.m_nextplayer)
         statedata[Constant.REMAINTOACT] = self.playerquantitytoact()
         statedata[Constant.REMAINRAISER] = self.raiserquantity()
-        statedata[Constant.POTSIZE] = self.m_pot
+        statedata[Constant.POTSIZE] = self.m_pot * 1.0 / self.m_bb
         statedata[Constant.INITIALPLAYERQUANTITY] = self.initalplayerquantity(round)
         statedata[Constant.RAISERSTACKVALUE] = self.getraiserstackpotratio()
         statedata[Constant.REMAINSTACKVALUE] = self.getneedtobetstackratio()
@@ -210,13 +178,13 @@ class StateCalculator(ReplayEngine):
         targetdoc = self.m_handsinfo.m_handsinfo["data"]
         targetdoc["STATEINFO"] = {}
         targetdoc = targetdoc["STATEINFO"]
-        targetdoc["PREFLOPSTATE"] = self.m_preflopstate
+        targetdoc["PREFLOP"] = self.m_preflopstate
         if self.m_flopstate:
-            targetdoc["FLOPSTATE"] = self.m_flopstate
+            targetdoc["FLOP"] = self.m_flopstate
         if self.m_turnstate:
-            targetdoc["TURNSTATE"] = self.m_turnstate
+            targetdoc["TURN"] = self.m_turnstate
         if self.m_riverstate:
-            targetdoc["RIVERSTATE"] = self.m_riverstate
+            targetdoc["RIVER"] = self.m_riverstate
         DBOperater.ReplaceOne(Constant.HANDSDB,Constant.STATEINFOHANDSCLT,{"_id":self.m_handsinfo.getid()},self.m_handsinfo.m_handsinfo,True)
 
 def mainfunc(handsinfo):
@@ -231,6 +199,64 @@ def mainfunc(handsinfo):
         traceback.print_exc()
         raise
 
+class StateByExpert:
+    def __init__(self,stateinfo):
+        self.m_stateinfo = stateinfo
+
+    def similar(self, other):
+        # handsinfocommon.pp.pprint(self.m_stateinfo)
+        # handsinfocommon.pp.pprint(other.m_stateinfo)
+        for attr in [Constant.ISOPENER,Constant.HASOPENER,Constant.RELATIVETOOPENER,Constant.TURN]:
+            if self.m_stateinfo[attr] != other.m_stateinfo[attr]:
+                return 0
+        attrsimilar = []
+        for attr,weight in [[Constant.RELATIVEPOS,200],]:
+            cursimilar = 1 - (self.m_stateinfo[attr] - other.m_stateinfo[attr])
+            attrsimilar.append([cursimilar,weight])
+        for attr,maxima,weight in [[Constant.REMAINTOACT,0,50],[Constant.REMAINRAISER,0,50],[Constant.ODDS,10,100],
+                            [Constant.POTSIZE,200,100],[Constant.INITIALPLAYERQUANTITY,0,100],
+                            [Constant.RAISERSTACKVALUE,[7,3,3,2][self.m_stateinfo[Constant.TURN]-1],50],
+                            [Constant.REMAINSTACKVALUE,[7,3,3,2][self.m_stateinfo[Constant.TURN]-1],50]]:
+            maxvalue = max(self.m_stateinfo[attr],other.m_stateinfo[attr])
+            if maxima == 0:
+                maxima = maxvalue
+            minvalue = min(self.m_stateinfo[attr],other.m_stateinfo[attr],maxima)
+            maxvalue = min(maxvalue,maxima)
+            cursimilar = (minvalue+1)/(maxvalue+1)
+            attrsimilar.append([cursimilar,weight])
+        for attr,k,maxima,weight in [[Constant.PREFLOPATTACKVALUE,4,3,200],[Constant.CURRENTATTACKVALUE,4,3,200],
+                              [Constant.AFTERFLOPATTACKVALUE,4,3,200]]:
+            myvalue = min(self.m_stateinfo[attr],3)
+            othervalue = min(self.m_stateinfo[attr],3)
+            cursimilar = numpy.exp(-1 * k * abs(myvalue-othervalue))
+            attrsimilar.append([cursimilar,weight])
+        similar = 1.0 * sum([v[0]*v[1] for v in attrsimilar]) / sum([v[1] for v in attrsimilar])
+        return similar
+
+class StateReaderEngine(ReplayEngine):
+    def getspecificturnstatedata(self,turn):
+        return self.m_handsinfo.m_handsinfo["data"]["STATEINFO"].get(self.m_handsinfo.getturnstr(turn),[])
+
+    def getstate(self,turn, actionidx):
+        return StateByExpert(self.getspecificturnstatedata(turn)[actionidx])
+
+def teststatesimilarity():
+    targethandsid = "2017-12-09 23:02:37 88"
+    result = DBOperater.Find(Constant.HANDSDB,Constant.STATEINFOHANDSCLT,{"_id":targethandsid})
+    targetstatereader = StateReaderEngine(result.next())
+    turn = 2
+    targetstate = targetstatereader.getstate(turn,0)
+
+    result1 = DBOperater.Find(Constant.HANDSDB,Constant.STATEINFOHANDSCLT,{})
+    for doc in result1:
+        curstatereader = StateReaderEngine(doc)
+        if curstatereader.m_handsinfo.getplayerquantity() == 2:
+            continue
+        for idx,statedata in enumerate(curstatereader.getspecificturnstatedata(turn)):
+            print curstatereader.m_handsinfo.getid(),"\t",idx,":",StateByExpert(statedata).similar(targetstate)
+            raw_input()
+
 if __name__ == "__main__":
     # TraverseHandsWithReplayEngine(Constant.HANDSDB,Constant.HANDSCLT,sync=False,func=mainfunc,handsid="2017-12-10 23:32:41 255").traverse()
-    TraverseHandsWithReplayEngine(Constant.HANDSDB,Constant.HANDSCLT,sync=False,func=mainfunc,handsid="").traverse()
+    # TraverseHandsWithReplayEngine(Constant.HANDSDB,Constant.HANDSCLT,sync=False,func=mainfunc,handsid="").traverse()
+    teststatesimilarity()

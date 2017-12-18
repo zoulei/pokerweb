@@ -942,6 +942,9 @@ class HandsInfo:
         self.initprivatehand()
         self.initboard()
 
+    def getturnstr(self,turn):
+        return self.TURNSTR[turn - 1]
+
     def getid(self):
         return self.m_handsinfo["_id"]
 
