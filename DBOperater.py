@@ -12,7 +12,8 @@ client = None
 def Connect():
     global client
     if not client:
-        client = MongoClient("mongodb://"+DBUSERNAME+":"+DBPWD+"@"+MONGOHOST+":"+str(MONGOPORT)+"/?authSource="+AUTHDBNAME,connect=False)
+        # client = MongoClient("mongodb://"+DBUSERNAME+":"+DBPWD+"@"+MONGOHOST+":"+str(MONGOPORT)+"/?authSource="+AUTHDBNAME,connect=False)
+        client = MongoClient("mongodb://"+DBUSERNAME+":"+DBPWD+"@"+MONGOHOST+"/?authSource="+AUTHDBNAME,connect=False)
 
 def Disconnect():
     global client

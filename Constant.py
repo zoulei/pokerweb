@@ -1,14 +1,18 @@
-MONGOHOST = '192.168.112.111'
+# MONGOHOST = '192.168.112.111'
+MONGOHOST = '192.168.66.1'
 #MONGOHOST = 'localhost'
-MONGOPORT = 27017
-DBUSERNAME = 'root'
-DBPWD = "123459"
+# MONGOPORT = 27017
+# DBUSERNAME = 'root'
+# DBPWD = "123459"
+DBUSERNAME = 'cltreedb'
+DBPWD = "Wv8Yg5gJD"
 AUTHDBNAME = "admin"
 
 LOGINDB = "pmdb"
 LOGINCLT = "loginclt"
 
-HANDSDB = "handsdb"
+# HANDSDB = "handsdb"
+HANDSDB = "cltreedb"
 HANDSCLT = "handsclt"
 STATEINFOHANDSCLT = "stateinfohandsclt"
 
