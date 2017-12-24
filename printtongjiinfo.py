@@ -132,8 +132,8 @@ def printcollectgamedata():
     keylist = doc.keys()
     keylist.sort(key = lambda v:int(v))
     for key in keylist:
-        curtime = time.gmtime(doc[key]["time"])
-        print key,"\t",curtime.tm_mday,"\t",curtime.tm_hour
+        curtime = time.localtime(doc[key]["time"])
+        print key,"\t",curtime.tm_mday,"\t",curtime.tm_hour,doc[key]["phoneid"]
 
 def printgameseqdata():
     result = DBOperater.Find(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":Constant.getphoneid(sys.argv[2])})
@@ -145,7 +145,7 @@ def printgameseqdata():
     keylist = doc.keys()
     keylist.sort(key = lambda v:int(v))
     for key in keylist:
-        curtime = time.gmtime(doc[key])
+        curtime = time.localtime(doc[key])
         print key,"\t",curtime.tm_mday,"\t",curtime.tm_hour
 
 def printmisscollectgameseq():
@@ -166,7 +166,7 @@ def printmisscollectgameseq():
     newdoc = newdoc["data"]
     for key in keylist:
         if key in newdoc:
-            curtime = time.gmtime(doc[key])
+            curtime = time.localtime(doc[key])
             print key,"\t",curtime.tm_mday,"\t",curtime.tm_hour
 
 if __name__ == "__main__":
