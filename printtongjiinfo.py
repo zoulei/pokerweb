@@ -148,6 +148,27 @@ def printgameseqdata():
         curtime = time.gmtime(doc[key])
         print key,"\t",curtime.tm_mday,"\t",curtime.tm_hour
 
+def printmisscollectgameseq():
+    result = DBOperater.Find(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":Constant.getphoneid(sys.argv[2])})
+    if result.count() == 0:
+        print "no data"
+        return
+    doc = result.next()
+    doc = doc["data"]
+    keylist = doc.keys()
+    keylist.sort(key = lambda v:int(v))
+
+    result = DBOperater.Find(Constant.HANDSDB,Constant.COLLECTGAMECLT,{})
+    if result.count() == 0:
+        print "no data"
+        return
+    newdoc = result.next()
+    newdoc = newdoc["data"]
+    for key in keylist:
+        if key in newdoc:
+            curtime = time.gmtime(doc[key])
+            print key,"\t",curtime.tm_mday,"\t",curtime.tm_hour
+
 if __name__ == "__main__":
     # totalplayer()
     # playerhandsdis()
@@ -160,5 +181,7 @@ if __name__ == "__main__":
         printcollectgamedata()
     elif sys.argv[1] == "2":
         printgameseqdata()
+    elif sys.argv[1] == "3":
+        printmisscollectgameseq()
     else:
         printhandsinfo(sys.argv[1])
