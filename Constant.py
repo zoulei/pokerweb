@@ -158,3 +158,22 @@ REMAINSTACKVALUE = "remainstackvalue"
 PREFLOPATTACKVALUE = "preflopattackvalue"
 CURRENTATTACKVALUE = "currentattackvalue"
 AFTERFLOPATTACKVALUE = "afterflopattackvalue"
+
+# ============================phone related=================================
+def getphoneid(phonecolor):
+    if phonecolor == "b":
+        return "353570060047458"
+    elif phonecolor == "w":
+        return "358584050326264"
+    elif phonecolor == "r":
+        return "353570060930398"
+    return "NA"
+
+def getphonecolor(phoneid):
+    if phoneid == "353570060047458":
+        return "b"
+    elif phoneid == "358584050326264":
+        return "w"
+    elif phoneid == "353570060930398":
+        return "r"
+    return "NA"

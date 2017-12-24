@@ -3,6 +3,7 @@ import Constant
 import pprint
 import handsinfocommon
 import sys
+import time
 
 def totalplayer():
     result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":"player"})
@@ -121,6 +122,32 @@ def printplayerquantitydis():
     for key, value in doclen.items():
         print key,":",value * 1.0 / totaldoc * 100
 
+def printcollectgamedata():
+    result = DBOperater.Find(Constant.HANDSDB,Constant.COLLECTGAMECLT,{})
+    if result.count() == 0:
+        print "no data"
+        return
+    doc = result.next()
+    doc = doc["data"]
+    keylist = doc.keys()
+    keylist.sort(key = lambda v:int(v))
+    for key in keylist:
+        curtime = time.gmtime(doc[key]["time"])
+        print key,"\t",curtime.tm_mday,"\t",curtime.tm_hour
+
+def printgameseqdata():
+    result = DBOperater.Find(Constant.HANDSDB,Constant.GAMESEQCLT,{"_id":Constant.getphoneid(sys.argv[2])})
+    if result.count() == 0:
+        print "no data"
+        return
+    doc = result.next()
+    doc = doc["data"]
+    keylist = doc.keys()
+    keylist.sort(key = lambda v:int(v))
+    for key in keylist:
+        curtime = time.gmtime(doc[key])
+        print key,"\t",curtime.tm_mday,"\t",curtime.tm_hour
+
 if __name__ == "__main__":
     # totalplayer()
     # playerhandsdis()
@@ -128,5 +155,10 @@ if __name__ == "__main__":
     # printdatalen6()
     #  printcombinationinfo()
     # preflopftdata()
-    printhandsinfo(sys.argv[1])
     # printplayerquantitydis()
+    if sys.argv[1] == "1":
+        printcollectgamedata()
+    elif sys.argv[1] == "2":
+        printgameseqdata()
+    else:
+        printhandsinfo(sys.argv[1])
