@@ -417,6 +417,7 @@ class ReplayEngine:
     def update(self,actionpos,action,value):
         if self.isgameover():
             print "game has over"
+            handsinfocommon.pp.pprint(self.m_handsinfo.m_handsinfo)
             raise handsinfoexception.ExtraAction()
         self.m_laststate = self.calstatistics()
         self.updatestate(actionpos,action,value)

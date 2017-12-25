@@ -155,16 +155,27 @@ class StateCalculator(ReplayEngine):
         statedata[Constant.REMAINTOACT] = self.playerquantitytoact()
         statedata[Constant.REMAINRAISER] = self.raiserquantity()
         statedata[Constant.POTSIZE] = self.m_pot * 1.0 / self.m_bb
-        statedata[Constant.INITIALPLAYERQUANTITY] = self.initalplayerquantity(round)
+        # statedata[Constant.INITIALPLAYERQUANTITY] = self.initalplayerquantity(round)
         statedata[Constant.RAISERSTACKVALUE] = self.getraiserstackpotratio()
         statedata[Constant.REMAINSTACKVALUE] = self.getneedtobetstackratio()
         statedata[Constant.CURRENTATTACKVALUE] = self.m_attack
+        statedata[Constant.PREFLOPINITALPQ] = self.m_playerquantity
         if round > 1:
             statedata[Constant.PREFLOPATTACKVALUE] = self.getpreflopinfomation()["newattack"]
             statedata[Constant.AFTERFLOPATTACKVALUE] = self.m_totalattack - self.getpreflopinfomation()["newattack"]
+            statedata[Constant.FLOPINITALPQ] = self.getpreflopinfomation()["remain"] + self.getpreflopinfomation()["allin"]
         else:
             statedata[Constant.PREFLOPATTACKVALUE] = 0
             statedata[Constant.AFTERFLOPATTACKVALUE] = 0
+            statedata[Constant.FLOPINITALPQ] = 0
+        if round > 2:
+            statedata[Constant.TURNINITALPQ] = self.getflopinformation()["remain"] + self.getflopinformation()["allin"]
+        else:
+            statedata[Constant.TURNINITALPQ] = 0
+        if round > 3:
+            statedata[Constant.RIVERINITALPQ] = self.getturninformation()["remain"] + self.getturninformation()["allin"]
+        else:
+            statedata[Constant.RIVERINITALPQ] = 0
         actionpos = self.m_handsinfo.getspecificturnbetdata(round)[actionidx][0]
         if actionpos != self.m_nextplayer:
             [self.m_preflopstate,self.m_flopstate,self.m_turnstate,self.m_riverstate][round-1].append({})
@@ -214,9 +225,11 @@ class StateByExpert:
             cursimilar = 1 - (self.m_stateinfo[attr] - other.m_stateinfo[attr])
             attrsimilar.append([cursimilar,weight])
         for attr,maxima,weight in [[Constant.REMAINTOACT,0,50],[Constant.REMAINRAISER,0,50],[Constant.ODDS,10,100],
-                            [Constant.POTSIZE,200,100],[Constant.INITIALPLAYERQUANTITY,0,100],
+                            [Constant.POTSIZE,200,100],#[Constant.INITIALPLAYERQUANTITY,0,100],
                             [Constant.RAISERSTACKVALUE,[7,3,3,2][self.m_stateinfo[Constant.TURN]-1],50],
-                            [Constant.REMAINSTACKVALUE,[7,3,3,2][self.m_stateinfo[Constant.TURN]-1],50]]:
+                            [Constant.REMAINSTACKVALUE,[7,3,3,2][self.m_stateinfo[Constant.TURN]-1],50],
+                            [Constant.PREFLOPINITALPQ,0,200],[Constant.FLOPINITALPQ,0,200],
+                            [Constant.TURNINITALPQ,0,200],[Constant.RIVERINITALPQ,0,200]]:
             maxvalue = max(self.m_stateinfo[attr],other.m_stateinfo[attr])
             if maxima == 0:
                 maxima = maxvalue
@@ -258,5 +271,5 @@ def teststatesimilarity():
 
 if __name__ == "__main__":
     # TraverseHandsWithReplayEngine(Constant.HANDSDB,Constant.HANDSCLT,sync=False,func=mainfunc,handsid="2017-12-10 23:32:41 255").traverse()
-    # TraverseHandsWithReplayEngine(Constant.HANDSDB,Constant.HANDSCLT,sync=False,func=mainfunc,handsid="").traverse()
-    teststatesimilarity()
+    TraverseHandsWithReplayEngine(Constant.HANDSDB,Constant.HANDSCLT,sync=False,func=mainfunc,handsid="").traverse()
+    # teststatesimilarity()

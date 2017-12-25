@@ -5,7 +5,7 @@ import copy
 import believeinterval
 import math
 import tongjihandsinfo
-from handsengine import HandsInfo
+from handsengine import ReplayEngine
 from TraverseHands import TraverseValidHands
 import handsengine
 import pprint
@@ -238,29 +238,16 @@ class JoinrateRepairer:
 
                 repairedcalldata = self.getbestpayoffratedata(believeintervaldata[pos][betbb],joinratedata[pos][betbb],"call")
                 repairedraisedata = self.getbestpayoffratedata(believeintervaldata[pos][betbb],joinratedata[pos][betbb],"raise")
-                # if pos == "9" and betbb == "24":
-                #     print "+"*100
-                #     print repairedcalldata
-                #     print repairedraisedata
-                #     pp.pprint(believeintervaldata[pos][betbb])
-                #     pp.pprint(joinratedata[pos][betbb])
-                #     pp.pprint(betbbdata)
                 self.insertrepaireddata(betbbdata,repairedcalldata,"call")
                 self.insertrepaireddata(betbbdata,repairedraisedata,"raise")
                 self.calfoldrate(betbbdata)
-                # print "betbbdata"
-                # pp.pprint( betbbdata)
-                # print "repairedcalldata: ",repairedcalldata
-                # print "repairedraisedata: ",repairedraisedata
 
-
-
-class Preflopstatemachine(HandsInfo):
+class Preflopstatemachine(ReplayEngine):
     def __init__(self,handsinfo,debug= False):
-        HandsInfo.__init__(self,handsinfo)
+        ReplayEngine.__init__(self,handsinfo)
+        if self.m_playerquantity < 6:
+            return
         self.m_debug = debug
-	if not self.isvalid():
-	    return
         self.retrivedoc()
         self.calstate()
         if not debug:
@@ -280,14 +267,13 @@ class Preflopstatemachine(HandsInfo):
             }
         else:
             prefloprange = result.next()
-
         self.m_doc = prefloprange
 
     def savedoc(self):
         DBOperater.ReplaceOne(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC},self.m_doc,True)
 
     def generatestate(self):
-        laststate = self.m_cumuinfo.getlaststate()
+        laststate = self.getlaststate()
         circle = laststate["circle"]
         betlevel = laststate["betlevel"]
         relativepos = laststate["relativepos"]
@@ -298,8 +284,6 @@ class Preflopstatemachine(HandsInfo):
 
         field = Constant.getprefloprangefield(circle,betlevel)
         targetdoc = self.m_doc[field]
-        # if circle > 2:
-        #     print self.m_handsinfo["_id"]
         if circle == 1 and betlevel < 3:
             flkey = str(pos)
             slkey = str(betbb)
@@ -310,23 +294,16 @@ class Preflopstatemachine(HandsInfo):
             tlkey = str(normalpayoff)
 
         handsinfocommon.completedict(targetdoc, flkey, slkey, tlkey)
-        # print "===============",circle,betlevel
-        # print flkey,slkey,tlkey
-        # handsinfocommon.pp.pprint( targetdoc)
         targetdoc = targetdoc[flkey][slkey][tlkey]
 
-        lastaction,lastattack = self.m_cumuinfo.getlastaction()
-        realaction = self.m_cumuinfo.actiontransfer(lastaction)
+        lastaction,lastattack = self.getlastaction()
+        realaction = self.actiontransfer(lastaction)
         if realaction:
             targetdoc[realaction] += 1
             targetdoc["sum"] += 1
 
-        # print realaction
-        # handsinfocommon.pp.pprint(laststate)
-        # handsinfocommon.pp.pprint( self.m_doc)
-
     def calstate(self):
-        preflopdata = self.getpreflopbetdata()
+        preflopdata = self.m_handsinfo.getpreflopbetdata()
         for idx in xrange(len(preflopdata)):
             self.updatecumuinfo(1, idx)
             self.generatestate()
@@ -385,7 +362,7 @@ def removepreflopdoc():
     DBOperater.DeleteData(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
 
 def tongjiftmain():
-    result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,{})
+    result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
     doclen =  result.count()
 
     iternum = doclen / 10000 + 1
@@ -393,7 +370,7 @@ def tongjiftmain():
         tongjiftmain_(idx)
 
 def tongjiftmain_(idx):
-    result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,{})
+    result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
     # result = DBOperater.Find(Constant.HANDSDB,Constant.TJHANDSCLT,
     #                         {"_id":"35858405032626420170603224833"})
 
@@ -415,9 +392,9 @@ def tongjiftmain_(idx):
     for handsinfo in doclist:
         Preflopstatemachine(handsinfo)
 
-class TestRangeAccuracy(HandsInfo):
+class TestRangeAccuracy(ReplayEngine):
     def __init__(self,handsinfo):
-        HandsInfo.__init__(self, handsinfo)
+        ReplayEngine.__init__(self, handsinfo)
 
         self.m_rangeengine = handsengine.prefloprangge()
 
@@ -426,10 +403,10 @@ class TestRangeAccuracy(HandsInfo):
 
         correct = 0
         wrong = 0
-        for pos, pvhand in enumerate(self.getprivatehands()):
+        for pos, pvhand in enumerate(self.m_handsinfo.getprivatehands()):
             if not pvhand:
                 continue
-            joinrate = self.m_cumuinfo.m_prefloprange[pos]
+            joinrate = self.m_prefloprange[pos]
             joinrate += 0.00001
             if pvhand in self.m_rangeengine.gethandsinrange(joinrate):
                 correct += 1
