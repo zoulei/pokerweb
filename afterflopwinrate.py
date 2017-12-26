@@ -104,7 +104,21 @@ class FnameManager:
     def getftbetdatafnamerawstatekey(self, statekey):
         self.getfname(statekey)
 
+# this is the histogram for the winratedata of one more card
 class WinrateHistogram:
+    # winratedata is a list of winrate for one more card
+    # handinfo is some extra information, which is a dict, handinfo["winrate"]
+    # is the current winrate of the hand
+    # handinfo = {
+    #             "id" : self.getid(),
+    #             "board" : curboard,
+    #             "pos" : pos,
+    #             "range" : self.m_cumuinfo.m_prefloprange,
+    #             "inpool" : self.m_cumuinfo.m_inpoolstate,
+    #             "hand" : curhand,
+    #             "winrate" : curwinrate,
+    #             "attack"  : self.m_cumuinfo.m_lastattack,
+    #         }
     def __init__(self, winratedata = None, handinfo = None, winratestr = ""):
         winratedata.sort(reverse=True)
         self.m_handinfo = handinfo

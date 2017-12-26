@@ -18,6 +18,16 @@ class HandsDisQuality:
             self.m_handsdis[key] = other.m_handsdis[key]
         return self
 
+    def getvalidhands(self):
+        handslist = self.m_handsdis.keys()
+        return [v for v in handslist if self.m_handsdis[v] != 0]
+
+    def removecard(self,card):
+        handslist = self.m_handsdis.keys()
+        for hand in handslist:
+            if card in hand.get():
+                self.m_handsdis[hand] = 0
+
     # make the sum of probability be 1
     def normalize(self):
         total = sum(self.m_handsdis.values())
@@ -49,6 +59,3 @@ class HandsDisQuality:
         dislist.sort(key=lambda v:v[1],reverse=True)
         for hand, value in dislist:
             print hand, "\t",value
-
-    # def getquality(self):
-    #     pass
