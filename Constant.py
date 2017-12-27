@@ -137,7 +137,7 @@ CURWINRATETHRE = 0.05
 HISTOGRAMTHRE = 1
 
 # =========================hands power related===========================
-CURWINRATEDIFFRATE = 0.5
+CURWINRATEDIFFRATE = 0.0005
 
 # =========================other==========================================
 THREADNUM = 15

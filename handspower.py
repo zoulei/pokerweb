@@ -38,7 +38,8 @@ class HandPower:
 
     def __sub__(self, other):
         try:
-            return earthmover.EMD(self.m_data,other.m_data) + Constant.CURWINRATEDIFFRATE * abs(self.m_curwinrate - other.m_curwinrate)
+            return earthmover.EMD(self.m_data,other.m_data) + \
+                   Constant.CURWINRATEDIFFRATE * abs(self.m_curwinrate - other.m_curwinrate) * max(self.m_curwinrate,other.m_curwinrate)
         except:
             print "WinrateHistogram error : "
             print self.m_data
@@ -52,6 +53,27 @@ class HandPower:
             "winratehis"    :   self.m_data,
         }
         return json.dumps(doc)
+
+def testhandpower():
+    import handsengine
+    rangenum = 0.3
+    handsrangeobj = handsengine.prefloprangge()
+    ophandsrange = handsrangeobj.gethandsinrange(rangenum)
+    board =  hunlgame.generateCards("ASTS4H")
+    winratedata = []
+    for hand in ophandsrange:
+        curwinrate = winratecalculator.WinrateCalculator(board,hand,handsdistribution.HandsDisQuality(ophandsrange)).calmywinrate()
+        winratedata.append([hand,curwinrate])
+    winratedata.sort(key=lambda v:v[1],reverse=True)
+    winratedata = [v for v in winratedata if v[1] != -1]
+    # for hand,winrate in winratedata:
+    #     print hand,winrate
+    # return
+    for hand, winrate in winratedata:
+        print "===========",rangenum,hunlgame.board2str(board),"==============="
+        for hand1, winrate1 in winratedata:
+            print hand,"\t",hand1,"\t",abs(winrate-winrate1)*max(winrate,winrate1)*100
+        raw_input()
 
 class RandomHandPower(HandPower):
     def __init__(self, turn = 2, opponentqt = 1):
@@ -142,4 +164,5 @@ def testrandompower():
             raw_input()
 
 if __name__ == "__main__":
-    testrandompower()
+    # testrandompower()
+    testhandpower()

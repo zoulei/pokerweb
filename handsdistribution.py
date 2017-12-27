@@ -6,6 +6,9 @@ class HandsDisQuality:
     def __init__(self,dis = None):
         if dis is None:
             self.m_handsdis = {}
+        elif isinstance(dis, list):
+            self.m_handsdis = dict(zip(dis,[1]*len(dis)))
+            self.normalize()
         else:
             self.m_handsdis = dis
 
@@ -33,7 +36,7 @@ class HandsDisQuality:
 
     # make the sum of probability be 1
     def normalize(self):
-        total = sum(self.m_handsdis.values())
+        total = sum(self.m_handsdis.values()) * 1.0
         for key in self.m_handsdis.keys():
             self.m_handsdis[key] /= total
 

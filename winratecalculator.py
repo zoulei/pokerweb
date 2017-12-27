@@ -7,7 +7,10 @@ class WinrateCalculator:
     def __init__(self, board, myhand, ophands, equalvalue = 0.5):
         self.m_board = board
         self.m_myhands = myhand
-        self.m_ophands = ophands
+        if isinstance(ophands,list):
+            self.m_ophands = ophands
+        else:
+            self.m_ophands = [ophands,]
         self.m_equalvalue = equalvalue
         self.m_pokerengine = Poker()
 
