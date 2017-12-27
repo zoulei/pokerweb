@@ -18,6 +18,9 @@ class HandsDisQuality:
             self.m_handsdis[key] = other.m_handsdis[key]
         return self
 
+    def __getitem__(self, key):
+        return self.m_handsdis.get(key, 0)
+
     def getvalidhands(self):
         handslist = self.m_handsdis.keys()
         return [v for v in handslist if self.m_handsdis[v] != 0]

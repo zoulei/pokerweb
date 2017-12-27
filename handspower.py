@@ -93,4 +93,53 @@ class RandomHandPower(HandPower):
         self.randomrange(handslist[handslen/ 2:],p2)
 
 def testrandompower():
-    pass
+    hplist = []
+    while True:
+        tmprhp = RandomHandPower()
+        for hp in hplist:
+            print tmprhp - hp
+            # if tmprhp - hp < 0.2:
+            #     break
+        else:
+            hplist.append(tmprhp)
+        print len(hplist)
+        if len(hplist) == 150:
+            break
+        raw_input()
+    return
+    import DBOperater, handsengine
+    result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
+    for doc in result:
+        replay = handsengine.ReplayEngine(doc)
+        if replay.m_handsinfo.getturncount() == 1:
+            continue
+        replay.traversepreflop()
+        preflopinfo = replay.getpreflopinfomation()
+        if preflopinfo["remain"] != 2 or preflopinfo["allin"] != 0:
+            continue
+        playerrange = preflopinfo["range"]
+        rangelist = []
+        for state, rangenum in zip(replay.m_inpoolstate, playerrange):
+            if state == 1:
+                rangelist.append(replay.m_handsrangeobj.gethandsinrange(rangenum))
+        myhanddis = dict(zip(rangelist[0],[1] * len(rangelist[0])))
+        myhanddis = handsdistribution.HandsDisQuality(myhanddis)
+        myhanddis.normalize()
+        ophanddis = dict(zip(rangelist[1],[1] * len(rangelist[1])))
+        ophanddis = handsdistribution.HandsDisQuality(ophanddis)
+        ophanddis.normalize()
+        for hand in rangelist[0]:
+            curhp = HandPower(hand,[ophanddis,],replay.getcurboard())
+            dislist = [curhp - v for v in hplist]
+            dislist.sort()
+            print dislist
+            raw_input()
+        for hand in rangelist[1]:
+            curhp = HandPower(hand,[myhanddis,],replay.getcurboard())
+            dislist = [curhp - v for v in hplist]
+            dislist.sort()
+            print dislist
+            raw_input()
+
+if __name__ == "__main__":
+    testrandompower()

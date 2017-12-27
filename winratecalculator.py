@@ -1,6 +1,7 @@
 from hunlgame import Poker,HandsRange
 import hunlgame
 import copy
+import handsinfocommon
 
 class WinrateCalculator:
     def __init__(self, board, myhand, ophands, equalvalue = 0.5):
@@ -15,33 +16,34 @@ class WinrateCalculator:
         for ophands in ophandslist:
             keylist = ophands.getvalidhands()
             fullhand = [myhand,] + list(keylist)
-            handinfo = []
-            for hand in fullhand:
-                handinfo.append(hand.get())
-            results = hunlgame.sorthands_(board, fullhand)
-            if 0 in results[1]:
+            # handinfo = []
+            # for hand in fullhand:
+            #     handinfo.append(hand.get())
+            results = hunlgame.sorthands_(board, [v.get() for v in fullhand])
+            resultkeylist = results.keys()
+            resultkeylist.sort()
+            maxkey = resultkeylist[-1]
+            if 0 in results[maxkey]:
                 return 1
-
             winrate = 0
-            for idx in xrange(2000):
+            for idx in resultkeylist:
                 curhandidxlist = results[idx]
                 if 0 in curhandidxlist:
-                    for hand in curhandidxlist:
-                        if hand == myhand:
+                    for handidx in curhandidxlist:
+                        if handidx == 0:
                             continue
-                        winrate += ophands[hand] * self.m_equalvalue
+                        winrate += ophands[fullhand[handidx]] * self.m_equalvalue
                     break
                 else:
-                    for hand in curhandidxlist:
-                        winrate += ophands[hand]
+                    for handidx in curhandidxlist:
+                        winrate += ophands[fullhand[handidx]]
             totalwinrate *= winrate
         return totalwinrate
 
     def calmywinrate_(self, board, myhand, ophands):
         for card in board:
-            for idx in xrange(len(myhand) - 1, -1, -1):
-                if card in myhand[idx].get():
-                    del myhand[idx]
+            if card in myhand.get():
+                return -1
             for handdis in ophands:
                 handdis.removecard(card)
         for card in myhand.get():
