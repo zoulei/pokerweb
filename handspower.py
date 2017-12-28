@@ -54,7 +54,7 @@ class HandPower:
         }
         return json.dumps(doc)
 
-def testhandpower():
+def testcurwinrate():
     import handsengine
     rangenum = 0.3
     handsrangeobj = handsengine.prefloprangge()
@@ -74,6 +74,26 @@ def testhandpower():
         for hand1, winrate1 in winratedata:
             print hand,"\t",hand1,"\t",abs(winrate-winrate1)*max(winrate,winrate1)*100
         raw_input()
+
+def testwinratestack():
+    import handsengine
+    boardlist = ["ASTS4H","ASTC4H","ASTS4S","ASKCJH","AS7C6H","AS7H6H","8S6C3H","8S7C6H","KSJC4H",
+                 "JSTC5H","JSTS5H","ASACJH","8S8C4H","8S8C8H","8S8C7C"]
+    boardlist = [hunlgame.generateCards(v) for v in boardlist]
+    rangenum = 0.3
+    handsrangeobj = handsengine.prefloprangge()
+    ophandsrange = handsrangeobj.gethandsinrange(rangenum)
+    myhand = hunlgame.generateHands("2S5S")
+    hplist = []
+    for board in boardlist:
+        hplist.append(HandPower(myhand,handsdistribution.HandsDisQuality(ophandsrange),board))
+    for board, hp in zip(boardlist,hplist):
+        diflist = []
+        for board1, hp1 in zip(boardlist,hplist):
+            diflist.append([board1,board,hp-hp1])
+        diflist.sort(key=lambda v:v[2])
+        for a,b,c in diflist:
+            print hunlgame.board2str(a),"\t",hunlgame.board2str(b),"\t",c
 
 class RandomHandPower(HandPower):
     def __init__(self, turn = 2, opponentqt = 1):
@@ -120,14 +140,14 @@ def testrandompower():
         tmprhp = RandomHandPower()
         for hp in hplist:
             print tmprhp - hp
-            # if tmprhp - hp < 0.2:
-            #     break
+            if tmprhp - hp < 2:
+                break
         else:
             hplist.append(tmprhp)
-        print len(hplist)
-        if len(hplist) == 150:
-            break
-        raw_input()
+        print "===============\t",len(hplist)
+        # if len(hplist) == 150:
+        #     break
+        # raw_input()
     return
     import DBOperater, handsengine
     result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
@@ -165,4 +185,5 @@ def testrandompower():
 
 if __name__ == "__main__":
     # testrandompower()
-    testhandpower()
+    # testcurwinrate()
+    testwinratestack()
