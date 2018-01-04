@@ -140,10 +140,11 @@ def testrandompower():
         tmprhp = RandomHandPower()
         for hp in hplist:
             print tmprhp - hp
-            if tmprhp - hp < 2:
+            if tmprhp - hp < 0.5:
                 break
         else:
             hplist.append(tmprhp)
+            json.dump([str(v) for v in hplist],open("tmpresult/randompower","w"))
         print "===============\t",len(hplist)
         # if len(hplist) == 150:
         #     break
@@ -184,6 +185,6 @@ def testrandompower():
             raw_input()
 
 if __name__ == "__main__":
-    # testrandompower()
+    testrandompower()
     # testcurwinrate()
-    testwinratestack()
+    # testwinratestack()
