@@ -150,6 +150,9 @@ def testrandompower():
         #     break
         # raw_input()
     return
+
+def testrandompowerquality():
+    hplist = [HandPower(winratestr=v) for v in  json.load(open("tmpresult/randompower"))]
     import DBOperater, handsengine
     result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
     for doc in result:
@@ -185,6 +188,7 @@ def testrandompower():
             raw_input()
 
 if __name__ == "__main__":
-    testrandompower()
+    # testrandompower()
+    testrandompowerquality
     # testcurwinrate()
     # testwinratestack()
