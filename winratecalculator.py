@@ -1,20 +1,41 @@
+#-*- coding:utf-8 -*-
 from hunlgame import Poker,HandsRange
 import hunlgame
 import copy
 import handsinfocommon
 
 class WinrateCalculator:
-    def __init__(self, board, myhand, ophands, equalvalue = 0.5):
-        self.m_board = board
-        self.m_myhands = myhand
-        if isinstance(ophands,list):
-            self.m_ophands = ophands
-        else:
-            self.m_ophands = [ophands,]
+    # rangestate is a object of class handsdistribution.RangeState
+    def __init__(self, rangestate, equalvalue = 0.5):
+        self.m_board = rangestate.m_board
+        self.m_myhands = rangestate.m_myhands
+        self.m_ophands = rangestate.m_ophands
         self.m_equalvalue = equalvalue
         self.m_pokerengine = Poker()
+        self.m_valid = True
+        self.checkparavalid()
+
+    # 检查一下输入的数据是否有错误,主要是看我的手牌和牌面上的牌是否有重复,
+    # 并检查对手的手牌中除掉牌面上的牌之后是否还有剩余的手牌,如果除掉无效的手牌之后对手的range为空胜率也没法计算
+    def checkparavalid(self):
+        for card in self.m_board:
+            if card in self.m_myhands.get():
+                # 我的手牌与牌面冲突了
+                self.m_valid = False
+                return False
+        for card in self.m_board + self.m_myhands.get():
+            for handsdis in self.m_ophands:
+                handsdis.removecard(card)
+        for handsdis in self.m_ophands:
+            if not handsdis.normalize():
+                # 有对手的range为空了
+                self.m_valid = False
+                return False
+        return True
 
     def calmywinrate__(self, board, myhand, ophandslist):
+        if not self.m_valid:
+            return -1
         totalwinrate = 1.0
         for ophands in ophandslist:
             keylist = ophands.getvalidhands()
@@ -43,26 +64,35 @@ class WinrateCalculator:
             totalwinrate *= winrate
         return totalwinrate
 
-    def calmywinrate_(self, board, myhand, ophands):
-        for card in board:
-            if card in myhand.get():
-                return -1
-            for handdis in ophands:
-                handdis.removecard(card)
-        for card in myhand.get():
-            for handdis in ophands:
-                handdis.removecard(card)
-        for handdis in ophands:
-            handdis.normalize()
-
-        curwinrate = self.calmywinrate__(board, myhand, copy.deepcopy(ophands))
-        return curwinrate
+    # def calmywinrate_(self, board, myhand, ophands):
+    #     for card in board:
+    #         if card in myhand.get():
+    #             # 如果我的手牌与牌面上的牌有重复的话,就返回-1
+    #             return -1
+    #         for handdis in ophands:
+    #             # 移除掉对手的手牌中包含牌面上的牌的手牌
+    #             handdis.removecard(card)
+    #     for card in myhand.get():
+    #         for handdis in ophands:
+    #             handdis.removecard(card)
+    #     for handdis in ophands:
+    #         handdis.normalize()
+    #
+    #     curwinrate = self.calmywinrate__(board, myhand, copy.deepcopy(ophands))
+    #     return curwinrate
 
     def calmywinrate(self):
         myhands = copy.deepcopy(self.m_myhands)
         ophands = copy.deepcopy(self.m_ophands)
         board = copy.deepcopy(self.m_board)
-        return self.calmywinrate_(board,myhands,ophands)
+        return self.calmywinrate__(board,myhands,ophands)
+
+    def ophandsremovecard(self,ophands,card):
+        for handsdis in ophands:
+            handsdis.removecard(card)
+            if not handsdis.normalize():
+                return False
+        return True
 
     def calnextturnstackwinrate(self):
         handrangeobj = HandsRange()
@@ -76,7 +106,10 @@ class WinrateCalculator:
             board.append(card)
             myhands = copy.deepcopy(self.m_myhands)
             ophands = copy.deepcopy(self.m_ophands)
-            winrate = self.calmywinrate_(board,myhands,ophands)
+            if not self.ophandsremovecard(ophands,card):
+                continue
+            # winrate = self.calmywinrate_(board,myhands,ophands)
+            winrate = self.calmywinrate__(board, myhands, ophands)
             if winrate == -1:
                 continue
 

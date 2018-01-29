@@ -1,3 +1,4 @@
+#-*- coding:utf-8 -*-
 import hunlgame
 import json
 import math
@@ -11,11 +12,16 @@ import handsdistribution
 
 # this is the composite hand power
 class HandPower:
-    # ophands is a list of handsdistribution, each represents a opponent
-    def __init__(self, myhand = None, ophands = None, board = None, winratestr = ""):
-        self.m_myhand = myhand
-        self.m_ophands = ophands
-        self.m_board = board
+    # rangestate is a object of class handsdistribution.RangeState
+    def __init__(self, rangestate = None, winratestr = ""):
+        self.m_myhand = None
+        self.m_ophands = None
+        self.m_board = None
+        self.m_rangestate = rangestate
+        if rangestate is not None:
+            self.m_myhand = rangestate.m_myhands
+            self.m_ophands = rangestate.m_ophands
+            self.m_board = rangestate.m_board
         self.m_winratestr = winratestr
         self.calculatewinrate()
 
@@ -25,7 +31,7 @@ class HandPower:
             self.m_curwinrate = data["curwinrate"]
             self.m_data = data["winratehis"]
             return
-        winratecal = winratecalculator.WinrateCalculator(self.m_board, self.m_myhand, self.m_ophands)
+        winratecal = winratecalculator.WinrateCalculator(self.m_rangestate)
         self.m_curwinrate = winratecal.calmywinrate()
         nextturnstackwinrate = winratecal.calnextturnstackwinrate()
         winratehistogram = [v[1] for v in nextturnstackwinrate]
@@ -62,7 +68,7 @@ def testcurwinrate():
     board =  hunlgame.generateCards("ASTS4H")
     winratedata = []
     for hand in ophandsrange:
-        curwinrate = winratecalculator.WinrateCalculator(board,hand,handsdistribution.HandsDisQuality(ophandsrange)).calmywinrate()
+        curwinrate = winratecalculator.WinrateCalculator(handsdistribution.RangeState(board,hand,handsdistribution.HandsDisQuality(ophandsrange))).calmywinrate()
         winratedata.append([hand,curwinrate])
     winratedata.sort(key=lambda v:v[1],reverse=True)
     winratedata = [v for v in winratedata if v[1] != -1]
@@ -86,7 +92,7 @@ def testwinratestack():
     myhand = hunlgame.generateHands("2S5S")
     hplist = []
     for board in boardlist:
-        hplist.append(HandPower(myhand,handsdistribution.HandsDisQuality(ophandsrange),board))
+        hplist.append(HandPower(handsdistribution.RangeState(board,myhand,handsdistribution.HandsDisQuality(ophandsrange))))
     for board, hp in zip(boardlist,hplist):
         diflist = []
         for board1, hp1 in zip(boardlist,hplist):
@@ -106,7 +112,7 @@ class RandomHandPower(HandPower):
         for idx in xrange(opponentqt):
             self.generaterandomrange(cardlist)
             self.m_ophands.append(handsdistribution.HandsDisQuality(copy.deepcopy(self.m_handsdis)))
-        HandPower.__init__(self,self.m_myhand,self.m_ophands,self.m_board)
+        HandPower.__init__(self,handsdistribution.RangeState(self.m_board,self.m_myhand,self.m_ophands))
 
     def generaterandomrange(self, removecardlist):
         handsrangeobj = hunlgame.HandsRange()
@@ -152,7 +158,7 @@ def testrandompower():
     return
 
 def testrandompowerquality():
-    hplist = [HandPower(winratestr=v) for v in  json.load(open("tmpresult/randompower"))]
+    hplist = [HandPower(winratestr=v) for v in json.load(open("tmpresult/randompower"))]
     import DBOperater, handsengine
     result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
     for doc in result:
@@ -168,27 +174,38 @@ def testrandompowerquality():
         for state, rangenum in zip(replay.m_inpoolstate, playerrange):
             if state == 1:
                 rangelist.append(replay.m_handsrangeobj.gethandsinrange(rangenum))
+            # else:
+            #     rangelist.append(None)
         myhanddis = dict(zip(rangelist[0],[1] * len(rangelist[0])))
         myhanddis = handsdistribution.HandsDisQuality(myhanddis)
         myhanddis.normalize()
         ophanddis = dict(zip(rangelist[1],[1] * len(rangelist[1])))
         ophanddis = handsdistribution.HandsDisQuality(ophanddis)
         ophanddis.normalize()
+        idx = 0
         for hand in rangelist[0]:
-            curhp = HandPower(hand,[ophanddis,],replay.getcurboard())
+            rangestate = handsdistribution.RangeState(replay.getcurboard(),hand,[ophanddis])
+
+            curhp = HandPower(rangestate)
             dislist = [curhp - v for v in hplist]
             dislist.sort()
-            print dislist
-            raw_input()
+            print dislist[:10]
+            idx += 1
+            if idx % 20 == 0:
+                raw_input()
+        idx = 0
         for hand in rangelist[1]:
-            curhp = HandPower(hand,[myhanddis,],replay.getcurboard())
+            rangestate = handsdistribution.RangeState(replay.getcurboard(),hand,[myhanddis])
+            curhp = HandPower(rangestate)
             dislist = [curhp - v for v in hplist]
             dislist.sort()
-            print dislist
-            raw_input()
+            print dislist[:10]
+            idx += 1
+            if idx % 20 == 0:
+                raw_input()
 
 if __name__ == "__main__":
     # testrandompower()
-    testrandompowerquality
+    testrandompowerquality()
     # testcurwinrate()
     # testwinratestack()
