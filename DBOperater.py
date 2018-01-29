@@ -45,4 +45,12 @@ def ReplaceOne(db,clt,query,newdoc,upsert = False):
         Connect()
     return client[db][clt].replace_one(query,newdoc,upsert)
 
-Connect()
+def testconnectdb():
+    result = Find(HANDSDB,HANDSCLT,{"_id":"2017-12-15 00:43:13 84"})
+    for v in result:
+        print v
+#
+# Connect()
+
+if __name__ == "__main__":
+    testconnectdb()
