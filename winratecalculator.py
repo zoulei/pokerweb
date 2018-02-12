@@ -7,6 +7,7 @@ import handsinfocommon
 class WinrateCalculator:
     # rangestate is a object of class handsdistribution.RangeState
     def __init__(self, rangestate, equalvalue = 0.5):
+        self.m_rangestate = rangestate
         self.m_board = rangestate.m_board
         self.m_myhands = rangestate.m_myhands
         self.m_ophands = rangestate.m_ophands
@@ -98,7 +99,13 @@ class WinrateCalculator:
         handrangeobj = HandsRange()
         allcards = handrangeobj._generateallcard()
         for card in self.m_board+list(self.m_myhands.get()):
-            allcards.remove(card)
+            try:
+                allcards.remove(card)
+            except:
+                print hunlgame.board2str(self.m_board)
+                print hunlgame.board2str(self.m_myhands.get())
+
+                raise
 
         nextturnwinratelist = []
         for card in allcards:

@@ -74,7 +74,7 @@ class HandsDisQuality:
             print hand, "\t",value
 
 class RangeState:
-    def __int__(self, board, myhands, ophands):
+    def __init__(self, board, myhands, ophands):
         self.m_myhands = myhands
         self.m_board = board
         if isinstance(ophands,list):
@@ -115,4 +115,6 @@ class RangeState:
                 return False
         return True
 
-    def __
+    def __nonzero__(self):
+        # print "called"
+        return self.m_valid
