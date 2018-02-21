@@ -10,6 +10,12 @@ import copy
 import winratecalculator
 import handsdistribution
 import shelve
+import DBOperater
+import handsengine
+from TraverseHands import TraverseHands
+import time
+import signal
+import multiprocessing
 
 # this is the composite hand power
 class HandPower:
@@ -40,6 +46,15 @@ class HandPower:
         winratehistogram.sort(reverse=True)
         slotnum = math.ceil(1 / Constant.HANDSTRENGTHSLOT) + 1
         self.m_data = [0] * int(slotnum)
+        if len(winratehistogram) == 0:
+            print "winratehistogram's length is zero."
+            print "myhand:",hunlgame.board2str(self.m_myhand.get())
+            print "board:",hunlgame.board2str(self.m_board)
+            print "ophands:"
+            print self.m_ophands[0].normalize()
+            self.m_ophands[0].printdata()
+            print "winrate valid:",winratecal.m_valid
+            raise
         for winrate in winratehistogram:
             self.m_data[int(math.ceil( (1 - winrate) / Constant.HANDSTRENGTHSLOT ) )] += 1
 
@@ -168,13 +183,17 @@ def testrandompower():
         # raw_input()
     return
 
+def randompowerlength():
+    hplist = [HandPower(winratestr=v) for v in json.load(open("tmpresult/randompower"))]
+    print len(hplist)
+
 # 这个方法的作用是测试随机生成的路标的质量
 # 测试的方法为查看牌例中的各种手牌是否都有与其相近的路标,
 # 将所有的牌例与路标都测一下距离,然后计算一下每个牌例与所有路标之间的最小距离,输出一个最小距离的list
 # 然后针对这个最小距离的list又可以进行各种操作
 def testrandompowerquality():
     hplist = [HandPower(winratestr=v) for v in json.load(open("tmpresult/randompower"))]
-    import DBOperater, handsengine
+    # import DBOperater, handsengine
     result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
     disdata = shelve.open("data/disdata","c")
     idx = 0
@@ -241,13 +260,90 @@ def testrandompowerquality():
 
 def readrandompowerquanlity():
     disdata = shelve.open("data/disdata","c")
+    keylist = []
     for key in disdata:
+        keylist.append(key)
+    keylist.sort(key=lambda v:float(v))
+    for key in keylist:
         print key ,"\t:\t",disdata[key]
     disdata.close()
 
+def gethandpowerfunc(rangestate):
+    return HandPower(rangestate)
+
+# 这个方法的功能是从牌例中学习路标
+# 这个结果可以用于与随机生成的路标进行质量对比
+class MarkerGeneraterTraverser(TraverseHands):
+    def initdata(self):
+        self.m_hplist = []
+
+    def mainfunc(self, handsinfo):
+        now = time.time()
+        replay = handsengine.ReplayEngine(handsinfo)
+        if replay.m_handsinfo.getturncount() == 1:
+            return
+        replay.traversepreflop()
+        preflopinfo = replay.getpreflopinfomation()
+        if preflopinfo["remain"] != 2 or preflopinfo["allin"] != 0:
+            return
+        playerrange = preflopinfo["range"]
+        rangelist = []
+        for state, rangenum in zip(replay.m_inpoolstate, playerrange):
+            if state == 1:
+                rangelist.append(replay.m_handsrangeobj.gethandsinrange(rangenum))
+        print hunlgame.board2str(replay.getcurboard())
+        print replay.m_handsinfo.getid()
+        print playerrange
+        print replay.m_inpoolstate
+        myhanddis = dict(zip(rangelist[0],[1] * len(rangelist[0])))
+        myhanddis = handsdistribution.HandsDisQuality(myhanddis)
+        myhanddis.normalize()
+        ophanddis = dict(zip(rangelist[1],[1] * len(rangelist[1])))
+        ophanddis = handsdistribution.HandsDisQuality(ophanddis)
+        ophanddis.normalize()
+        rangestatelist = []
+        for hand in rangelist[0]:
+            rangestate = handsdistribution.RangeState(copy.deepcopy(replay.getcurboard()),copy.deepcopy(hand),copy.deepcopy(ophanddis))
+            if not rangestate:
+                continue
+            rangestatelist.append(rangestate)
+        for hand in rangelist[1]:
+            rangestate = handsdistribution.RangeState(copy.deepcopy(replay.getcurboard()),copy.deepcopy(hand),copy.deepcopy(myhanddis))
+            if not rangestate:
+                continue
+            rangestatelist.append(rangestate)
+        # for rangestate in rangestatelist:
+        #     hp = HandPower(rangestate)
+
+        original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
+        pool = multiprocessing.Pool(Constant.THREADNUM)
+        # pool = multiprocessing.Pool(1)
+        signal.signal(signal.SIGINT, original_sigint_handler)
+        try:
+            # result = self.m_pool.map_async(self.mainfunc, doclist)
+            result = pool.map_async(gethandpowerfunc, rangestatelist)
+            hplist = result.get(99999999)  # Without the timeout this blocking call ignores all signals.
+            for curhp in hplist:
+                for markerhp in self.m_hplist:
+                    if curhp - markerhp < Constant.HANDSPOWERGRANULARITY:
+                        break
+                else:
+                    self.m_hplist.append(curhp)
+            json.dump([str(v) for v in self.m_hplist],open(Constant.HANDSPOWERMARKER,"w"))
+        except KeyboardInterrupt:
+            pool.terminate()
+            pool.close()
+            pool.join()
+            exit()
+        else:
+            pool.close()
+        pool.join()
+        print "spend:",time.time() - now
+
 if __name__ == "__main__":
     # testrandompower()
-    testrandompowerquality()
+    # testrandompowerquality()
     # readrandompowerquanlity()
     # testcurwinrate()
     # testwinratestack()
+    MarkerGeneraterTraverser(Constant.HANDSDB,Constant.HANDSCLT,step=1000).traverse()

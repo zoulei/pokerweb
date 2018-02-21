@@ -104,7 +104,6 @@ class WinrateCalculator:
             except:
                 print hunlgame.board2str(self.m_board)
                 print hunlgame.board2str(self.m_myhands.get())
-
                 raise
 
         nextturnwinratelist = []

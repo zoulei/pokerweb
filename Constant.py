@@ -104,6 +104,7 @@ ANTI = 2
 CACHEDIR = "/home/zoul15/temp/"
 AFTERFLOPSTATEHEADER = CACHEDIR + "afterflopstateheader"
 AFTERFLOPSTATEDATA = CACHEDIR + "afterflopstatedata"
+DATADIR = "data/"
 
 # ========================hands strength related=====================
 COMPLETESTRENGTHMAPPREFIX = CACHEDIR + "strengthmap"
@@ -185,3 +186,7 @@ def getphonecolor(phoneid):
     elif phoneid == "353570060930398":
         return "r"
     return "NA"
+
+# ==============================handspower related============================
+HANDSPOWERGRANULARITY = 0.5
+HANDSPOWERMARKER = DATADIR + "handspowermarker"

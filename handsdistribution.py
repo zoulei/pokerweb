@@ -3,6 +3,7 @@ from math import pow
 from privatecardsstrength import PrivateHandRank
 from hunlgame import HandsRange
 import copy
+import hunlgame
 
 class HandsDisQuality:
     def __init__(self,dis = None):
@@ -70,10 +71,14 @@ class HandsDisQuality:
     def printdata(self):
         dislist = self.m_handsdis.items()
         dislist.sort(key=lambda v:v[1],reverse=True)
+        dislist = [v for v in dislist if v[1] != 0]
+        print "=======start print hands distribution========="
         for hand, value in dislist:
             print hand, "\t",value
+        print "=======stop print hands distribution========="
 
 class RangeState:
+    # ophands 是一个 handsdistribution.HandsDisQuality 实例 的列表或者单个该对象
     def __init__(self, board, myhands, ophands):
         self.m_myhands = myhands
         self.m_board = board

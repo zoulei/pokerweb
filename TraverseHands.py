@@ -24,7 +24,10 @@ class TraverseHands:
         self.m_processeddata = 0
 
         self.m_elapsedtime = 0
+        self.initdata()
 
+    def initdata(self):
+        pass
 
     def traverse(self):
         start = time.time()
