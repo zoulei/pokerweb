@@ -1,3 +1,8 @@
+#-*- coding:utf-8 -*-
+# 这个文档中的内容主要是和state相关,
+# 包括计算历史牌局的state,以及计算state之间的相似度,
+# 从牌局数据中读取state等
+
 from handsengine import ReplayEngine
 from TraverseHands import TraverseHandsWithReplayEngine
 import DBOperater
@@ -6,6 +11,8 @@ import numpy
 import handsinfocommon
 import traceback
 
+# 计算一个历史牌局中的state的类,并可以将数据保存起来
+# 其具体用法参见下面的mainfunc方法
 class StateCalculator(ReplayEngine):
     def __init__(self,handsinfo):
         ReplayEngine.__init__(self,handsinfo)
@@ -185,6 +192,7 @@ class StateCalculator(ReplayEngine):
             statedata[Constant.ODDS] = self.m_laststate["odds"]
             [self.m_preflopstate,self.m_flopstate,self.m_turnstate,self.m_riverstate][round-1].append(statedata)
 
+    # 存储计算得到的本牌局的state信息,并存储到一个新的数据集中
     def savestatedata(self):
         targetdoc = self.m_handsinfo.m_handsinfo["data"]
         targetdoc["STATEINFO"] = {}
@@ -198,6 +206,7 @@ class StateCalculator(ReplayEngine):
             targetdoc["RIVER"] = self.m_riverstate
         DBOperater.ReplaceOne(Constant.HANDSDB,Constant.STATEINFOHANDSCLT,{"_id":self.m_handsinfo.getid()},self.m_handsinfo.m_handsinfo,True)
 
+# StateCalculator 的使用示例,同时也是用来多线程处理历史牌局的处理函数
 def mainfunc(handsinfo):
     try:
         cal = StateCalculator(handsinfo)
@@ -210,10 +219,13 @@ def mainfunc(handsinfo):
         traceback.print_exc()
         raise
 
+# state类,类名中的byexpert指的是这个state的设计是基于专家的领域知识
 class StateByExpert:
+    # 本类并不由用户直接调用其构造函数产生,而是通过StateReaderEngine类从存储了state信息的牌局文档中读取
     def __init__(self,stateinfo):
         self.m_stateinfo = stateinfo
 
+    # 计算两个state的相似度的方法,返回0-1
     def similar(self, other):
         # handsinfocommon.pp.pprint(self.m_stateinfo)
         # handsinfocommon.pp.pprint(other.m_stateinfo)
@@ -225,7 +237,7 @@ class StateByExpert:
             cursimilar = 1 - (self.m_stateinfo[attr] - other.m_stateinfo[attr])
             attrsimilar.append([cursimilar,weight])
         for attr,maxima,weight in [[Constant.REMAINTOACT,0,50],[Constant.REMAINRAISER,0,50],[Constant.ODDS,10,100],
-                            [Constant.POTSIZE,200,100],#[Constant.INITIALPLAYERQUANTITY,0,100],
+                            [Constant.POTSIZE,200,100],
                             [Constant.RAISERSTACKVALUE,[7,3,3,2][self.m_stateinfo[Constant.TURN]-1],50],
                             [Constant.REMAINSTACKVALUE,[7,3,3,2][self.m_stateinfo[Constant.TURN]-1],50],
                             [Constant.PREFLOPINITALPQ,0,200],[Constant.FLOPINITALPQ,0,200],
@@ -246,13 +258,17 @@ class StateByExpert:
         similar = 1.0 * sum([v[0]*v[1] for v in attrsimilar]) / sum([v[1] for v in attrsimilar])
         return similar
 
+# 读取牌局数据中的state的类
 class StateReaderEngine(ReplayEngine):
+    # 读取指定轮的所有state原始信息
     def getspecificturnstatedata(self,turn):
         return self.m_handsinfo.m_handsinfo["data"]["STATEINFO"].get(self.m_handsinfo.getturnstr(turn),[])
 
+    # 读取指定轮第指定次行动时的state
     def getstate(self,turn, actionidx):
         return StateByExpert(self.getspecificturnstatedata(turn)[actionidx])
 
+# 测试state相似度计算的代码
 def teststatesimilarity():
     targethandsid = "2017-12-09 23:02:37 88"
     result = DBOperater.Find(Constant.HANDSDB,Constant.STATEINFOHANDSCLT,{"_id":targethandsid})
