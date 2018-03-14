@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import Constant
 import handsinfocommon
 import copy
@@ -1027,6 +1028,11 @@ class HandsInfo:
 
     def getStack(self):
         return self.m_handsinfo["data"]["STACK"]
+
+    # 这个方法获取的下注行为都是经过了处理之后的, 也就是说把all in数据都已经转化成了call, 和raise
+    def getspecificturnrealbetdata(self, turnidx):
+        turnstr = self.TURNSTR[turnidx - 1]
+        return self.m_handsinfo["data"]["REALBETDATA"].get(turnstr,[])
 
 def testgetprefloprange():
     rangeobj = prefloprangge()

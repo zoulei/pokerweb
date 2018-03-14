@@ -271,6 +271,27 @@ def readrandompowerquanlity():
 def gethandpowerfunc(rangestate):
     return HandPower(rangestate)
 
+# 该类用于生成随机路标以及读取随机路标
+class RandomMarker:
+    def __init__(self):
+        self.m_hplist = [HandPower(winratestr=v) for v in json.load(open("tmpresult/randompower"))]
+
+    # 此方法用于生成随机路标,生成的方式为向已有的路标库中进行添加
+    # 此方法会一直运行下去,除非手动结束程序
+    def generaterandompower(self,mindis=0.5):
+        hplist = self.m_hplist
+        while True:
+            tmprhp = RandomHandPower()
+            for hp in hplist:
+                print tmprhp - hp
+                if tmprhp - hp < mindis:
+                    break
+            else:
+                hplist.append(tmprhp)
+                json.dump([str(v) for v in hplist],open("tmpresult/randompower","w"))
+            print "===============\t",len(hplist)
+        return
+
 # 这个方法的功能是从牌例中学习路标
 # 这个结果可以用于与随机生成的路标进行质量对比
 class MarkerGeneraterTraverser(TraverseHands):

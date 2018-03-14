@@ -67,7 +67,6 @@ class StateCalculator(ReplayEngine):
             if self.m_inpoolstate[pos] == 1:
                 total += 1
         return total
-        # 1 2 3 4(r) 5 6 7(f) 8 9
 
     # player quantitiy that has made action
     def playerquantityacted(self):
@@ -225,6 +224,10 @@ class StateByExpert:
     def __init__(self,stateinfo):
         self.m_stateinfo = stateinfo
 
+    # 获取该state属于哪一轮
+    def getstateturn(self):
+        return self.m_stateinfo[Constant.TURN]
+
     # 计算两个state的相似度的方法,返回0-1
     def similar(self, other):
         # handsinfocommon.pp.pprint(self.m_stateinfo)
@@ -267,6 +270,11 @@ class StateReaderEngine(ReplayEngine):
     # 读取指定轮第指定次行动时的state
     def getstate(self,turn, actionidx):
         return StateByExpert(self.getspecificturnstatedata(turn)[actionidx])
+
+    # 读取指定轮的所有state
+    def getallstate(self, turn):
+        staterawinfo = self.m_handsinfo.m_handsinfo["data"]["STATEINFO"].get(self.m_handsinfo.getturnstr(turn),[])
+        return [StateByExpert(v) for v in staterawinfo]
 
 # 测试state相似度计算的代码
 def teststatesimilarity():
