@@ -190,3 +190,9 @@ def getphonecolor(phoneid):
 # ==============================handspower related============================
 HANDSPOWERGRANULARITY = 0.5
 HANDSPOWERMARKER = DATADIR + "handspowermarker"
+
+# ===============================actionn related==============================
+CHECK = "check"
+CALL = "call"
+RAISE = "raise"
+FOLD = "fold"

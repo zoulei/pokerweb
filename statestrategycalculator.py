@@ -9,10 +9,10 @@ import handspower
 class ActionDis:
     def __init__(self):
         self.m_actiondis = {
-            "fold"  :   0.0,
-            "check" :   0.0,
-            "call"  :   0.0,
-            "raise" :   0.0,
+            FOLD  :   0.0,
+            CHECK :   0.0,
+            CALL  :   0.0,
+            RAISE :   0.0,
         }
 
     def addaction(self, action, rate):
@@ -23,10 +23,39 @@ class ActionDis:
         for v in self.m_actiondis.keys():
             self.m_actiondis[v] /= total
 
+    def __getitem__(self, item):
+        return self.m_actiondis[item]
+
 # 完整行为分布
 class FullActionDis:
-    def __init__(self):
+    def __init__(self, checkavailable=False):
         self.m_marker = handspower.RandomMarker()
+        self.m_checkavailable = checkavailable
+        if self.m_checkavailable:
+            self.m_defend = CHECK
+        else:
+            self.m_defend = CALL
+        self.initdata()
+
+    # 该方法初始化本类的数据结构
+    def initdata(self):
+        self.m_actiondisdata = {}
+        for v in self.m_marker.m_hplist:
+            self.m_actiondisdata[v] = ActionDis()
+
+    def addaction(self, hp, action, rate):
+        self.m_actiondisdata[hp].addaction(action, rate)
+
+    # 该方法根据统计的行为分布初始化完整行为分布数据
+    def initfulldis(self, actiondis):
+        raiserlen = int(actiondis[RAISE] * self.m_marker.m_length)
+        callandchecklen = int( (actiondis[CALL]+actiondis[CHECK])* self.m_marker.m_length )
+        for idx in xrange(raiserlen):
+            self.addaction(self.m_marker.m_hplist[idx],RAISE,1.0)
+        for idx in xrange(callandchecklen):
+            self.addaction(self.m_marker.m_hplist[idx+raiserlen],self.m_defend,1.0)
+        for idx in xrange(self.m_marker.m_length - raiserlen - callandchecklen):
+            self.addaction(self.m_marker.m_hplist[idx+raiserlen+callandchecklen],FOLD,1.0)
 
 # 该类基于一个牌局库来计算给定牌局的所有state的完整行动分布
 class StateStrategyCalculator:
@@ -41,8 +70,14 @@ class StateStrategyCalculator:
 
     # 计算某个state的完整行为分布
     def calstrategyforspecificstate(self, state):
+        # 统计行为分布
         actiondis = self.getactiondisofsimilarstate(state)
-        initialdis = self.getinitialdis(actiondis)
+        # 根据统计行为分布获取一个初始完整行为分布
+        fullactiondis = FullActionDis(state.ischeckavailable())
+        fullactiondis.initfulldis(actiondis)
+
+        # 根据秀牌数据进行强化学习
+
 
     # 统计相似state下的行为分布
     def getactiondisofsimilarstate(self, state):
@@ -64,10 +99,6 @@ class StateStrategyCalculator:
 
     # state相似度权值计算公式
     def similarweightfunction(self, similar):
-        pass
-
-    # 根据行为分布获取一个初始分布
-    def getinitialdis(self, actiondis):
         pass
 
     # 根据某一手特定的牌进行强化学习

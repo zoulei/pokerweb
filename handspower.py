@@ -69,6 +69,9 @@ class HandPower:
             traceback.print_exc()
             raise
 
+    def __hash__(self):
+        return self.__str__()
+
     def __str__(self):
         doc = {
             "curwinrate"    :   self.m_curwinrate,
@@ -275,6 +278,8 @@ def gethandpowerfunc(rangestate):
 class RandomMarker:
     def __init__(self):
         self.m_hplist = [HandPower(winratestr=v) for v in json.load(open("tmpresult/randompower"))]
+        self.m_hplist.sort(key=lambda v:v.m_curwinrate,reverse=True)
+        self.m_length = len(self.m_hplist)
 
     # 此方法用于生成随机路标,生成的方式为向已有的路标库中进行添加
     # 此方法会一直运行下去,除非手动结束程序

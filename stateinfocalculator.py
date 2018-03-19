@@ -228,6 +228,13 @@ class StateByExpert:
     def getstateturn(self):
         return self.m_stateinfo[Constant.TURN]
 
+    # 获取该state是否能够进行check
+    def ischeckavailable(self):
+        if self.m_stateinfo[Constant.CURRENTATTACKVALUE] == 0:
+            return True
+        else:
+            return False
+
     # 计算两个state的相似度的方法,返回0-1
     def similar(self, other):
         # handsinfocommon.pp.pprint(self.m_stateinfo)
