@@ -4,6 +4,7 @@ import pprint
 import handsinfocommon
 import sys
 import time
+import random
 
 def totalplayer():
     result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":"player"})
@@ -113,6 +114,15 @@ def printhandsinfo(handsid):
     print "handsid:",handsid
     handsinfocommon.pp.pprint(result.next())
 
+def printrandomhandsinfo():
+    result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
+    doclen = result.count()
+    rate = 1.0 / min(doclen,10000)
+    for doc in result:
+        if random.random() < rate:
+            handsinfocommon.pp.pprint(doc)
+            break
+
 def printplayerquantitydis():
     doclen = {}
     for idx in xrange(1,10):
@@ -177,7 +187,9 @@ if __name__ == "__main__":
     #  printcombinationinfo()
     # preflopftdata()
     # printplayerquantitydis()
-    if sys.argv[1] == "1":
+    if len(sys.argv) == 1:
+        printrandomhandsinfo()
+    elif sys.argv[1] == "1":
         printcollectgamedata()
     elif sys.argv[1] == "2":
         printgameseqdata()

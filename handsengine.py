@@ -746,7 +746,10 @@ class ReplayEngine:
         elif action in [2,4.2]:
             return "raise"
         elif action in [3,6,4.3]:
+            # check 和 call 都算call
             return "call"
+        # elif action == 3:
+        #     return "check"
 
     # these function is used to calculate payoff and most of the function is
     # copied from tongjihandsinfo.py

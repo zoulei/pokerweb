@@ -4,16 +4,22 @@ from Constant import *
 import DBOperater
 import stateinfocalculator
 import handspower
+import handsengine
+import handsdistribution
+import json
 
 # 行为分布, 包括各种行动的概率, 包括check, call, raise三种
 class ActionDis:
-    def __init__(self):
-        self.m_actiondis = {
-            FOLD  :   0.0,
-            CHECK :   0.0,
-            CALL  :   0.0,
-            RAISE :   0.0,
-        }
+    def __init__(self, jsonstr = None):
+        if jsonstr is None:
+            self.m_actiondis = {
+                FOLD  :   0.0,
+                CHECK :   0.0,
+                CALL  :   0.0,
+                RAISE :   0.0,
+            }
+        else:
+            self.m_actiondis = json.loads(jsonstr)
 
     def addaction(self, action, rate):
         self.m_actiondis[action] += rate
@@ -26,16 +32,33 @@ class ActionDis:
     def __getitem__(self, item):
         return self.m_actiondis[item]
 
+    def __str__(self):
+        return json.dumps(self.m_actiondis)
+
 # 完整行为分布
 class FullActionDis:
-    def __init__(self, checkavailable=False):
+    def __init__(self, checkavailable=False, restorestr = None):
         self.m_marker = handspower.RandomMarker()
+        if restorestr is None:
+            self.initcheckavailable(checkavailable)
+            self.initdata()
+        else:
+            self.restoredata(restorestr)
+
+    # 从存储的文本中恢愎数据
+    def restoredata(self,restorestr):
+        svdata = json.loads(restorestr)
+        self.initcheckavailable(svdata["check"])
+        self.m_actiondisdata = {}
+        for k,v in svdata["data"].items():
+            self.m_actiondisdata[handspower.HandPower(winratestr=k)] = ActionDis(jsonstr=v)
+
+    def initcheckavailable(self, checkavailable):
         self.m_checkavailable = checkavailable
         if self.m_checkavailable:
             self.m_defend = CHECK
         else:
             self.m_defend = CALL
-        self.initdata()
 
     # 该方法初始化本类的数据结构
     def initdata(self):
@@ -57,19 +80,44 @@ class FullActionDis:
         for idx in xrange(self.m_marker.m_length - raiserlen - callandchecklen):
             self.addaction(self.m_marker.m_hplist[idx+raiserlen+callandchecklen],FOLD,1.0)
 
+    # 该方法将完整的行为分布中每一个hp的行为分布都归一化
+    def normalize(self):
+        for hp in self.m_actiondisdata.keys():
+            self.m_actiondisdata[hp].normalize()
+
+    def __str__(self):
+        targetdict = {}
+        for k,v in self.m_actiondisdata.items():
+            targetdict[str(k)] = str(v)
+        svdata = {
+            "check":self.m_checkavailable,
+            "data":targetdict
+        }
+        return json.dumps(svdata)
+
 # 该类基于一个牌局库来计算给定牌局的所有state的完整行动分布
 class StateStrategyCalculator:
-    def __init__(self,targetdoc,db=HANDSDB,clt=HANDSCLT,querystr=None):
+    def __init__(self,targetdoc,db=HANDSDB,clt=STATEINFOHANDSCLT,querydict=None):
         self.m_targetdoc = targetdoc
         self.m_db = db
         self.m_clt = clt
-        if querystr is None:
-            self.m_querystr = {}
+        if querydict is None:
+            self.m_querydict = {}
         else:
-            self.m_querystr = querystr
+            self.m_querydict = querydict
+
+
+    def testcal(self):
+        result = DBOperater.Find(self.m_db,self.m_clt,{"_id":"2017-12-11 00:59:25 203"})
+        doc = result.next()
+        replay = stateinfocalculator.StateReaderEngine(doc)
+        state = replay.getstate(2,0)
+        actiondis = self.calstrategyforspecificstate(state,2,0)
+        # 这里需要把这个actiondis存起来
+        open("tmpresult/actiondis","w").write(str(actiondis))
 
     # 计算某个state的完整行为分布
-    def calstrategyforspecificstate(self, state):
+    def calstrategyforspecificstate(self, state, turnidx, actionidx):
         # 统计行为分布
         actiondis = self.getactiondisofsimilarstate(state)
         # 根据统计行为分布获取一个初始完整行为分布
@@ -77,7 +125,21 @@ class StateStrategyCalculator:
         fullactiondis.initfulldis(actiondis)
 
         # 根据秀牌数据进行强化学习
-
+        result = DBOperater.Find(self.m_db,self.m_clt,self.m_querydict)
+        prefloprangeengine = handsengine.prefloprangge()
+        for doc in result:
+            replay = stateinfocalculator.StateReaderEngine(doc)
+            replay.traversepreflop()
+            pvhand = replay.m_handsinfo.gethand(replay.m_nextplayer)
+            if pvhand is None:
+                continue
+            oppohands = handsdistribution.HandsDisQuality(prefloprangeengine.gethandsinrange(replay.m_prefloprange[replay.m_nextplayer]))
+            board = replay.m_handsinfo.getboardcard()[:3]
+            targethp = handspower.HandPower(handsdistribution.RangeState(board,pvhand,oppohands))
+            replay.updatecumuinfo(2,0)
+            self.reinlearning(replay.getstate(2,0), targethp, replay.actiontransfer(replay.m_lastaction),fullactiondis,state)
+        fullactiondis.normalize()
+        return fullactiondis
 
     # 统计相似state下的行为分布
     def getactiondisofsimilarstate(self, state):
@@ -100,8 +162,17 @@ class StateStrategyCalculator:
     # state相似度权值计算公式
     def similarweightfunction(self, similar):
         pass
+        return similar
+
+    # handspower相似度权值计算公式
+    def similarhpfunction(self, similar):
+        pass
+        return similar
 
     # 根据某一手特定的牌进行强化学习
-    def reinlearning(self, state, rangeobj, action):
-        pass
-
+    def reinlearning(self, targetstate, targethp, targetaction, fullactiondis, state):
+        statesimilar = targetstate - state
+        statesimilarweight = self.similarweightfunction(statesimilar)
+        for hp in fullactiondis.m_actiondisdata.keys():
+            hpsimilar = targethp - hp
+            fullactiondis.addaction(hp, targetaction, self.similarhpfunction(hpsimilar) * statesimilarweight)

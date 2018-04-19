@@ -9,6 +9,7 @@ from handsengine import ReplayEngine
 from TraverseHands import TraverseValidHands
 import handsengine
 import pprint
+import traceback
 pp = pprint.PrettyPrinter(indent=4)
 
 
@@ -390,7 +391,12 @@ def tongjiftmain_(idx):
         doclist.append(handsinfo)
 
     for handsinfo in doclist:
-        Preflopstatemachine(handsinfo)
+        try:
+            Preflopstatemachine(handsinfo)
+        except:
+            print "============="
+            print handsinfo["_id"]
+            traceback.print_exc()
 
 class TestRangeAccuracy(ReplayEngine):
     def __init__(self,handsinfo):

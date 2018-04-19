@@ -72,6 +72,7 @@ class HandPower:
     def __hash__(self):
         return self.__str__()
 
+    # 该方法生成的str可以用作构造函数中的winratestr参数用于恢愎Handpower对象
     def __str__(self):
         doc = {
             "curwinrate"    :   self.m_curwinrate,
