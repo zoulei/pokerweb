@@ -247,7 +247,7 @@ class StateByExpert:
         for attr,weight in [[Constant.RELATIVEPOS,200],]:
             cursimilar = 1 - (self.m_stateinfo[attr] - other.m_stateinfo[attr])
             attrsimilar.append([cursimilar,weight])
-        for attr,maxima,weight in [[Constant.REMAINTOACT,0,50],[Constant.REMAINRAISER,0,50],[Constant.ODDS,10,100],
+        for attr,maxima,weight in [[Constant.REMAINTOACT,0,100],[Constant.REMAINRAISER,0,100],[Constant.ODDS,10,100],
                             [Constant.POTSIZE,200,100],
                             [Constant.RAISERSTACKVALUE,[7,3,3,2][self.m_stateinfo[Constant.TURN]-1],50],
                             [Constant.REMAINSTACKVALUE,[7,3,3,2][self.m_stateinfo[Constant.TURN]-1],50],
@@ -294,16 +294,21 @@ def teststatesimilarity():
 
     result1 = DBOperater.Find(Constant.HANDSDB,Constant.STATEINFOHANDSCLT,{})
     for doc in result1:
+        handsinfocommon.pp.pprint(doc)
         curstatereader = StateReaderEngine(doc)
         if curstatereader.m_handsinfo.getplayerquantity() == 2:
             continue
         for idx,statedata in enumerate(curstatereader.getspecificturnstatedata(turn)):
             print curstatereader.m_handsinfo.getid(),"\t",idx,":",StateByExpert(statedata).similar(targetstate)
             raw_input()
+            if idx > 2:
+                break
 
 if __name__ == "__main__":
     # TraverseHandsWithReplayEngine(Constant.HANDSDB,Constant.HANDSCLT,sync=False,func=mainfunc,handsid="2017-12-10 23:32:41 255").traverse()
 
     # 下面这句话用于将库中的牌谱都计算完state信息,并存入state数据库中
-    TraverseHandsWithReplayEngine(Constant.HANDSDB,Constant.HANDSCLT,sync=False,func=mainfunc,handsid="").traverse()
-    # teststatesimilarity()
+    # TraverseHandsWithReplayEngine(Constant.HANDSDB,Constant.HANDSCLT,sync=False,func=mainfunc,handsid="").traverse()
+
+
+    teststatesimilarity()

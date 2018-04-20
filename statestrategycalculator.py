@@ -7,6 +7,7 @@ import handspower
 import handsengine
 import handsdistribution
 import json
+import numpy
 
 # 行为分布, 包括各种行动的概率, 包括check, call, raise三种
 class ActionDis:
@@ -107,6 +108,7 @@ class StateStrategyCalculator:
             self.m_querydict = querydict
 
 
+
     def testcal(self):
         result = DBOperater.Find(self.m_db,self.m_clt,{"_id":"2017-12-11 00:59:25 203"})
         doc = result.next()
@@ -127,12 +129,20 @@ class StateStrategyCalculator:
         # 根据秀牌数据进行强化学习
         result = DBOperater.Find(self.m_db,self.m_clt,self.m_querydict)
         prefloprangeengine = handsengine.prefloprangge()
+        cnt1 = 0
+        cnt2 = 0
         for doc in result:
+            if cnt1 % 1000 == 0:
+                print "cnt1:",cnt1
+            if cnt2 % 1000 == 0:
+                print "cnt2:",cnt2
+            cnt1 += 1
             replay = stateinfocalculator.StateReaderEngine(doc)
             replay.traversepreflop()
             pvhand = replay.m_handsinfo.gethand(replay.m_nextplayer)
             if pvhand is None:
                 continue
+            cnt2 += 1
             oppohands = handsdistribution.HandsDisQuality(prefloprangeengine.gethandsinrange(replay.m_prefloprange[replay.m_nextplayer]))
             board = replay.m_handsinfo.getboardcard()[:3]
             targethp = handspower.HandPower(handsdistribution.RangeState(board,pvhand,oppohands))
@@ -162,12 +172,12 @@ class StateStrategyCalculator:
     # state相似度权值计算公式
     def similarweightfunction(self, similar):
         pass
-        return similar
+        return numpy.exp((similar - 1)*20)
 
     # handspower相似度权值计算公式
     def similarhpfunction(self, similar):
         pass
-        return similar
+        return numpy.exp(-1.6 * similar)
 
     # 根据某一手特定的牌进行强化学习
     def reinlearning(self, targetstate, targethp, targetaction, fullactiondis, state):
@@ -176,3 +186,11 @@ class StateStrategyCalculator:
         for hp in fullactiondis.m_actiondisdata.keys():
             hpsimilar = targethp - hp
             fullactiondis.addaction(hp, targetaction, self.similarhpfunction(hpsimilar) * statesimilarweight)
+
+if __name__ == "__main__":
+    import time
+    start = time.time()
+    print "start:",start
+    ssc = StateStrategyCalculator(None)
+    ssc.testcal()
+    print "elapsed:",time.time() - start

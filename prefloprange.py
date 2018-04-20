@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 import Constant
 import DBOperater
 import handsinfocommon
@@ -405,6 +406,8 @@ class TestRangeAccuracy(ReplayEngine):
         self.m_rangeengine = handsengine.prefloprangge()
 
     def test(self):
+        if self.m_handsinfo.getplayerquantity() == 2:
+            return list([0,0])
         self.traversepreflop()
 
         correct = 0
@@ -418,7 +421,7 @@ class TestRangeAccuracy(ReplayEngine):
                 correct += 1
             else:
                 realjoinrate = self.m_rangeengine.gethandsjoinrate(pvhand)
-                print self.m_handsinfo["_id"], pos, round(joinrate,3), pvhand, realjoinrate, round(realjoinrate / joinrate, 4)
+                print self.m_handsinfo.getid(), pos, round(joinrate,3), pvhand, realjoinrate, round(realjoinrate / joinrate, 4)
                 wrong += 1
         return list([correct, wrong])
 
@@ -431,16 +434,18 @@ def mainfunc(handsinfo):
     rangeaccuracydict["wrong"] += wrong
 
 def testprefloprangemain():
-    TraverseValidHands(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="",sync=True, step=100).traverse()
+    TraverseValidHands(Constant.HANDSDB,Constant.HANDSCLT,func=mainfunc,handsid="",sync=True, step=100).traverse()
     handsinfocommon.pp.pprint(rangeaccuracydict)
     handsinfocommon.printdictbypercentage(rangeaccuracydict)
 
 if __name__ == "__main__":
-    removepreflopdoc()
+    # 下面这四个函数一起用来激活翻前范围程序
+    # removepreflopdoc()
+    #
+    # tongjiftmain()
+    # tongjijoinrate()
+    # repairjoinrate()
 
-    tongjiftmain()
-    tongjijoinrate()
-    repairjoinrate()
-
-    # testprefloprangemain()
+    # 下面这个程序用于测试上面生成的翻前范围配合翻前排力排行的准确率
+    testprefloprangemain()
 

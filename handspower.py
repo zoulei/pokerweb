@@ -106,13 +106,13 @@ def testcurwinrate():
 
 def testwinratestack():
     import handsengine
-    boardlist = ["ASTS4H","ASTC4H","ASTS4S","ASKCJH","AS7C6H","AS7H6H","8S6C3H","8S7C6H","KSJC4H",
+    boardlist = ["ASTS4H","ASKS4H","AS7S4H","ASTC4H","ASTS4S","ASKCJH","AS7C6H","AS7H6H","8S6C3H","8S7C6H","KSJC4H",
                  "JSTC5H","JSTS5H","ASACJH","8S8C4H","8S8C8H","8S8C7C"]
     boardlist = [hunlgame.generateCards(v) for v in boardlist]
     rangenum = 0.3
     handsrangeobj = handsengine.prefloprangge()
     ophandsrange = handsrangeobj.gethandsinrange(rangenum)
-    myhand = hunlgame.generateHands("2S5S")
+    myhand = hunlgame.generateHands("AD5D")
     hplist = []
     for board in boardlist:
         rangestate = handsdistribution.RangeState(board,myhand,handsdistribution.HandsDisQuality(ophandsrange))
@@ -373,4 +373,5 @@ if __name__ == "__main__":
     # readrandompowerquanlity()
     # testcurwinrate()
     # testwinratestack()
-    MarkerGeneraterTraverser(Constant.HANDSDB,Constant.HANDSCLT,step=1000).traverse()
+    # MarkerGeneraterTraverser(Constant.HANDSDB,Constant.HANDSCLT,step=1000).traverse()
+    testwinratestack()
