@@ -142,7 +142,7 @@ HISTOGRAMTHRE = 1
 CURWINRATEDIFFRATE = 25
 
 # =========================other==========================================
-THREADNUM = 15
+THREADNUM = 30
 
 # =========================state related===================================
 ISOPENER = "isopener"
@@ -196,3 +196,12 @@ CHECK = "check"
 CALL = "call"
 RAISE = "raise"
 FOLD = "fold"
+
+# ===============================turn related=================================
+TURNPREFLOP = "PREFLOP"
+TURNFLOP = "FLOP"
+TURNTURN = "TURN"
+TURNRIVER = "RIVER"
+
+# ===============================field related================================
+REALBETDATA = "REALBETDATA"

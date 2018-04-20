@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 #mongodb operation
 from pymongo import MongoClient
 
@@ -39,6 +40,8 @@ def Find(db,clt,query):
         Connect()
     return client[db][clt].find(query)
 
+# upsert为真时,如果没有通过query查到doc,那么会插入这个doc,
+# upsert为假时,如果没有通过query查到doc,那么会报错
 def ReplaceOne(db,clt,query,newdoc,upsert = False):
     global client
     if not client:

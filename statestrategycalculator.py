@@ -8,6 +8,7 @@ import handsengine
 import handsdistribution
 import json
 import numpy
+import traceback
 
 # 行为分布, 包括各种行动的概率, 包括check, call, raise三种
 class ActionDis:
@@ -158,14 +159,25 @@ class StateStrategyCalculator:
         result = DBOperater.Find(HANDSDB,STATEINFOHANDSCLT,{})
         turn = state.getstateturn()
         # 首先遍历所有牌局获取相似的state, 所有的信息会更新在actiondis中
+        cnt1 = 0
         for handdoc in result:
+            cnt1 += 1
+            if cnt1 %1000:
+                print "getactiondisofsimilarstate:",cnt1
             statereader = stateinfocalculator.StateReaderEngine(handdoc)
             allstate = statereader.getallstate(turn)
             allaction = statereader.m_handsinfo.getspecificturnrealbetdata(turn)
             # 遍历一个牌局中的所有state
             for curstate, curaction in zip(allstate,allaction):
                 actionpos, action, value = curaction
-                similar = state.similar(curstate)
+                try:
+                    similar = state.similar(curstate)
+                except:
+                    print "error:",handdoc["_id"]
+                    traceback.print_exc()
+                    raise
+                if similar == 0:
+                    break
                 actiondis.addaction(action, self.similarweightfunction(similar))
         return actiondis
 

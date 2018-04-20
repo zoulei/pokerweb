@@ -434,7 +434,7 @@ def mainfunc(handsinfo):
     rangeaccuracydict["wrong"] += wrong
 
 def testprefloprangemain():
-    TraverseValidHands(Constant.HANDSDB,Constant.HANDSCLT,func=mainfunc,handsid="",sync=True, step=100).traverse()
+    TraverseValidHands(Constant.HANDSDB,Constant.HANDSCLT,func=mainfunc,handsid="",sync=True, step=1000,end=10).traverse()
     handsinfocommon.pp.pprint(rangeaccuracydict)
     handsinfocommon.printdictbypercentage(rangeaccuracydict)
 

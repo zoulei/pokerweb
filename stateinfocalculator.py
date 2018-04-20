@@ -17,6 +17,12 @@ class StateCalculator(ReplayEngine):
     def __init__(self,handsinfo):
         ReplayEngine.__init__(self,handsinfo)
         self.initstaterecorder()
+        self.m_realbetdata = {
+            Constant.TURNPREFLOP:[],
+            Constant.TURNFLOP:[],
+            Constant.TURNTURN:[],
+            Constant.TURNRIVER:[]
+        }
 
     def initstaterecorder(self):
         self.m_preflopstate = []
@@ -152,6 +158,7 @@ class StateCalculator(ReplayEngine):
         return info["remain"] + info["allin"]
 
     def updatecumuinfo(self,round,actionidx):
+        curplayer = self.m_nextplayer
         statedata = {}
         statedata[Constant.ISOPENER] = self.getpreflopinfomation()["raiser"] == self.m_nextplayer
         statedata[Constant.HASOPENER] = self.getpreflopinfomation()["raiser"] != 0
@@ -191,9 +198,15 @@ class StateCalculator(ReplayEngine):
             statedata[Constant.ODDS] = self.m_laststate["odds"]
             [self.m_preflopstate,self.m_flopstate,self.m_turnstate,self.m_riverstate][round-1].append(statedata)
 
+        self.m_realbetdata[self.m_handsinfo.getturnstr(round)].append([curplayer,self.actiontransfer(self.m_lastaction),self.m_lastattackrate])
+
     # 存储计算得到的本牌局的state信息,并存储到一个新的数据集中
     def savestatedata(self):
         targetdoc = self.m_handsinfo.m_handsinfo["data"]
+        for k in self.m_realbetdata.keys():
+            if not len(self.m_realbetdata[k]):
+                del self.m_realbetdata[k]
+        targetdoc[Constant.REALBETDATA] = self.m_realbetdata
         targetdoc["STATEINFO"] = {}
         targetdoc = targetdoc["STATEINFO"]
         targetdoc["PREFLOP"] = self.m_preflopstate
@@ -203,6 +216,7 @@ class StateCalculator(ReplayEngine):
             targetdoc["TURN"] = self.m_turnstate
         if self.m_riverstate:
             targetdoc["RIVER"] = self.m_riverstate
+
         DBOperater.ReplaceOne(Constant.HANDSDB,Constant.STATEINFOHANDSCLT,{"_id":self.m_handsinfo.getid()},self.m_handsinfo.m_handsinfo,True)
 
 # StateCalculator 的使用示例,同时也是用来多线程处理历史牌局的处理函数
@@ -211,6 +225,7 @@ def mainfunc(handsinfo):
         cal = StateCalculator(handsinfo)
         cal.traversealldata()
         cal.savestatedata()
+        # print handsinfo["_id"]
     except:
         print "===============error=============="
         print "error : ", handsinfo["_id"]
@@ -308,7 +323,7 @@ if __name__ == "__main__":
     # TraverseHandsWithReplayEngine(Constant.HANDSDB,Constant.HANDSCLT,sync=False,func=mainfunc,handsid="2017-12-10 23:32:41 255").traverse()
 
     # 下面这句话用于将库中的牌谱都计算完state信息,并存入state数据库中
-    # TraverseHandsWithReplayEngine(Constant.HANDSDB,Constant.HANDSCLT,sync=False,func=mainfunc,handsid="").traverse()
+    TraverseHandsWithReplayEngine(Constant.HANDSDB,Constant.HANDSCLT,sync=False,func=mainfunc,handsid="").traverse()
 
 
-    teststatesimilarity()
+    # teststatesimilarity()

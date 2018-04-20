@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 import DBOperater
 import Constant
 import handsinfocommon
@@ -8,6 +9,7 @@ import os
 import signal
 import time
 import handsengine
+
 
 class TraverseHands:
     # def __init__(self,db,clt,handsnum = 0):
@@ -24,6 +26,9 @@ class TraverseHands:
         self.m_processeddata = 0
 
         self.m_elapsedtime = 0
+
+        self.m_true = 0
+        self.m_false = 0
         self.initdata()
 
     def initdata(self):
@@ -55,6 +60,8 @@ class TraverseHands:
         min = int(self.m_elapsedtime)%  3600/60
         sec = int(self.m_elapsedtime)%  60
         print "processeddata : ", self.m_processeddata
+        print "true value : ", self.m_true
+        print "false value : ", self.m_false
         print "elapsedtime : ", day, "D", hour,"H", min, "M", sec, "S"
         print "elapsedtime : ", self.m_elapsedtime
 
@@ -101,7 +108,12 @@ class TraverseHands:
         try:
             # result = self.m_pool.map_async(self.mainfunc, doclist)
             result = pool.map_async(self.m_func, doclist)
-            result.get(99999999)  # Without the timeout this blocking call ignores all signals.
+            result = result.get(99999999)  # Without the timeout this blocking call ignores all signals.
+            for v in result:
+                if v is True:
+                    self.m_true += 1
+                else:
+                    self.m_false += 1
         except KeyboardInterrupt:
             pool.terminate()
             pool.close()
@@ -115,9 +127,13 @@ class TraverseHands:
         for handsinfo in doclist:
             try:
                 if self.m_func:
-                    self.m_func(handsinfo)
+                    returnvalue = self.m_func(handsinfo)
                 else:
-                    self.mainfunc(handsinfo)
+                    returnvalue = self.mainfunc(handsinfo)
+                if returnvalue is True:
+                    self.m_true += 1
+                else:
+                    self.m_false += 1
             except  KeyboardInterrupt:
                 exit()
             except:
@@ -135,6 +151,12 @@ class TraverseHands:
 
 class TraverseValidHands(TraverseHands):
     def filter(self, handsinfo):
+        return False
+
+class TraverseMultiplayerHands(TraverseHands):
+    def filter(self, handsinfo):
+        if handsinfo["data"]["PLAYQUANTITY"] == 2:
+            return True
         return False
 
 def mainfunc( handsinfo):
@@ -171,8 +193,18 @@ class TestPayoff(TraverseValidHands):
         }
         raw_input()
 
+def traversemultiplayerhandsmainfunc(handsinfo):
+    try:
+        engine = handsengine.ReplayEngine(handsinfo)
+        if engine.m_handsinfo.getplayerquantity() == 2:
+            return
+        engine.traversealldata()
+    except:
+        print "======:",handsinfo["_id"]
 
 if __name__ == "__main__":
-    # TraverseHands(Constant.HANDSDB,Constant.TJHANDSCLT,func=mainfunc,handsid="").traverse()
-    # TraverseHandsEngine(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="35357006093039820170327013640").traverse()
-    TestPayoff(Constant.HANDSDB,Constant.HANDSCLT,handsid="2017-12-15 00:43:13 84",step=1000).traverse()
+    # 下面这个函数是用来检查一手牌的输赢数据,通过对比输赢数据来确定引擎的正确性
+    # TestPayoff(Constant.HANDSDB,Constant.HANDSCLT,handsid="2017-12-15 00:43:13 84",step=1000).traverse()
+
+    # 下面这个函数用于检查牌局数据是否正确,会打印出有错误的牌局数据
+    TraverseHands(Constant.HANDSDB,Constant.HANDSCLT,func=traversemultiplayerhandsmainfunc).traverse()

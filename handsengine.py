@@ -34,6 +34,8 @@ class prefloprangge:
         try:
             if not action:
                 return
+            if action == "check":
+                action = "call"
             targetfield = Constant.getprefloprangefield(curturn,betlevel)
             targetdoc = self.m_rawdata[targetfield]
 
@@ -259,6 +261,7 @@ class ReplayEngine:
 
         self.m_attack = 0
         self.m_totalattack = 0
+        self.m_lastattackrate = 0
 
         self.repairstackandpot()
 
@@ -420,6 +423,8 @@ class ReplayEngine:
             print "game has over"
             handsinfocommon.pp.pprint(self.m_handsinfo.m_handsinfo)
             raise handsinfoexception.ExtraAction()
+        if actionpos != self.m_nextplayer:
+            raise
         self.m_laststate = self.calstatistics()
         self.updatestate(actionpos,action,value)
         if actionpos == self.m_nextplayer:
@@ -470,10 +475,6 @@ class ReplayEngine:
     def updatestate(self,actionpos,action,value):
         # print "action:",action,value
         pos = self.m_nextplayer
-        if pos != actionpos:
-            self.m_inpoolstate[actionpos] = 0
-            self.m_remainplayer -= 1
-            return
         self.m_stacksize[pos] -= value
         value += self.m_bethistory.get(pos,0)
         realvalue = value
@@ -513,7 +514,10 @@ class ReplayEngine:
             realpot = self.m_pot + self.m_betvalue - self.m_bethistory.get(pos,0)
             attackrate = attackvalue * 1.0 / realpot
             self.m_attack += attackrate
+            self.m_lastattackrate = attackrate
             self.m_totalattack += attackrate
+        else:
+            self.m_lastattackrate = 0
 
         # print "action:",action,value
         if action == 1 or action == -1:
@@ -745,11 +749,11 @@ class ReplayEngine:
             return
         elif action in [2,4.2]:
             return "raise"
-        elif action in [3,6,4.3]:
+        elif action in [6,4.3]:
             # check 和 call 都算call
             return "call"
-        # elif action == 3:
-        #     return "check"
+        elif action == 3:
+            return "check"
 
     # these function is used to calculate payoff and most of the function is
     # copied from tongjihandsinfo.py
@@ -1035,7 +1039,7 @@ class HandsInfo:
     # 这个方法获取的下注行为都是经过了处理之后的, 也就是说把all in数据都已经转化成了call, 和raise
     def getspecificturnrealbetdata(self, turnidx):
         turnstr = self.TURNSTR[turnidx - 1]
-        return self.m_handsinfo["data"]["REALBETDATA"].get(turnstr,[])
+        return self.m_handsinfo["data"][Constant.REALBETDATA].get(turnstr,[])
 
 def testgetprefloprange():
     rangeobj = prefloprangge()
