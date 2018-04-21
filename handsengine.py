@@ -263,6 +263,8 @@ class ReplayEngine:
         self.m_totalattack = 0
         self.m_lastattackrate = 0
 
+        self.m_gameover = False
+
         self.repairstackandpot()
 
     def repairstackandpot(self):
@@ -363,6 +365,7 @@ class ReplayEngine:
                 return False
 
     def updatecurturnstate(self):
+        # print "updateturnstate:",self.m_remainplayer,self.m_raiser,self.m_fakeraiser
         if self.m_remainplayer == 1:
             self.m_curturnover = True
             return
@@ -397,18 +400,23 @@ class ReplayEngine:
                 self.m_curturnover = False
 
     def isgameover(self):
-        if self.m_curturnover == False:
-            return False
-        if self.m_curturnover == True and self.m_curturn == 4:
-            return True
+        return self.m_gameover
 
+    def updategameoverstate(self):
+        # print "updategameover:",self.m_curturnover,self.m_curturn,self.m_remainplayer - self.m_allinplayer
+        if self.m_curturnover == False:
+            self.m_gameover = False
+            return
+        if self.m_curturnover == True and self.m_curturn == 4:
+            self.m_gameover = True
+            return
         remain = self.m_remainplayer - self.m_allinplayer
         if remain > 1:
-            return False
+            self.m_gameover = False
         elif remain == 1:
-            return True
+            self.m_gameover = True
         elif remain == 0:
-            return True
+            self.m_gameover = True
         else:
             print "remain small than 0"
             raise
@@ -419,6 +427,8 @@ class ReplayEngine:
         return self.m_afterflopposlist
 
     def update(self,actionpos,action,value):
+        # print "-----------------------------------"
+        # print "update:",actionpos,action,value
         if self.isgameover():
             print "game has over"
             handsinfocommon.pp.pprint(self.m_handsinfo.m_handsinfo)
@@ -430,8 +440,10 @@ class ReplayEngine:
         if actionpos == self.m_nextplayer:
             self.m_lastplayer = self.m_nextplayer
         self.updatecurturnstate()
-        if actionpos != self.m_nextplayer:
-            return
+        self.updategameoverstate()
+        # print "gameover:",self.isgameover()
+        # if actionpos != self.m_nextplayer:
+        #     return
         self.m_nextplayer = self.getnextplayer()
         # print "player: ",self.m_lastplayer,self.m_nextplayer, action, value
         self.updatecircle()

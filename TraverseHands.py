@@ -9,6 +9,7 @@ import os
 import signal
 import time
 import handsengine
+import traceback
 
 
 class TraverseHands:
@@ -197,14 +198,24 @@ def traversemultiplayerhandsmainfunc(handsinfo):
     try:
         engine = handsengine.ReplayEngine(handsinfo)
         if engine.m_handsinfo.getplayerquantity() == 2:
-            return
+            return True
         engine.traversealldata()
+        # print "gameover:",engine.isgameover()
+        if not engine.isgameover():
+            print "=====:",handsinfo["_id"]
+            handsinfocommon.pp.pprint(handsinfo)
+            DBOperater.DeleteData(Constant.HANDSDB,Constant.HANDSCLT,{"_id":handsinfo["_id"]})
+            return False
+        return True
     except:
         print "======:",handsinfo["_id"]
+        DBOperater.DeleteData(Constant.HANDSDB,Constant.HANDSCLT,{"_id":handsinfo["_id"]})
+        traceback.print_exc()
+        return False
 
 if __name__ == "__main__":
     # 下面这个函数是用来检查一手牌的输赢数据,通过对比输赢数据来确定引擎的正确性
     # TestPayoff(Constant.HANDSDB,Constant.HANDSCLT,handsid="2017-12-15 00:43:13 84",step=1000).traverse()
 
     # 下面这个函数用于检查牌局数据是否正确,会打印出有错误的牌局数据
-    TraverseHands(Constant.HANDSDB,Constant.HANDSCLT,func=traversemultiplayerhandsmainfunc).traverse()
+    TraverseHands(Constant.HANDSDB,Constant.HANDSCLT,func=traversemultiplayerhandsmainfunc,handsid="").traverse()
