@@ -13,8 +13,8 @@ import traceback
 
 
 class TraverseHands:
-    # def __init__(self,db,clt,handsnum = 0):
-    def __init__(self, db, clt, func = None, handsid = "", step = 10000, start = 0, end = 0, sync = False):
+    def __init__(self, db, clt, func = None, handsid = "", step = 10000,
+                 start = 0, end = 0, sync = False, para = None, otherpara = None):
         self.m_db = db
         self.m_clt = clt
         self.m_func = func
@@ -23,13 +23,15 @@ class TraverseHands:
         self.m_start = start
         self.m_end = end
         self.m_sync = sync
-        # self.m_limit = handsnum
         self.m_processeddata = 0
 
         self.m_elapsedtime = 0
 
         self.m_true = 0
         self.m_false = 0
+
+        self.m_para = para
+        self.m_otherpara = otherpara
         self.initdata()
 
     def initdata(self):
@@ -52,7 +54,7 @@ class TraverseHands:
 
             if idx >= self.m_start:
                 print "traverse : ",idx
-                self.traverse_(idx)
+                self.parttraverse(idx)
 
         end = time.time()
         self.m_elapsedtime = end - start
@@ -66,7 +68,7 @@ class TraverseHands:
         print "elapsedtime : ", day, "D", hour,"H", min, "M", sec, "S"
         print "elapsedtime : ", self.m_elapsedtime
 
-    def traverse_(self, idx):
+    def parttraverse(self, idx):
         DBOperater.Connect()
         if not self.m_handsid:
             result = DBOperater.Find(self.m_db, self.m_clt, {})
@@ -97,10 +99,10 @@ class TraverseHands:
         if self.m_func and not self.m_sync:
             # print "async"
             DBOperater.Disconnect()
-            self.asyncmain(doclist)
+            return self.asyncmain(doclist)
         else:
             # print "sync"
-            self.syncmain(doclist)
+            return self.syncmain(doclist)
 
     def asyncmain(self,doclist):
         original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -108,7 +110,13 @@ class TraverseHands:
         signal.signal(signal.SIGINT, original_sigint_handler)
         try:
             # result = self.m_pool.map_async(self.mainfunc, doclist)
-            result = pool.map_async(self.m_func, doclist)
+            if self.m_para is None:
+                result = pool.map_async(self.m_func, doclist)
+            else:
+                doclist = [[v,] for v in doclist]
+                for v in doclist:
+                    v.extend(self.m_para)
+                result = pool.map_async(self.m_func, doclist)
             result = result.get(99999999)  # Without the timeout this blocking call ignores all signals.
             for v in result:
                 if v is True:
@@ -123,14 +131,20 @@ class TraverseHands:
         else:
             pool.close()
         pool.join()
+        return result
 
     def syncmain(self,doclist):
+        result = []
         for handsinfo in doclist:
             try:
                 if self.m_func:
-                    returnvalue = self.m_func(handsinfo)
+                    if self.m_para is None:
+                        returnvalue = self.m_func(handsinfo)
+                    else:
+                        returnvalue = self.m_func(handsinfo,*self.m_para)
                 else:
                     returnvalue = self.mainfunc(handsinfo)
+                result.append(returnvalue)
                 if returnvalue is True:
                     self.m_true += 1
                 else:
@@ -142,6 +156,7 @@ class TraverseHands:
                 print "error : ", handsinfo["_id"]
                 handsinfocommon.pp.pprint(handsinfo)
                 raise
+        return result
 
     def filter(self, handsinfo):
         return False
@@ -150,31 +165,19 @@ class TraverseHands:
         return "mainfunc of TraverseHands: "+handsinfo["_id"]
         pass
 
-class TraverseValidHands(TraverseHands):
-    def filter(self, handsinfo):
-        return False
-
+# 该遍历引擎会遍历多人的牌局, 即不会处理单挑局
 class TraverseMultiplayerHands(TraverseHands):
     def filter(self, handsinfo):
         if handsinfo["data"]["PLAYQUANTITY"] == 2:
             return True
         return False
 
-def mainfunc( handsinfo):
-    time.sleep(20)
-    return "mainfunc of TraverseHands: " + handsinfo["_id"]
+# =============================================================
+# 下面这些函数都是在本文件中专用的一些测试用或者专用函数
+# =============================================================
 
-class TraverseHandsEngine(TraverseHands):
-    def mainfunc(self, handsinfo):
-        handsengine.ReplayEngine(handsinfo).traversealldata()
-
-class TraverseHandsWithReplayEngine(TraverseHands):
-    def filter(self, handsinfo):
-        if handsengine.HandsInfo(handsinfo).getplayerquantity() == 2:
-            return True
-        return False
-
-class TestPayoff(TraverseValidHands):
+# 这个是用于验证ReplayEngine正确性的函数
+class TestPayoff(TraverseHands):
     def mainfunc(self, handsinfo):
         engine = handsengine.ReplayEngine(handsinfo)
         engine.traversealldata()

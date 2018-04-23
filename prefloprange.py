@@ -7,7 +7,7 @@ import believeinterval
 import math
 import tongjihandsinfo
 from handsengine import ReplayEngine
-from TraverseHands import TraverseValidHands
+from TraverseHands import TraverseHands
 import handsengine
 import pprint
 import traceback
@@ -406,7 +406,7 @@ class TestRangeAccuracy(ReplayEngine):
         self.m_rangeengine = handsengine.prefloprangge()
 
     def test(self):
-        if self.m_handsinfo.getplayerquantity() == 2:
+        if self.m_handsinfo.getplayerquantity() < 6:
             return list([0,0])
         self.traversepreflop()
 
@@ -434,17 +434,17 @@ def mainfunc(handsinfo):
     rangeaccuracydict["wrong"] += wrong
 
 def testprefloprangemain():
-    TraverseValidHands(Constant.HANDSDB,Constant.HANDSCLT,func=mainfunc,handsid="",sync=True, step=1000,end=10).traverse()
+    TraverseHands(Constant.HANDSDB,Constant.HANDSCLT,func=mainfunc,handsid="",sync=True, step=1000,end=10).traverse()
     handsinfocommon.pp.pprint(rangeaccuracydict)
     handsinfocommon.printdictbypercentage(rangeaccuracydict)
 
 if __name__ == "__main__":
     # 下面这四个函数一起用来激活翻前范围程序
-    # removepreflopdoc()
-    #
-    # tongjiftmain()
-    # tongjijoinrate()
-    # repairjoinrate()
+    removepreflopdoc()
+
+    tongjiftmain()
+    tongjijoinrate()
+    repairjoinrate()
 
     # 下面这个程序用于测试上面生成的翻前范围配合翻前排力排行的准确率
     testprefloprangemain()

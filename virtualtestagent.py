@@ -4,7 +4,7 @@ import Constant
 import copy
 from handsdistribution import HandsDisQuality
 from rullbasedagent import HonestAgent
-from TraverseHands import TraverseValidHands
+from TraverseHands import TraverseHands
 import handsinfocommon
 
 class VirtualTestAgent:
@@ -89,7 +89,7 @@ class TestPayoff(TraverseValidHands):
         #     for action, _ in betdata:
         #         if action != 1:
         #             return True
-        return TraverseValidHands.filter(self,handsinfo)
+        return TraverseHands.filter(self,handsinfo)
 
     def mainfunc(self, handsinfo):
         dealer = DealerFromHistory(handsinfo)

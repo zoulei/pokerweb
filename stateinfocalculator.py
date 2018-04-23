@@ -4,7 +4,7 @@
 # 从牌局数据中读取state等
 
 from handsengine import ReplayEngine
-from TraverseHands import TraverseHandsWithReplayEngine
+from TraverseHands import TraverseMultiplayerHands
 import DBOperater
 import Constant
 import numpy
@@ -225,6 +225,7 @@ def mainfunc(handsinfo):
         cal = StateCalculator(handsinfo)
         cal.traversealldata()
         cal.savestatedata()
+        return True
         # print handsinfo["_id"]
     except:
         print "===============error=============="
@@ -232,6 +233,7 @@ def mainfunc(handsinfo):
         DBOperater.DeleteData(Constant.HANDSDB,Constant.HANDSCLT,{"_id":handsinfo["_id"]})
         handsinfocommon.pp.pprint(handsinfo)
         traceback.print_exc()
+        return False
         # raise
 
 # state类,类名中的byexpert指的是这个state的设计是基于专家的领域知识
@@ -323,7 +325,7 @@ if __name__ == "__main__":
     # TraverseHandsWithReplayEngine(Constant.HANDSDB,Constant.HANDSCLT,sync=False,func=mainfunc,handsid="2017-12-10 23:32:41 255").traverse()
 
     # 下面这句话用于将库中的牌谱都计算完state信息,并存入state数据库中
-    TraverseHandsWithReplayEngine(Constant.HANDSDB,Constant.HANDSCLT,sync=False,func=mainfunc,handsid="").traverse()
+    TraverseMultiplayerHands(Constant.HANDSDB,Constant.HANDSCLT,sync=False,func=mainfunc,handsid="").traverse()
 
 
     # teststatesimilarity()
