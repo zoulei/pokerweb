@@ -70,18 +70,26 @@ class FullActionDis:
             self.m_actiondisdata[v] = ActionDis()
 
     def addaction(self, hp, action, rate):
-        self.m_actiondisdata[hp].addaction(action, rate)
+        try:
+            self.m_actiondisdata[hp].addaction(action, rate)
+        except:
+            print str(hp)
+            print len(self.m_marker.m_hplist)
+            raise
 
     # 该方法根据统计的行为分布初始化完整行为分布数据
     def initfulldis(self, actiondis):
         raiserlen = int(actiondis[RAISE] * self.m_marker.m_length)
-        callandchecklen = int( (actiondis[CALL]+actiondis[CHECK])* self.m_marker.m_length )
+        calllen = int(actiondis[CALL] * self.m_marker.m_length)
+        checklen = int(actiondis[CHECK] * self.m_marker.m_length)
         for idx in xrange(raiserlen):
             self.addaction(self.m_marker.m_hplist[idx],RAISE,1.0)
-        for idx in xrange(callandchecklen):
-            self.addaction(self.m_marker.m_hplist[idx+raiserlen],self.m_defend,1.0)
-        for idx in xrange(self.m_marker.m_length - raiserlen - callandchecklen):
-            self.addaction(self.m_marker.m_hplist[idx+raiserlen+callandchecklen],FOLD,1.0)
+        for idx in xrange(raiserlen,calllen+raiserlen):
+            self.addaction(self.m_marker.m_hplist[idx],CALL,1.0)
+        for idx in xrange(raiserlen+calllen,checklen+raiserlen+calllen):
+            self.addaction(self.m_marker.m_hplist[idx],CHECK,1.0)
+        for idx in xrange(raiserlen + calllen + checklen,self.m_marker.m_length):
+            self.addaction(self.m_marker.m_hplist[idx],FOLD,1.0)
 
     # 该方法将完整的行为分布中每一个hp的行为分布都归一化
     def normalize(self):
@@ -129,14 +137,19 @@ class FullActionDisCalculator(TraverseHands):
         for subresult in result:
             for action, weightedsimilar in subresult:
                 self.m_actiondis.addaction(action, weightedsimilar)
+        self.m_actiondis.normalize()
 
 def reinlearningmainfunc(para):
     handsinfo, state, prefloprangeengine, actiondiskeys = para
     replay = stateinfocalculator.StateReaderEngine(handsinfo)
+    if replay.m_handsinfo.getturncount() < 2:
+        return []
     replay.traversepreflop()
     pvhand = replay.m_handsinfo.gethand(replay.m_nextplayer)
     if pvhand is None:
-        return
+        return []
+    # print "------"
+    # print replay.m_prefloprange
     oppohands = handsdistribution.HandsDisQuality(prefloprangeengine.gethandsinrange(replay.m_prefloprange[replay.m_nextplayer]))
     board = replay.m_handsinfo.getboardcard()[:3]
     targethp = handspower.HandPower(handsdistribution.RangeState(board,pvhand,oppohands))
@@ -201,52 +214,22 @@ class StateStrategyCalculator:
         # 根据秀牌数据进行强化学习
         prefloprangeengine = handsengine.prefloprangge()
         fullactiondis = FullActionDis(state.ischeckavailable())
-        reinlearningengine = ReinLearning(self.m_db,self.m_clt,func=reinlearningmainfunc,
+        reinlearningengine = ReinLearning(self.m_db,self.m_clt,func=reinlearningmainfunc,sync=False,end=1,step=10000,
                 para=[state,prefloprangeengine, fullactiondis.m_marker.m_hplist], otherpara=[state, actiondis])
         reinlearningengine.traverse()
         return reinlearningengine.m_fullactiondis
 
-        # # 根据统计行为分布获取一个初始完整行为分布
-        # fullactiondis = FullActionDis(state.ischeckavailable())
-        # fullactiondis.initfulldis(actiondis)
-        #
-        # # 根据秀牌数据进行强化学习
-        # result = DBOperater.Find(self.m_db,self.m_clt,self.m_querydict)
-        #
-        # cnt1 = 0
-        # cnt2 = 0
-        # for doc in result:
-        #     if cnt1 % 1000 == 0:
-        #         print "cnt1:",cnt1
-        #     if cnt2 % 1000 == 0:
-        #         print "cnt2:",cnt2
-        #     cnt1 += 1
-        #     replay = stateinfocalculator.StateReaderEngine(doc)
-        #     replay.traversepreflop()
-        #     pvhand = replay.m_handsinfo.gethand(replay.m_nextplayer)
-        #     if pvhand is None:
-        #         continue
-        #     cnt2 += 1
-        #     oppohands = handsdistribution.HandsDisQuality(prefloprangeengine.gethandsinrange(replay.m_prefloprange[replay.m_nextplayer]))
-        #     board = replay.m_handsinfo.getboardcard()[:3]
-        #     targethp = handspower.HandPower(handsdistribution.RangeState(board,pvhand,oppohands))
-        #     replay.updatecumuinfo(2,0)
-        #     self.reinlearning(replay.getstate(2,0), targethp, replay.actiontransfer(replay.m_lastaction),fullactiondis,state)
-        # fullactiondis.normalize()
-        # return fullactiondis
-
     # 统计相似state下的行为分布
     def getactiondisofsimilarstate(self, state):
         actiondistraverseengine = FullActionDisCalculator(self.m_db,self.m_clt,
-            func=fullactiondiscalculatormainfunc,para=[state,similarweightfunction])
+            func=fullactiondiscalculatormainfunc,para=[state,similarweightfunction],end=1)
         actiondistraverseengine.traverse()
         actiondis = actiondistraverseengine.m_actiondis
         return actiondis
 
-def actiondismainfunc(handsinfo):
-    pass
-
 if __name__ == "__main__":
+    # testprinthandpower()
+
     import time
     start = time.time()
     print "start:",start

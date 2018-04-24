@@ -141,7 +141,7 @@ class TraverseHands:
                     if self.m_para is None:
                         returnvalue = self.m_func(handsinfo)
                     else:
-                        returnvalue = self.m_func(handsinfo,*self.m_para)
+                        returnvalue = self.m_func([handsinfo,]+self.m_para)
                 else:
                     returnvalue = self.mainfunc(handsinfo)
                 result.append(returnvalue)

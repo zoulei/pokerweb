@@ -80,6 +80,9 @@ class HandPower:
         }
         return json.dumps(doc)
 
+    def __eq__(self, other):
+        return str(self) == str(other)
+
 def testcurwinrate():
     import handsengine
     rangenum = 0.3

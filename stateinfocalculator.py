@@ -286,6 +286,9 @@ class StateByExpert:
         similar = 1.0 * sum([v[0]*v[1] for v in attrsimilar]) / sum([v[1] for v in attrsimilar])
         return similar
 
+    def __sub__(self, other):
+        return self.similar(other)
+
 # 读取牌局数据中的state的类
 class StateReaderEngine(ReplayEngine):
     # 读取指定轮的所有state原始信息
