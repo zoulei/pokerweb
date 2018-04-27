@@ -41,9 +41,6 @@ class WinrateCalculator:
         for ophands in ophandslist:
             keylist = ophands.getvalidhands()
             fullhand = [myhand,] + list(keylist)
-            # handinfo = []
-            # for hand in fullhand:
-            #     handinfo.append(hand.get())
             results = hunlgame.sorthands_(board, [v.get() for v in fullhand])
             resultkeylist = results.keys()
             resultkeylist.sort()
@@ -65,23 +62,6 @@ class WinrateCalculator:
             totalwinrate *= winrate
         return totalwinrate
 
-    # def calmywinrate_(self, board, myhand, ophands):
-    #     for card in board:
-    #         if card in myhand.get():
-    #             # 如果我的手牌与牌面上的牌有重复的话,就返回-1
-    #             return -1
-    #         for handdis in ophands:
-    #             # 移除掉对手的手牌中包含牌面上的牌的手牌
-    #             handdis.removecard(card)
-    #     for card in myhand.get():
-    #         for handdis in ophands:
-    #             handdis.removecard(card)
-    #     for handdis in ophands:
-    #         handdis.normalize()
-    #
-    #     curwinrate = self.calmywinrate__(board, myhand, copy.deepcopy(ophands))
-    #     return curwinrate
-
     def calmywinrate(self):
         myhands = copy.deepcopy(self.m_myhands)
         ophands = copy.deepcopy(self.m_ophands)
@@ -102,6 +82,7 @@ class WinrateCalculator:
             try:
                 allcards.remove(card)
             except:
+                print "my hands conflict with the board cards"
                 print hunlgame.board2str(self.m_board)
                 print hunlgame.board2str(self.m_myhands.get())
                 raise
