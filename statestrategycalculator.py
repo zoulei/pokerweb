@@ -142,43 +142,63 @@ class FullActionDisCalculator(TraverseHands):
         self.m_actiondis.normalize()
 
 timer = Timer()
+syncflag = False
 
 def reinlearningmainfunc(para):
     handsinfo, state, prefloprangeengine, actiondiskeys = para
     curturn = state.getstateturn()
-    timer.start("readerengine")
+    if syncflag:
+        timer.start("readerengine")
     replay = stateinfocalculator.StateReaderEngine(handsinfo)
-    timer.stop("readerengine")
+    if syncflag:
+        timer.stop("readerengine")
     if replay.m_handsinfo.getturncount() < 2:
         return []
-    timer.start("traverse")
+    if syncflag:
+        timer.start("traverse")
     replay.traversepreflop()
-    timer.stop("traverse")
+    if syncflag:
+        timer.stop("traverse")
     pvhand = replay.m_handsinfo.gethand(replay.m_nextplayer)
     if pvhand is None:
         return []
-    timer.start("handsquality")
-    oppohands = handsdistribution.HandsDisQuality(prefloprangeengine.gethandsinrange(replay.m_prefloprange[replay.m_nextplayer]))
-    timer.stop("handsquality")
+    if syncflag:
+        timer.start("handsquality")
+    oppohands = []
+    for pos, inpoolstate in enumerate(replay.m_inpoolstate):
+        if inpoolstate != 0:
+            oppohands.append(handsdistribution.HandsDisQuality(prefloprangeengine.gethandsinrange(replay.m_prefloprange[pos])))
+    # oppohands = handsdistribution.HandsDisQuality(prefloprangeengine.gethandsinrange(replay.m_prefloprange[replay.m_nextplayer]))
+    if syncflag:
+        timer.stop("handsquality")
     board = replay.m_handsinfo.getboardcard()[:3]
-    timer.start("handspower")
+    if syncflag:
+        timer.start("handspower")
     targethp = handspower.HandPower(handsdistribution.RangeState(board,pvhand,oppohands))
-    timer.stop("handspower")
-    # replay.updatecumuinfo(2,0)
-    timer.start("statesimilar")
+    if syncflag:
+        timer.stop("handspower")
+    if syncflag:
+        timer.start("statesimilar")
     statesimilar = replay.getstate(curturn,0) - state
-    timer.stop("statesimilar")
-    timer.start("weightfunc")
+    if syncflag:
+        timer.stop("statesimilar")
+    if syncflag:
+        timer.start("weightfunc")
     statesimilarweight = similarweightfunction(statesimilar)
-    timer.stop("weightfunc")
+    if syncflag:
+        timer.stop("weightfunc")
     result = []
     for hp in actiondiskeys:
-        timer.start("hpsimilar")
+        if syncflag:
+            timer.start("hpsimilar")
         hpsimilar = targethp - hp
-        timer.stop("hpsimilar")
-        timer.start("hpweightfunc")
+        if syncflag:
+            timer.stop("hpsimilar")
+        if syncflag:
+            timer.start("hpweightfunc")
         result.append([hp, replay.m_handsinfo.getspecificturnrealbetdata(curturn)[0][1], similarhpfunction(hpsimilar) * statesimilarweight])
-        timer.stop("hpweightfunc")
+        if syncflag:
+            timer.stop("hpweightfunc")
     return result
 
 class ReinLearning(TraverseHands):
@@ -243,7 +263,7 @@ class StateStrategyCalculator:
         # 根据秀牌数据进行强化学习
         prefloprangeengine = handsengine.prefloprangge()
         fullactiondis = FullActionDis(state.ischeckavailable())
-        reinlearningengine = ReinLearning(self.m_db,self.m_clt,func=reinlearningmainfunc,sync=True,end=100,step=50,
+        reinlearningengine = ReinLearning(self.m_db,self.m_clt,func=reinlearningmainfunc,sync=False,end=1,step=1000,
                 para=[state,prefloprangeengine, fullactiondis.m_marker.m_hplist], otherpara=[state, actiondis])
         reinlearningengine.traverse()
         return reinlearningengine.m_fullactiondis
