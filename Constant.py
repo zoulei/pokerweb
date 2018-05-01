@@ -116,6 +116,9 @@ SCORERANGE = 50 # lower, pair gets priority
 
 NEWSTRENGTHMAP = CACHEDIR + "newstrengthmap"
 
+ALLHANDSSTRENGTH = CACHEDIR + "calculateallhandsstrength"
+ALLHANDSRANK = CACHEDIR + "calculateallhandsrank"
+
     # ----------------------next turn strength histogram----------------
 HANDSTRENGTHSLOT = 0.04
 
@@ -142,7 +145,7 @@ HISTOGRAMTHRE = 1
 CURWINRATEDIFFRATE = 25
 
 # =========================other==========================================
-THREADNUM = 30
+THREADNUM = 24
 
 # =========================state related===================================
 ISOPENER = "isopener"

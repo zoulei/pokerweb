@@ -7,6 +7,7 @@ from pyemd import emd
 def EMD(histogram1, histogram2, distancematrix = None):
     if distancematrix is not None:
         return EMD_(histogram1,histogram2,distancematrix)
+    #===============================================
     hislen = len(histogram1)
     a = np.zeros( (hislen,2))
     # a = np.zeros((5,2))
@@ -22,7 +23,9 @@ def EMD(histogram1, histogram2, distancematrix = None):
         # b[i][1] = i+1
         b[i][1] = i + 1
         b[i][0] = histogram2[i]
+    #=====================5.8s======================
 
+    #===============================================
     # Convert from numpy array to CV_32FC1 Mat
     a64 = cv.fromarray(a)
     a32 = cv.CreateMat(a64.rows, a64.cols, cv.CV_32FC1)
@@ -31,11 +34,15 @@ def EMD(histogram1, histogram2, distancematrix = None):
     b64 = cv.fromarray(b)
     b32 = cv.CreateMat(b64.rows, b64.cols, cv.CV_32FC1)
     cv.Convert(b64, b32)
+    #=====================2.7s=======================
 
+    #================================================
     # Calculate Earth Mover's
     return cv.CalcEMD2(a32,b32,cv.CV_DIST_L2)
+    #=====================1.2s=======================
 
 def EMD_(histogram1, histogram2, distancematrix):
+    #============================================
     fh = np.array(histogram1,dtype=float)
     fhsum = sum(fh)
     fh = np.vectorize(lambda t:t / fhsum)(fh)
@@ -44,8 +51,11 @@ def EMD_(histogram1, histogram2, distancematrix):
     sh = np.vectorize(lambda t:t / shsum)(sh)
 
     dm = np.array(distancematrix)
-    return emd(fh,sh,dm)
+    #=================41.2s========================
 
+    #==============================================
+    return emd(fh,sh,dm)
+    #=================25.5s========================
 
 def simplediff(histogram1, histogram2):
     totaldif = 0
@@ -85,7 +95,7 @@ def testpyemd1():
     print emd(first_histogram, second_histogram, distance_matrix)
 
 if __name__ == "__main__":
-    print EMD([2,2,2,1,3],[2,2,2,2,2],[
+    print EMD([0.2,0.2,0.2,0.1,0.3],[0.2,0.2,0.2,0.2,0.2],[
         [0.0,1,2,3,4],
         [1.0,0,1,2,3],
         [2.0,1,0,1,2],
@@ -93,39 +103,39 @@ if __name__ == "__main__":
         [4.0,3,2,1,0],
     ])
 
-    print EMD([2,2,2,2,2],[2,2,2,1,3],[
-        [0.0,1,2,3,4],
-        [1.0,0,1,2,3],
-        [2.0,1,0,1,2],
-        [3.0,2,1,0,1],
-        [4.0,3,2,1,0],
-    ])
-
-    print EMD([1/3.0,1/3.0,1/3.0,0,0],[0,0,0,1/2.0,1/2.0],[
-        [0.0,0,0,3,4],
-        [0.0,0,0,2,3],
-        [0.0,0,0,1,2],
-        [0.0,0,0,0,1],
-        [0.0,0,0,1,0],
-    ])
-
-    print EMD([5,5,5,0,0],[0,0,0,5,5],[
-        [0.0,1,2,3,4],
-        [1.0,0,1,2,3],
-        [2.0,1,0,1,2],
-        [3.0,2,1,0,1],
-        [4.0,3,2,1,0],
-    ])
-
-    print EMD([0,0,0,1,1],[1/3.0,1/3.0,1/3.0,0,0],[
-        [0.0,1,2,3,4],
-        [1.0,0,1,2,3],
-        [2.0,1,0,1,2],
-        [3.0,2,1,0,1],
-        [4.0,3,2,1,0],
-    ])
-
-
-    testpyemd()
-    print EMD([0,1],[5,3])
-    testpyemd1()
+    # print EMD([2,2,2,2,2],[2,2,2,1,3],[
+    #     [0.0,1,2,3,4],
+    #     [1.0,0,1,2,3],
+    #     [2.0,1,0,1,2],
+    #     [3.0,2,1,0,1],
+    #     [4.0,3,2,1,0],
+    # ])
+    #
+    # print EMD([1/3.0,1/3.0,1/3.0,0,0],[0,0,0,1/2.0,1/2.0],[
+    #     [0.0,0,0,3,4],
+    #     [0.0,0,0,2,3],
+    #     [0.0,0,0,1,2],
+    #     [0.0,0,0,0,1],
+    #     [0.0,0,0,1,0],
+    # ])
+    #
+    # print EMD([5,5,5,0,0],[0,0,0,5,5],[
+    #     [0.0,1,2,3,4],
+    #     [1.0,0,1,2,3],
+    #     [2.0,1,0,1,2],
+    #     [3.0,2,1,0,1],
+    #     [4.0,3,2,1,0],
+    # ])
+    #
+    # print EMD([0,0,0,1,1],[1/3.0,1/3.0,1/3.0,0,0],[
+    #     [0.0,1,2,3,4],
+    #     [1.0,0,1,2,3],
+    #     [2.0,1,0,1,2],
+    #     [3.0,2,1,0,1],
+    #     [4.0,3,2,1,0],
+    # ])
+    #
+    #
+    # testpyemd()
+    # print EMD([0,1],[5,3])
+    # testpyemd1()

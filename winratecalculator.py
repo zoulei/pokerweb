@@ -3,6 +3,8 @@ from hunlgame import Poker,HandsRange
 import hunlgame
 import copy
 import handsinfocommon
+from handsrank import cards2key, getengine
+from handsrank import HandsRankEngine
 
 class WinrateCalculator:
     # rangestate is a object of class handsdistribution.RangeState
@@ -40,33 +42,20 @@ class WinrateCalculator:
         totalwinrate = 1.0
         for ophands in ophandslist:
             keylist = ophands.getvalidhands()
-            fullhand = [myhand,] + list(keylist)
-            results = hunlgame.sorthands_(board, [v.get() for v in fullhand])
-            resultkeylist = results.keys()
-            resultkeylist.sort()
-            maxkey = resultkeylist[-1]
-            if 0 in results[maxkey]:
-                return 1
+            rankengine = HandsRankEngine(myhand,keylist,board)
             winrate = 0
-            for idx in resultkeylist:
-                curhandidxlist = results[idx]
-                if 0 in curhandidxlist:
-                    for handidx in curhandidxlist:
-                        if handidx == 0:
-                            continue
-                        winrate += ophands[fullhand[handidx]] * self.m_equalvalue
-                    break
-                else:
-                    for handidx in curhandidxlist:
-                        winrate += ophands[fullhand[handidx]]
+            if rankengine.getlose() == 0:
+                winrate = 1
+            else:
+                for hand in rankengine.getwinhands():
+                    winrate += ophands[hand]
+                for hand in rankengine.gettiehands():
+                    winrate += ophands[hand] * self.m_equalvalue
             totalwinrate *= winrate
         return totalwinrate
 
     def calmywinrate(self):
-        myhands = copy.deepcopy(self.m_myhands)
-        ophands = copy.deepcopy(self.m_ophands)
-        board = copy.deepcopy(self.m_board)
-        return self.calmywinrate__(board,myhands,ophands)
+        return self.calmywinrate__(self.m_board,self.m_myhands,self.m_ophands)
 
     def ophandsremovecard(self,ophands,card):
         for handsdis in ophands:
