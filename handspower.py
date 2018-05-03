@@ -121,7 +121,7 @@ def testwinratestack():
         rangestate = handsdistribution.RangeState(board,myhand,handsdistribution.HandsDisQuality(ophandsrange))
         if not rangestate:
             continue
-        hplist.append(HandPower(handsdistribution.RangeState(board,myhand,handsdistribution.HandsDisQuality(ophandsrange))))
+        hplist.append(HandPower(handsdistribution.RangeState(board,myhand,[handsdistribution.HandsDisQuality(ophandsrange),handsdistribution.HandsDisQuality(ophandsrange)])))
     for board, hp in zip(boardlist,hplist):
         diflist = []
         for board1, hp1 in zip(boardlist,hplist):
