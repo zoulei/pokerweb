@@ -1,6 +1,7 @@
 import json
 import Constant
-from hunlgame import generateCards,board2str
+from hunlgame import generateCards,board2str,generateHands
+import shelve
 
 def cards2key(cards):
     return "".join(sorted([str(v) for v in cards]))
@@ -9,9 +10,9 @@ engine = None
 
 class HandsRankDict:
     def __init__(self):
-        self.m_handsrank = json.load(open(Constant.ALLHANDSRANK))
+        self.m_handsrank = shelve.open(Constant.ALLHANDSRANK)
 
-    def __index__(self,key):
+    def __getitem__(self,key):
         return self.m_handsrank.get(key,None)
 
 def getengine():
@@ -28,7 +29,7 @@ class HandsRankEngine:
         self.sort()
 
     def sort(self):
-        allhandslist = self.m_myhand + self.m_ophands
+        allhandslist = [self.m_myhand,] + self.m_ophands
         allhands = [v.get() for v in allhandslist]
         self.m_len = len(allhands)
         allfullcards = [v+self.m_board for v in allhands]
@@ -84,8 +85,11 @@ class HandsRankEngine:
         print "losehand:",[str(v) for v in self.getlosehands()]
 
 def testhandsrankengine():
-    HandsRankEngine(generateCards("AHTH"),[generateCards(v) for v in ["TC9C","5S7S","ACTC"]],generateCards("KSQSJS5H8C")).printresult()
-    HandsRankEngine(generateCards("5S7S"),[generateCards(v) for v in ["TC9C","AHTH","ASTS","ACTC"]],generateCards("KSQSJS5H8C")).printresult()
+    HandsRankEngine(generateHands("AHTH"),[generateHands(v) for v in ["TC9C","5S7S","ACTC"]],generateCards("KSQSJS5H8C")).printresult()
+    HandsRankEngine(generateHands("5S7S"),[generateHands(v) for v in ["TC9C","AHTH","ASTS","ACTC"]],generateCards("KSQSJS5H8C")).printresult()
+    print getengine()[cards2key(generateCards("ASKSQSJSTS"))]
+    print getengine()[cards2key(generateCards("ASKSQSJSTS6S8T"))]
+    print getengine()[cards2key(generateCards("7S5S4S3S2H"))]
 
 if __name__ == "__main__":
     testhandsrankengine()

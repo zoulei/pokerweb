@@ -169,8 +169,7 @@ class SortAllHands:
         for idx in [3,]:
             for firstlvkey in xrange(2,15):
                 for secondlvkey in range(2, firstlvkey)+range(firstlvkey+1,15):
-                    self.m_dictindex[idx][firstlvkey][secondlvkey] =\
-                    shelve.open(Constant.CACHEDIR + "_".join([str(v) for v in [idx,firstlvkey,secondlvkey]]),writeback=True)
+                    self.m_dictindex[idx][firstlvkey][secondlvkey].close()
         # 2个踢脚
         # for idx in [4,6,7,8,9]:
         for idx in [6,7]:
@@ -203,8 +202,7 @@ class SortAllHands:
         for idx in [3,]:
             for firstlvkey in xrange(2,15):
                 for secondlvkey in range(2, firstlvkey)+range(firstlvkey+1,15):
-                    self.m_dictindex[idx][firstlvkey][secondlvkey] =\
-                    shelve.open(Constant.CACHEDIR + "_".join([str(v) for v in [idx,firstlvkey,secondlvkey]]),writeback=True)
+                    self.m_dictindex[idx][firstlvkey][secondlvkey].sync()
         # 2个踢脚
         # for idx in [4,6,7,8,9]:
         for idx in [6,7]:
@@ -262,7 +260,8 @@ class SortAllHands:
 
     def sorthands(self):
         self.init()
-        self.m_handsrank = {}
+        # self.m_handsrank = {}
+        self.m_handsrank = shelve.open(Constant.ALLHANDSRANK,writeback=True)
         self.m_laskrank = 0
         start = time.time()
         lasttime = start
@@ -281,6 +280,7 @@ class SortAllHands:
                 for firstlvkey in xrange(2,15):
                     for secondlvkey in xrange(2, firstlvkey):
                         print "idx:",idx
+                        print "firstlvkey:",firstlvkey
                         print "secondlvkey:",secondlvkey
                         print "process elapsed:",time.time() - lasttime
                         elapsedtime = time.time() - lasttime
@@ -333,9 +333,13 @@ class SortAllHands:
                 subdict = self.m_dictindex[idx]
                 self.sorthandssubdict(subdict)
         self.closeall()
-        json.dump(self.m_handsrank, open(Constant.ALLHANDSRANK,"w"))
+        self.m_handsrank.close()
+        # json.dump(self.m_handsrank, open(Constant.ALLHANDSRANK,"w"))
+        print "over"
 
     def sorthandssubdict(self,subdict):
+        if not len(subdict):
+            return
         keyvaluelist = subdict.items()
         keyvaluelist.sort(key=lambda v:v[1])
         self.m_laskrank += 1
@@ -344,6 +348,7 @@ class SortAllHands:
             if keyvaluelist[idx][1] != keyvaluelist[idx - 1][1]:
                 self.m_laskrank += 1
             self.m_handsrank[keyvaluelist[idx][0]] = self.m_laskrank
+        self.m_handsrank.sync()
         return keyvaluelist
 
 def testhandsstrength():
@@ -362,11 +367,14 @@ def testhandsstrength():
     cards = generateCards("AHKHJHTHTS8SQH")
     print hs["".join(sorted([str(v) for v in cards]))]
 
+def testdistribute():
+    pass
+
 if __name__ == "__main__":
     # calculateallhandsstrength()
     # testhandsstrength()
 
     sortengine = SortAllHands()
-    sortengine.distributehands()
+    # sortengine.distributehands()
 
     sortengine.sorthands()
