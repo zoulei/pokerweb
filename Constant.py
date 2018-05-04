@@ -118,6 +118,8 @@ NEWSTRENGTHMAP = CACHEDIR + "newstrengthmap"
 
 ALLHANDSSTRENGTH = CACHEDIR + "calculateallhandsstrength"
 ALLHANDSRANK = CACHEDIR + "calculateallhandsrank"
+ALLHANDSRANKINMEMORYJSON = CACHEDIR + "allhandsrankinmemoryjson"
+ALLHANDSRANKINMEMORYSTR = CACHEDIR + "allhandsrankinmemorystr"
 
     # ----------------------next turn strength histogram----------------
 HANDSTRENGTHSLOT = 0.04

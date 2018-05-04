@@ -84,7 +84,6 @@ class WinrateCalculator:
             ophands = copy.deepcopy(self.m_ophands)
             if not self.ophandsremovecard(ophands,card):
                 continue
-            # winrate = self.calmywinrate_(board,myhands,ophands)
             winrate = self.calmywinrate__(board, myhands, ophands)
             if winrate == -1:
                 continue

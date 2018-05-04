@@ -351,6 +351,21 @@ class SortAllHands:
         self.m_handsrank.sync()
         return keyvaluelist
 
+    def writedicttomemory(self):
+        handsrank = shelve.open(Constant.ALLHANDSRANK)
+        handsrankinmemory = {}
+        cnt = 0
+        for key in handsrank:
+            cnt += 1
+            if cnt % 10000000 == 0:
+                print "cnt:",cnt
+            handsrankinmemory[key] = handsrank[key]
+        print "dumpjson"
+        json.dump(handsrankinmemory,open(Constant.ALLHANDSRANKINMEMORYJSON,"w"))
+        print "writestr"
+        open(Constant.ALLHANDSRANKINMEMORYSTR,"w").write(str(handsrankinmemory))
+        print "writeover"
+
 def testhandsstrength():
     hs = shelve.open(Constant.ALLHANDSSTRENGTH)
     from hunlgame import generateCards
@@ -377,4 +392,5 @@ if __name__ == "__main__":
     sortengine = SortAllHands()
     # sortengine.distributehands()
 
-    sortengine.sorthands()
+    # sortengine.sorthands()
+    sortengine.writedicttomemory()
