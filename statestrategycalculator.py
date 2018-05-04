@@ -142,7 +142,7 @@ class FullActionDisCalculator(TraverseHands):
         self.m_actiondis.normalize()
 
 timer = Timer()
-syncflag = False
+syncflag = True
 
 def reinlearningmainfunc(para):
     handsinfo, state, prefloprangeengine, actiondiskeys = para
@@ -166,7 +166,7 @@ def reinlearningmainfunc(para):
         timer.start("handsquality")
     oppohands = []
     for pos, inpoolstate in enumerate(replay.m_inpoolstate):
-        if inpoolstate != 0:
+        if inpoolstate != 0 and pos != replay.m_nextplayer:
             oppohands.append(handsdistribution.HandsDisQuality(prefloprangeengine.gethandsinrange(replay.m_prefloprange[pos])))
     # oppohands = handsdistribution.HandsDisQuality(prefloprangeengine.gethandsinrange(replay.m_prefloprange[replay.m_nextplayer]))
     if syncflag:
@@ -206,7 +206,7 @@ class ReinLearning(TraverseHands):
         # 根据统计行为分布获取一个初始完整行为分布
         state, actiondis = self.m_otherpara
         self.m_fullactiondis = FullActionDis(state.ischeckavailable())
-        self.m_fullactiondis.initfulldis(actiondis)
+        # self.m_fullactiondis.initfulldis(actiondis)
         self.m_timer = Timer()
 
     def parttraverse(self, idx):
@@ -263,7 +263,7 @@ class StateStrategyCalculator:
         # 根据秀牌数据进行强化学习
         prefloprangeengine = handsengine.prefloprangge()
         fullactiondis = FullActionDis(state.ischeckavailable())
-        reinlearningengine = ReinLearning(self.m_db,self.m_clt,func=reinlearningmainfunc,sync=False,end=1,step=1000,
+        reinlearningengine = ReinLearning(self.m_db,self.m_clt,func=reinlearningmainfunc,sync=True,end=10,step=100,
                 para=[state,prefloprangeengine, fullactiondis.m_marker.m_hplist], otherpara=[state, actiondis])
         reinlearningengine.traverse()
         return reinlearningengine.m_fullactiondis
