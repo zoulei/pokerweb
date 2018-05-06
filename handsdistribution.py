@@ -28,14 +28,14 @@ class HandsDisQuality:
         return self.m_handsdis.get(key, 0)
 
     def getvalidhands(self):
-        handslist = self.m_handsdis.keys()
-        return [v for v in handslist if self.m_handsdis[v] != 0]
+        return self.m_handsdis.keys()
 
     def removecard(self,card):
         handslist = self.m_handsdis.keys()
         for hand in handslist:
             if card in hand.get():
-                self.m_handsdis[hand] = 0
+                del self.m_handsdis[hand]
+
 
     # make the sum of probability be 1
     # 成功归一化反回True
