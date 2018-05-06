@@ -212,4 +212,4 @@ TURNRIVER = "RIVER"
 REALBETDATA = "REALBETDATA"
 
 # ===============================calculate time related=======================
-SYNC = True
+SYNC = False

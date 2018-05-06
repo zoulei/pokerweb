@@ -61,6 +61,8 @@ class WinrateCalculator:
             if SYNC:
                 timer.start("sort hands")
             rankengine = HandsRankEngine(myhand,keylist,board)
+            rankengine.printresult()
+            # print "rawdata:",[[str(v[0]),v[1]] for v in rankengine.m_handsrankdata]
             if SYNC:
                 timer.stop("sort hands")
             if SYNC:
@@ -75,7 +77,9 @@ class WinrateCalculator:
                 winrate = 1
             if SYNC:
                 timer.stop("sort hands info")
-            totalwinrate *= winrate
+            normalizevalue = 1.0 / (1 - sum([ophands[v] for v in rankengine.getinvalidhands()]))
+            totalwinrate *= (winrate * normalizevalue)
+
         return totalwinrate
 
     def calmywinrate(self):
@@ -106,27 +110,21 @@ class WinrateCalculator:
         for card in allcards:
             if SYNC:
                 timer.start("copy hands")
-            # board = copy.deepcopy(self.m_board)
-            # board.append(card)
-            # myhands = copy.deepcopy(self.m_myhands)
-            ophands = copy.deepcopy(self.m_ophands)
             if SYNC:
                 timer.stop("copy hands")
             if SYNC:
                 timer.start("clear ophands")
-            if not self.ophandsremovecard(ophands,card):
-                continue
             if SYNC:
                 timer.stop("clear ophands")
             if SYNC:
                 timer.start("calwinrate")
-            winrate = self.calmywinrate__(self.m_board + [card,], self.m_myhands, ophands)
+            winrate = self.calmywinrate__(self.m_board + [card,], self.m_myhands, self.m_ophands)
             if SYNC:
                 timer.stop("calwinrate")
             if winrate == -1:
                 continue
 
-            nextturnwinratelist.append([self.m_board+[card,], winrate])
+            nextturnwinratelist.append([card, winrate])
         if SYNC:
             timer.start("next turn sort")
         nextturnwinratelist.sort(key = lambda v:v[1])

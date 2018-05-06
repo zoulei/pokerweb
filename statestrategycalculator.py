@@ -274,7 +274,7 @@ class StateStrategyCalculator:
         # 根据秀牌数据进行强化学习
         prefloprangeengine = handsengine.prefloprangge()
         fullactiondis = FullActionDis(state.ischeckavailable())
-        reinlearningengine = ReinLearning(self.m_db,self.m_clt,func=reinlearningmainfunc,sync=True,end=5,step=100,
+        reinlearningengine = ReinLearning(self.m_db,self.m_clt,func=reinlearningmainfunc,sync=False,step=10000,
                 para=[state,prefloprangeengine, fullactiondis.m_marker.m_hplist], otherpara=[state, None])
         reinlearningengine.traverse()
         return reinlearningengine.m_fullactiondis

@@ -87,7 +87,7 @@ class RangeState:
         else:
             self.m_ophands = [ophands,]
         self.m_valid = True
-        self.checkparavalid()
+        # self.checkparavalid()
 
     # 检查一下输入的数据是否有错误,主要是看我的手牌和牌面上的牌是否有重复,
     # 并检查对手的手牌中除掉牌面上的牌之后是否还有剩余的手牌,如果除掉无效的手牌之后对手的range为空胜率也没法计算

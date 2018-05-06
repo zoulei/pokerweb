@@ -33,7 +33,9 @@ class HandPower:
             self.m_myhand = rangestate.m_myhands
             self.m_ophands = rangestate.m_ophands
             self.m_board = rangestate.m_board
+            print "ophandslen:",[len(v.m_handsdis) for v in rangestate.m_ophands]
         self.m_winratestr = winratestr
+
         self.calculatewinrate()
 
     def calculatewinrate(self):
@@ -71,6 +73,9 @@ class HandPower:
             raise
         for winrate in winratehistogram:
             self.m_data[int(math.ceil( (1 - winrate) / Constant.HANDSTRENGTHSLOT ) )] += 1
+        print "nextturnstackwinrate:",[[str(v[0]),v[1]] for v in nextturnstackwinrate]
+        print self.m_data
+        raise
         if SYNC:
             timer.stop("process result")
 
