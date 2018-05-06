@@ -210,3 +210,6 @@ TURNRIVER = "RIVER"
 
 # ===============================field related================================
 REALBETDATA = "REALBETDATA"
+
+# ===============================calculate time related=======================
+SYNC = True

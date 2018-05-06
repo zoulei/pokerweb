@@ -6,6 +6,7 @@ import handsinfocommon
 from handsrank import cards2key, getengine
 from handsrank import HandsRankEngine
 from mytimer import Timer
+from Constant import *
 
 timer = Timer()
 
@@ -17,13 +18,17 @@ class WinrateCalculator:
         self.m_myhands = rangestate.m_myhands
         self.m_ophands = rangestate.m_ophands
         self.m_equalvalue = equalvalue
-        timer.start("init poker")
+        if SYNC:
+            timer.start("init poker")
         self.m_pokerengine = Poker()
-        timer.stop("init poker")
+        if SYNC:
+            timer.stop("init poker")
         self.m_valid = True
-        timer.start("checkparavalid")
+        if SYNC:
+            timer.start("checkparavalid")
         self.checkparavalid()
-        timer.stop("checkparavalid")
+        if SYNC:
+            timer.stop("checkparavalid")
 
     # 检查一下输入的数据是否有错误,主要是看我的手牌和牌面上的牌是否有重复,
     # 并检查对手的手牌中除掉牌面上的牌之后是否还有剩余的手牌,如果除掉无效的手牌之后对手的range为空胜率也没法计算
@@ -48,14 +53,18 @@ class WinrateCalculator:
             return -1
         totalwinrate = 1.0
         for ophands in ophandslist:
-            timer.start("get valid hands")
+            if SYNC:
+                timer.start("get valid hands")
             keylist = ophands.getvalidhands()
-            timer.stop("get valid hands")
-            timer.start("sort hands")
+            if SYNC:
+                timer.stop("get valid hands")
+            if SYNC:
+                timer.start("sort hands")
             rankengine = HandsRankEngine(myhand,keylist,board)
-            timer.stop("sort hands")
-
-            timer.start("sort hands info")
+            if SYNC:
+                timer.stop("sort hands")
+            if SYNC:
+                timer.start("sort hands info")
             winrate = 0
             if rankengine.getlose() != 0:
                 for hand in rankengine.getwinhands():
@@ -64,7 +73,8 @@ class WinrateCalculator:
                     winrate += ophands[hand] * self.m_equalvalue
             else:
                 winrate = 1
-            timer.stop("sort hands info")
+            if SYNC:
+                timer.stop("sort hands info")
             totalwinrate *= winrate
         return totalwinrate
 
@@ -79,36 +89,47 @@ class WinrateCalculator:
         return True
 
     def calnextturnstackwinrate(self):
-        timer.start("generate all card")
+        if SYNC:
+            timer.start("generate all card")
         handrangeobj = HandsRange()
         allcards = handrangeobj._generateallcard()
-        timer.stop("generate all card")
-
-        timer.start("clear all card")
+        if SYNC:
+            timer.stop("generate all card")
+        if SYNC:
+            timer.start("clear all card")
         for card in self.m_board+list(self.m_myhands.get()):
             allcards.remove(card)
-        timer.stop("clear all card")
+        if SYNC:
+            timer.stop("clear all card")
 
         nextturnwinratelist = []
         for card in allcards:
-            timer.start("copy hands")
+            if SYNC:
+                timer.start("copy hands")
             # board = copy.deepcopy(self.m_board)
             # board.append(card)
             # myhands = copy.deepcopy(self.m_myhands)
             ophands = copy.deepcopy(self.m_ophands)
-            timer.stop("copy hands")
-            timer.start("clear ophands")
+            if SYNC:
+                timer.stop("copy hands")
+            if SYNC:
+                timer.start("clear ophands")
             if not self.ophandsremovecard(ophands,card):
                 continue
-            timer.stop("clear ophands")
-            timer.start("calwinrate")
+            if SYNC:
+                timer.stop("clear ophands")
+            if SYNC:
+                timer.start("calwinrate")
             winrate = self.calmywinrate__(self.m_board + [card,], self.m_myhands, ophands)
-            timer.stop("calwinrate")
+            if SYNC:
+                timer.stop("calwinrate")
             if winrate == -1:
                 continue
 
-            nextturnwinratelist.append([board, winrate])
-        timer.start("next turn sort")
+            nextturnwinratelist.append([self.m_board+[card,], winrate])
+        if SYNC:
+            timer.start("next turn sort")
         nextturnwinratelist.sort(key = lambda v:v[1])
-        timer.stop("next turn sort")
+        if SYNC:
+            timer.stop("next turn sort")
         return nextturnwinratelist

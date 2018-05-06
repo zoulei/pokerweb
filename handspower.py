@@ -17,6 +17,7 @@ import time
 import signal
 import multiprocessing
 from mytimer import Timer
+from Constant import SYNC
 
 timer = Timer()
 
@@ -42,14 +43,18 @@ class HandPower:
             self.m_data = data["winratehis"]
             return
         winratecal = winratecalculator.WinrateCalculator(self.m_rangestate)
-        timer.start("calmywinrate")
+        if SYNC:
+            timer.start("calmywinrate")
         self.m_curwinrate = winratecal.calmywinrate()
-        timer.stop("calmywinrate")
-        timer.start("nextturnwinrate")
+        if SYNC:
+            timer.stop("calmywinrate")
+        if SYNC:
+            timer.start("nextturnwinrate")
         nextturnstackwinrate = winratecal.calnextturnstackwinrate()
-        timer.stop("nextturnwinrate")
-
-        timer.start("process result")
+        if SYNC:
+            timer.stop("nextturnwinrate")
+        if SYNC:
+            timer.start("process result")
         winratehistogram = [v[1] for v in nextturnstackwinrate]
 
         winratehistogram.sort(reverse=True)
@@ -66,7 +71,8 @@ class HandPower:
             raise
         for winrate in winratehistogram:
             self.m_data[int(math.ceil( (1 - winrate) / Constant.HANDSTRENGTHSLOT ) )] += 1
-        timer.stop("process result")
+        if SYNC:
+            timer.stop("process result")
 
     def __sub__(self, other):
         try:

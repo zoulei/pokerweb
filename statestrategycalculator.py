@@ -144,7 +144,7 @@ class FullActionDisCalculator(TraverseHands):
         self.m_actiondis.normalize()
 
 timer = Timer()
-syncflag = True
+syncflag = SYNC
 
 def reinlearningmainfunc(para):
     handsinfo, state, prefloprangeengine, actiondiskeys = para
