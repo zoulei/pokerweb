@@ -10,7 +10,10 @@ engine = None
 
 class HandsRankDict:
     def __init__(self):
-        self.m_handsrank = shelve.open(Constant.ALLHANDSRANK)
+        # self.m_handsrank = shelve.open(Constant.ALLHANDSRANK)
+
+        # 19 GB
+        self.m_handsrank = json.load(open(Constant.ALLHANDSRANKINMEMORYJSON))
 
     def __getitem__(self,key):
         return self.m_handsrank.get(key,None)

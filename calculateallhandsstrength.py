@@ -389,8 +389,12 @@ if __name__ == "__main__":
     # calculateallhandsstrength()
     # testhandsstrength()
 
-    sortengine = SortAllHands()
+    # sortengine = SortAllHands()
     # sortengine.distributehands()
-
     # sortengine.sorthands()
-    sortengine.writedicttomemory()
+    # sortengine.writedicttomemory()
+
+
+    a = json.load(open(Constant.ALLHANDSRANKINMEMORYJSON))
+    print len(a)
+    print hpy().heap().bytype

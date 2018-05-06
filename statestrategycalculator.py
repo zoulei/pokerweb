@@ -11,6 +11,8 @@ import numpy
 import traceback
 from TraverseHands import TraverseHands
 from mytimer import Timer
+from handsrank import getengine
+import winratecalculator
 
 # 行为分布, 包括各种行动的概率, 包括check, call, raise三种
 class ActionDis:
@@ -208,6 +210,7 @@ class ReinLearning(TraverseHands):
         self.m_fullactiondis = FullActionDis(state.ischeckavailable())
         # self.m_fullactiondis.initfulldis(actiondis)
         self.m_timer = Timer()
+        getengine()
 
     def parttraverse(self, idx):
         self.m_timer.start("calculate result")
@@ -218,7 +221,7 @@ class ReinLearning(TraverseHands):
             for hp, targetaction, weight in subresult:
                 self.m_fullactiondis.addaction(hp, targetaction, weight)
         self.m_timer.stop("deal with result")
-        print "m_timer:==========================="
+        print "m_timer:======================================================="
         self.m_timer.printdata()
         print "----------------------------"
         self.m_timer.printpcgdata()
@@ -226,6 +229,14 @@ class ReinLearning(TraverseHands):
         timer.printdata()
         print "----------------------------"
         timer.printpcgdata()
+        print "handspower:============================"
+        handspower.timer.printdata()
+        print "----------------------------"
+        handspower.timer.printpcgdata()
+        print "winrate calculator:============================"
+        winratecalculator.timer.printdata()
+        print "----------------------------"
+        winratecalculator.timer.printpcgdata()
 
 # state相似度权值计算公式
 def similarweightfunction(similar):
@@ -258,13 +269,13 @@ class StateStrategyCalculator:
     # 计算某个state的完整行为分布
     def calstrategyforspecificstate(self, state, turnidx, actionidx):
         # 统计行为分布
-        actiondis = self.getactiondisofsimilarstate(state)
+        # actiondis = self.getactiondisofsimilarstate(state)
 
         # 根据秀牌数据进行强化学习
         prefloprangeengine = handsengine.prefloprangge()
         fullactiondis = FullActionDis(state.ischeckavailable())
-        reinlearningengine = ReinLearning(self.m_db,self.m_clt,func=reinlearningmainfunc,sync=True,end=10,step=100,
-                para=[state,prefloprangeengine, fullactiondis.m_marker.m_hplist], otherpara=[state, actiondis])
+        reinlearningengine = ReinLearning(self.m_db,self.m_clt,func=reinlearningmainfunc,sync=True,end=5,step=100,
+                para=[state,prefloprangeengine, fullactiondis.m_marker.m_hplist], otherpara=[state, None])
         reinlearningengine.traverse()
         return reinlearningengine.m_fullactiondis
 
