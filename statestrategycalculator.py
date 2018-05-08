@@ -176,7 +176,10 @@ def reinlearningmainfunc(para):
     board = replay.m_handsinfo.getboardcard()[:3]
     if syncflag:
         timer.start("handspower")
-    targethp = handspower.HandPower(handsdistribution.RangeState(board,pvhand,oppohands))
+    try:
+        targethp = handspower.HandPower(handsdistribution.RangeState(board,pvhand,oppohands))
+    except:
+        return []
     if syncflag:
         timer.stop("handspower")
     if syncflag:
@@ -220,6 +223,7 @@ class ReinLearning(TraverseHands):
         for subresult in result:
             for hp, targetaction, weight in subresult:
                 self.m_fullactiondis.addaction(hp, targetaction, weight)
+        open("tmpresult/actiondis","w").write(str(self.m_fullactiondis))
         self.m_timer.stop("deal with result")
         print "m_timer:======================================================="
         self.m_timer.printdata()
@@ -274,7 +278,7 @@ class StateStrategyCalculator:
         # 根据秀牌数据进行强化学习
         prefloprangeengine = handsengine.prefloprangge()
         fullactiondis = FullActionDis(state.ischeckavailable())
-        reinlearningengine = ReinLearning(self.m_db,self.m_clt,func=reinlearningmainfunc,sync=False,step=10000,
+        reinlearningengine = ReinLearning(self.m_db,self.m_clt,func=reinlearningmainfunc,sync=True,step=10000,
                 para=[state,prefloprangeengine, fullactiondis.m_marker.m_hplist], otherpara=[state, None])
         reinlearningengine.traverse()
         return reinlearningengine.m_fullactiondis

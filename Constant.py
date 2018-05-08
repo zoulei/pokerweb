@@ -147,7 +147,7 @@ HISTOGRAMTHRE = 1
 CURWINRATEDIFFRATE = 25
 
 # =========================other==========================================
-THREADNUM = 24
+THREADNUM = 10
 
 # =========================state related===================================
 ISOPENER = "isopener"

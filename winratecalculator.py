@@ -61,7 +61,7 @@ class WinrateCalculator:
             if SYNC:
                 timer.start("sort hands")
             rankengine = HandsRankEngine(myhand,keylist,board)
-            rankengine.printresult()
+            # rankengine.printresult()
             # print "rawdata:",[[str(v[0]),v[1]] for v in rankengine.m_handsrankdata]
             if SYNC:
                 timer.stop("sort hands")
