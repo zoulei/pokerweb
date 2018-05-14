@@ -3,6 +3,7 @@ from Constant import *
 import multiprocessing
 import os
 import signal
+import time
 
 def process(func, para, threadnum = THREADNUM):
     original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -32,5 +33,19 @@ def test():
     for v in result:
         print v
 
+def testmainfunc(para):
+    a = 0
+    for key in para:
+        a += para[key]
+    time.sleep(60)
+    return a
+
+def test1():
+    kvdict = dict(zip(range(100000000),range(100000000)))
+    print "generate dict"
+    time.sleep(60)
+    print "sleep over"
+    process(testmainfunc,[kvdict,]*1000)
+
 if __name__ == "__main__":
-    test()
+    test1()
