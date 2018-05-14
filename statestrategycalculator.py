@@ -269,6 +269,8 @@ class StateStrategyCalculator:
         actiondis = self.calstrategyforspecificstate(state,2,0)
         # 这里需要把这个actiondis存起来
         open("tmpresult/actiondis","w").write(str(actiondis))
+        import handsinfocommon
+        handsinfocommon.pp.pprint(self.getactiondisofsimilarstate(state))
 
     # 计算某个state的完整行为分布
     def calstrategyforspecificstate(self, state, turnidx, actionidx):
@@ -286,7 +288,7 @@ class StateStrategyCalculator:
     # 统计相似state下的行为分布
     def getactiondisofsimilarstate(self, state):
         actiondistraverseengine = FullActionDisCalculator(self.m_db,self.m_clt,
-            func=fullactiondiscalculatormainfunc,para=[state,similarweightfunction],end=1)
+            func=fullactiondiscalculatormainfunc,para=[state,similarweightfunction])
         actiondistraverseengine.traverse()
         actiondis = actiondistraverseengine.m_actiondis
         return actiondis

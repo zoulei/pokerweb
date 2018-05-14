@@ -704,6 +704,9 @@ class ReplayEngine:
             if not self.m_prefloprange[self.m_laststate["pos"]]:
                 self.m_prefloprange[self.m_laststate["pos"]] = 1
             self.m_prefloprange[self.m_laststate["pos"]] *= newrange
+            # 这个0.009是表示range里只有AAKK
+            if self.m_prefloprange[self.m_laststate["pos"]] < 0.009:
+                self.m_prefloprange[self.m_laststate["pos"]] = 0.009
 
     def updatepreflopinformation(self):
         if self.m_laststate["round"] != 1:
