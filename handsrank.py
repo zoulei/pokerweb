@@ -117,5 +117,5 @@ def testhands():
     print [str(v) for v in a]
 
 if __name__ == "__main__":
-    # testhandsrankengine()
-    testhands()
+    testhandsrankengine()
+    # testhands()
