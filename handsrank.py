@@ -117,5 +117,7 @@ def testhands():
     print [str(v) for v in a]
 
 if __name__ == "__main__":
-    testhandsrankengine()
+    # testhandsrankengine()
     # testhands()
+    print cards2key(generateCards("ASKSQSJSTS9S8S7S6S5S4S3S2S"))
+    print cards2key(generateCards("ASAHACAD"))
