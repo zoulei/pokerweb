@@ -295,10 +295,19 @@ class StateStrategyCalculator:
 
 if __name__ == "__main__":
     # testprinthandpower()
+    # 0-3 step为0.01,共300个数据
+    # for similar in xrange(0, 301):
+    #     print similar / 100.0, similarhpfunction(similar / 100.0)
 
-    import time
-    start = time.time()
-    print "start:",start
-    ssc = StateStrategyCalculator(None)
-    ssc.testcal()
-    print "elapsed:",time.time() - start
+
+    # 0.7-1.0 step为0.001，共300个数据
+    for similar in xrange(700, 1001):
+        print similar / 1000.0, similarweightfunction(similar / 1000.0)
+
+    # 下面这些代码用于计算statestrategy并统计时间
+    # import time
+    # start = time.time()
+    # print "start:",start
+    # ssc = StateStrategyCalculator(None)
+    # ssc.testcal()
+    # print "elapsed:",time.time() - start
