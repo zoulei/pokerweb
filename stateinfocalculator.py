@@ -203,6 +203,7 @@ class StateCalculator(ReplayEngine):
     # 存储计算得到的本牌局的state信息,并存储到一个新的数据集中
     def savestatedata(self):
         targetdoc = self.m_handsinfo.m_handsinfo["data"]
+        targetdoc[Constant.PREFLOPRANGEDOC] = self.m_prefloprange
         for k in self.m_realbetdata.keys():
             if not len(self.m_realbetdata[k]):
                 del self.m_realbetdata[k]
