@@ -280,8 +280,8 @@ class StateByExpert:
             attrsimilar.append([cursimilar,weight])
         for attr,k,maxima,weight in [[Constant.PREFLOPATTACKVALUE,4,3,200],[Constant.CURRENTATTACKVALUE,4,3,200],
                               [Constant.AFTERFLOPATTACKVALUE,4,3,200]]:
-            myvalue = min(self.m_stateinfo[attr],3)
-            othervalue = min(self.m_stateinfo[attr],3)
+            myvalue = min(self.m_stateinfo[attr],maxima)
+            othervalue = min(other.m_stateinfo[attr],maxima)
             cursimilar = numpy.exp(-1 * k * abs(myvalue-othervalue))
             attrsimilar.append([cursimilar,weight])
         similar = 1.0 * sum([v[0]*v[1] for v in attrsimilar]) / sum([v[1] for v in attrsimilar])
