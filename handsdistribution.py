@@ -27,8 +27,17 @@ class HandsDisQuality:
     def __getitem__(self, key):
         return self.m_handsdis.get(key, 0)
 
+    def __len__(self):
+        return len(self.m_handsdis)
+
     def getvalidhands(self):
         return self.m_handsdis.keys()
+
+    def gethands(self):
+        return self.m_handsdis.keys()
+
+    def items(self):
+        return self.m_handsdis.items()
 
     def removecard(self,card):
         handslist = self.m_handsdis.keys()

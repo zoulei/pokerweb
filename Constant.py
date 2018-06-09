@@ -29,6 +29,7 @@ COLLECTGAMECLT = "collectgameclt"
 CUMUCLT = "cumuclt"
 
 # =====================preflop state related=============================
+PREFLOPINPOOLSTATE = "preflopinpoolstate"
 PREFLOPRANGEDOC = "prefloprange"
 PREFLOPJOINRATEDOC  = "preflopjoinratedoc"
 PREFLOPREPAIRJOINRATEDOC = "prefloprepairjoinratedoc"
@@ -101,7 +102,11 @@ ANTI = 2
 
 # ========================cache data related=============================
 # CACHEDIR = "/mnt/mfs/users/zoul15/pokercachedata/"
-CACHEDIR = "/home/zoul15/temp/"
+CACHEDIR = "/dev/shm/home/zoul15/temp/"
+SUBMITTASKDIR = CACHEDIR + "submittask/"
+TEMPSUBMITTASKDIR = CACHEDIR + "tmpsubmittask/"
+TASKRESULTDIR = CACHEDIR + "taskresult/"
+TEMPTASKRESULTDIR = CACHEDIR + "tmptaskresult/"
 AFTERFLOPSTATEHEADER = CACHEDIR + "afterflopstateheader"
 AFTERFLOPSTATEDATA = CACHEDIR + "afterflopstatedata"
 DATADIR = "data/"
@@ -121,7 +126,7 @@ ALLHANDSRANK = CACHEDIR + "calculateallhandsrank"
 ALLHANDSRANKINMEMORYJSON = CACHEDIR + "allhandsrankinmemoryjson"
 ALLHANDSRANKINMEMORYSTR = CACHEDIR + "allhandsrankinmemorystr"
 
-    # ----------------------next turn strength histogram----------------
+# ----------------------next turn strength histogram----------------
 HANDSTRENGTHSLOT = 0.04
 
 # ========================board value related================================
@@ -213,3 +218,6 @@ REALBETDATA = "REALBETDATA"
 
 # ===============================calculate time related=======================
 SYNC = False
+
+# ===============================train state strategy related=================
+FILEQUANTITYTHRE = 10000

@@ -281,7 +281,7 @@ class StateStrategyCalculator:
         prefloprangeengine = handsengine.prefloprangge()
         fullactiondis = FullActionDis(state.ischeckavailable())
         reinlearningengine = ReinLearning(self.m_db,self.m_clt,func=reinlearningmainfunc,sync=True,step=10000,
-                para=[state,prefloprangeengine, fullactiondis.m_marker.m_hplist], otherpara=[state, None])
+                para=[state,prefloprangeengine, fullactiondis.m_marker.m_hplist])
         reinlearningengine.traverse()
         return reinlearningengine.m_fullactiondis
 

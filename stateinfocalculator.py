@@ -10,6 +10,7 @@ import Constant
 import numpy
 import handsinfocommon
 import traceback
+import copy
 
 # 计算一个历史牌局中的state的类,并可以将数据保存起来
 # 其具体用法参见下面的mainfunc方法
@@ -23,6 +24,7 @@ class StateCalculator(ReplayEngine):
             Constant.TURNTURN:[],
             Constant.TURNRIVER:[]
         }
+        self.m_preflopinpoolstate = None
 
     def initstaterecorder(self):
         self.m_preflopstate = []
@@ -158,6 +160,9 @@ class StateCalculator(ReplayEngine):
         return info["remain"] + info["allin"]
 
     def updatecumuinfo(self,round,actionidx):
+        if round == 1 and actionidx == 0:
+            self.m_preflopinpoolstate = copy.deepcopy(self.m_inpoolstate)
+
         curplayer = self.m_nextplayer
         statedata = {}
         statedata[Constant.ISOPENER] = self.getpreflopinfomation()["raiser"] == self.m_nextplayer
@@ -204,6 +209,7 @@ class StateCalculator(ReplayEngine):
     def savestatedata(self):
         targetdoc = self.m_handsinfo.m_handsinfo["data"]
         targetdoc[Constant.PREFLOPRANGEDOC] = self.m_prefloprange
+        targetdoc[Constant.PREFLOPINPOOLSTATE] = self.m_preflopinpoolstate
         for k in self.m_realbetdata.keys():
             if not len(self.m_realbetdata[k]):
                 del self.m_realbetdata[k]
@@ -304,6 +310,12 @@ class StateReaderEngine(ReplayEngine):
     def getallstate(self, turn):
         staterawinfo = self.m_handsinfo.m_handsinfo["data"]["STATEINFO"].get(self.m_handsinfo.getturnstr(turn),[])
         return [StateByExpert(v) for v in staterawinfo]
+
+    def getprefloprange(self):
+        return self.m_handsinfo["data"][Constant.PREFLOPRANGEDOC]
+
+    def getpreflopinpoolstate(self):
+        return self.m_handsinfo["data"][Constant.PREFLOPINPOOLSTATE]
 
 # 测试state相似度计算的代码
 def teststatesimilarity():

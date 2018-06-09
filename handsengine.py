@@ -6,16 +6,24 @@ import DBOperater
 import hunlgame
 import handsinfoexception
 
+prefloprangeobj = None
+
+def getprefloprangeobj():
+    global prefloprangeobj
+    if prefloprangeobj is None:
+        prefloprangeobj = prefloprangge()
+    return prefloprangeobj
+
 class prefloprangge:
     def __init__(self):
         result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPREPAIRJOINRATEDOC})
         if result.count() > 0:
             self.m_rawdata = result.next()
 
-        self.m_handsjoinrate = []
-        self.readjoinratedata()
+        self.m_handsjoinrate = None
 
     def readjoinratedata(self):
+        self.m_handsjoinrate = []
         f = open("data/handsrank")
         handsnum = 0
         for line in f:
@@ -55,6 +63,8 @@ class prefloprangge:
 
     # short representation of hands in range
     def gethandsinfoinrange(self, joinrate):
+        if self.m_handsjoinrate is None:
+            self.readjoinratedata()
         handslist = []
         if joinrate == 0:
             return handslist
