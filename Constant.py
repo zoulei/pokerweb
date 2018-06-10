@@ -220,4 +220,4 @@ REALBETDATA = "REALBETDATA"
 SYNC = False
 
 # ===============================train state strategy related=================
-FILEQUANTITYTHRE = 10000
+FILEQUANTITYTHRE = 1000000

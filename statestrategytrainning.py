@@ -29,6 +29,8 @@ def submitmainfunc(para):
                 handsdistribution.HandsDisQuality(prefloprangeengine.gethandsinrange(replay.m_prefloprange[pos])))
     board = replay.m_handsinfo.getboardcard()[:3]
     statesimilar = replay.getstate(curturn, 0) - state
+    if statesimilar < 0.8:
+        return []
     # 把pvhand, board, oppohands, statesimilar都返回，由主函数统一写文件
     action = replay.m_handsinfo.getspecificturnrealbetdata(curturn)[0][1]
     return [stateid, stateturn, stateidx, pvhand, board, oppohands, statesimilar, action]
@@ -57,6 +59,7 @@ class SubmitTraverseMain(TraverseHands):
             ofile.write(str(stateturn)+" "+str(stateidx)+"\n")
             ofile.write(str(statesimilar)+" "+action+"\n")
             ofile.write("".join([str(v) for v in pvhand.get()])+" "+"".join([str(v) for v in board])+"\n")
+            ofile.write(str(len(oppohands))+"\n")
             for handsdis in oppohands:
                 # "0 0" 为标识符，一个该标识符表示接下来的数据为一个新的对手的手牌分布
                 ofile.write(str(len(handsdis))+"\n")
@@ -80,6 +83,7 @@ class TaskSubmitter(threading.Thread):
                 continue
             state = replay.getstate(2, 0)
             self.calstrategyforspecificstate(state, doc["_id"], 2, 0)
+            break
             idx += 1
             if idx == 100:
                 break
@@ -98,7 +102,7 @@ class ResultDealer(threading.Thread):
     def run(self):
         fnamelist = os.listdir(TASKRESULTDIR)
         for fname in fnamelist:
-            ifile = open(fname)
+            ifile = open(TASKRESULTDIR+fname)
             stateid = ifile.readline().strip()
             stateturn, stateidx = [int(v) for v in ifile.readline().strip().split(SPACE)]
             actiondisdata = self.m_taskdata.getdata(stateid, stateturn, stateidx).getdata()
@@ -106,6 +110,7 @@ class ResultDealer(threading.Thread):
                 hpidx, action, weight = line.strip().split(SPACE)
                 actiondisdata.addaction(hpidx, action, weight)
         # 这里还缺少了一个写结果的步骤，这个之后再想怎么写
+            os.system("rm "+TASKRESULTDIR+fname)
 
 class FastFullActionDis:
     def __init__(self, restorestr = None):
@@ -190,3 +195,6 @@ class TaskData:
 if __name__ == "__main__":
     t = TaskSubmitter()
     t.start()
+
+    # rsd = ResultDealer()
+    # rsd.start()
