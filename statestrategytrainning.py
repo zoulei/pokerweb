@@ -10,6 +10,7 @@ import hunlgame
 import os
 import time
 from handsdistribution import RangeState
+from mytimer import Timer
 
 def submitmainfunc(para):
     handsinfo, state, stateid, stateturn, stateidx= para
@@ -17,6 +18,9 @@ def submitmainfunc(para):
     curturn = state.getstateturn()
     replay = stateinfocalculator.StateReaderEngine(handsinfo)
     if replay.m_handsinfo.getturncount() < 2:
+        return []
+    statesimilar = replay.getstate(curturn, 0) - state
+    if statesimilar < 0.8:
         return []
     replay.traversepreflop()
     pvhand = replay.m_handsinfo.gethand(replay.m_nextplayer)
@@ -28,9 +32,6 @@ def submitmainfunc(para):
             oppohands.append(
                 handsdistribution.HandsDisQuality(prefloprangeengine.gethandsinrange(replay.m_prefloprange[pos])))
     board = replay.m_handsinfo.getboardcard()[:3]
-    statesimilar = replay.getstate(curturn, 0) - state
-    if statesimilar < 0.8:
-        return []
     # 把pvhand, board, oppohands, statesimilar都返回，由主函数统一写文件
     action = replay.m_handsinfo.getspecificturnrealbetdata(curturn)[0][1]
     return [stateid, stateturn, stateidx, pvhand, board, oppohands, statesimilar, action]
@@ -40,7 +41,13 @@ class SubmitTraverseMain(TraverseHands):
         self.m_idx = 0
 
     def parttraverse(self, idx):
+        # 这里处理1万手牌需要花费125sec,这种速度处理40万手牌需要80分钟
+        tm = Timer()
+        tm.start("process")
         result = TraverseHands.parttraverse(self, idx)
+        tm.stop("process")
+
+        tm.start("processresult")
         for subresult in result:
         # for stateid, stateturn, stateidx, pvhand, board, oppohands, statesimilar in result:
             # 这里把东西写入文件
@@ -67,6 +74,11 @@ class SubmitTraverseMain(TraverseHands):
                     ofile.write("".join([str(v) for v in hands.get()])+" "+str(rate)+"\n")
             ofile.close()
             os.system("mv "+TEMPSUBMITTASKDIR + fname +" "+SUBMITTASKDIR+fname)
+        tm.stop("processresult")
+        print "===================================================="
+        tm.printdata()
+        print "------------------------"
+        tm.printpcgdata()
 
 class TaskSubmitter(threading.Thread):
     def __init__(self, db = HANDSDB, clt = STATEINFOHANDSCLT):

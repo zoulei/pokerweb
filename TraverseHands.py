@@ -78,17 +78,17 @@ class TraverseHands:
 
         doclist = []
         cnt = 0
-        for handsinfo in result:
-            cnt += 1
-            if cnt < idx * self.m_step:
-                continue
-
-            if cnt >= (idx + 1) * self.m_step:
-                break
+        for handsinfo in result[idx * self.m_step:(idx + 1) * self.m_step]:
+        # for handsinfo in result:
+            # if cnt < idx * self.m_step:
+            #     continue
+            #
+            # if cnt >= (idx + 1) * self.m_step:
+            #     break
 
             if cnt % 1000 == 0:
-                print cnt
-
+                print cnt+(idx * self.m_step)
+            cnt += 1
             try:
                 if not self.filter(handsinfo):
                     doclist.append(copy.deepcopy(handsinfo))
