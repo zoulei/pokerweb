@@ -10,7 +10,9 @@ import signal
 import time
 import handsengine
 import traceback
+from mytimer import Timer
 
+testtimer = Timer()
 
 class TraverseHands:
     def __init__(self, db, clt, func = None, handsid = "", step = 10000,
@@ -73,25 +75,18 @@ class TraverseHands:
         if not self.m_handsid:
             result = DBOperater.Find(self.m_db, self.m_clt, {})
         else:
-            result = DBOperater.Find(self.m_db, self.m_clt,
-                                {"_id":self.m_handsid})
+            result = DBOperater.Find(self.m_db, self.m_clt, {"_id":self.m_handsid})
 
         doclist = []
         cnt = 0
         for handsinfo in result[idx * self.m_step:(idx + 1) * self.m_step]:
-        # for handsinfo in result:
-            # if cnt < idx * self.m_step:
-            #     continue
-            #
-            # if cnt >= (idx + 1) * self.m_step:
-            #     break
-
             if cnt % 1000 == 0:
                 print cnt+(idx * self.m_step)
             cnt += 1
             try:
                 if not self.filter(handsinfo):
-                    doclist.append(copy.deepcopy(handsinfo))
+                    # doclist.append(copy.deepcopy(handsinfo))
+                    doclist.append(handsinfo)
             except:
                 print "error : ",handsinfo["_id"]
         self.m_processeddata += len(doclist)
@@ -134,9 +129,12 @@ class TraverseHands:
         return result
 
     def syncmain(self,doclist):
+        testtimer.start("syncmain")
         result = []
         for handsinfo in doclist:
+            testtimer.start("for loop")
             try:
+                testtimer.start("runfunc")
                 if self.m_func:
                     if self.m_para is None:
                         returnvalue = self.m_func(handsinfo)
@@ -144,11 +142,14 @@ class TraverseHands:
                         returnvalue = self.m_func([handsinfo,]+self.m_para)
                 else:
                     returnvalue = self.mainfunc(handsinfo)
+                testtimer.stop("runfunc")
+                testtimer.start("result")
                 result.append(returnvalue)
                 if returnvalue is True:
                     self.m_true += 1
                 else:
                     self.m_false += 1
+                testtimer.stop("result")
             except  KeyboardInterrupt:
                 exit()
             except:
@@ -156,6 +157,8 @@ class TraverseHands:
                 print "error : ", handsinfo["_id"]
                 handsinfocommon.pp.pprint(handsinfo)
                 raise
+            testtimer.stop("for loop")
+        testtimer.stop("syncmain")
         return result
 
     def filter(self, handsinfo):
@@ -164,6 +167,28 @@ class TraverseHands:
     def mainfunc(self, handsinfo):
         return "mainfunc of TraverseHands: "+handsinfo["_id"]
         pass
+
+# 与上面那个TraverseHands相比，这个不会先把doc读进来再传给方法，而是传cursor，
+# filter函数在这个类里面是没有用的
+# 目前只测试过同步处理，异步处理没有测试过
+class FastTraverseHands(TraverseHands):
+    def parttraverse(self, idx):
+        DBOperater.Disconnect()
+        DBOperater.Connect()
+        if not self.m_handsid:
+            result = DBOperater.Find(self.m_db, self.m_clt, {})
+        else:
+            result = DBOperater.Find(self.m_db, self.m_clt, {"_id": self.m_handsid})
+
+        self.m_processeddata = result.count()
+
+        if self.m_func and not self.m_sync:
+            # print "async"
+            # 这个还没有测试过
+            return self.asyncmain(result[idx * self.m_step:(idx + 1) * self.m_step])
+        else:
+            # print "sync"
+            return self.syncmain(result[idx * self.m_step:(idx + 1) * self.m_step])
 
 # 该遍历引擎会遍历多人的牌局, 即不会处理单挑局
 class TraverseMultiplayerHands(TraverseHands):

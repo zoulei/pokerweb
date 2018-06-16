@@ -3,82 +3,135 @@ from statestrategycalculator import *
 from Constant import *
 import DBOperater
 from stateinfocalculator import *
+from purehandsreader import *
 import threading
 import handsengine
-from TraverseHands import TraverseHands
+import TraverseHands
 import hunlgame
 import os
 import time
 from handsdistribution import RangeState
 from mytimer import Timer
+from InMemoryTraverseHands import *
+
+sbtime = Timer()
 
 def submitmainfunc(para):
-    handsinfo, state, stateid, stateturn, stateidx= para
+    sbtime.start("dealmain")
+    sbtime.start("prepare para")
+    replay, state, stateid, stateturn, stateidx= para
     prefloprangeengine = handsengine.getprefloprangeobj()
     curturn = state.getstateturn()
-    replay = stateinfocalculator.StateReaderEngine(handsinfo)
-    if replay.m_handsinfo.getturncount() < 2:
-        return []
-    statesimilar = replay.getstate(curturn, 0) - state
-    if statesimilar < 0.8:
-        return []
-    replay.traversepreflop()
-    pvhand = replay.m_handsinfo.gethand(replay.m_nextplayer)
+    sbtime.stop("prepare para")
+    sbtime.start("prepare replay")
+    # replay = PureHandsReader(handsinfo)
+    sbtime.stop("prepare replay")
+    if replay.getturncount() < 2:
+        sbtime.stop("dealmain")
+        return
+    sbtime.start("init private hand")
+    trainstate = replay.getstate(curturn, 0)
+    replay.initprivatehand()
+    pvhand = replay.gethand(trainstate[Constant.NEXTPLAYER])
+    sbtime.stop("init private hand")
     if pvhand is None:
-        return []
-    oppohands = []
-    for pos, inpoolstate in enumerate(replay.m_inpoolstate):
-        if inpoolstate != 0 and pos != replay.m_nextplayer:
-            oppohands.append(
-                handsdistribution.HandsDisQuality(prefloprangeengine.gethandsinrange(replay.m_prefloprange[pos])))
-    board = replay.m_handsinfo.getboardcard()[:3]
-    # 把pvhand, board, oppohands, statesimilar都返回，由主函数统一写文件
-    action = replay.m_handsinfo.getspecificturnrealbetdata(curturn)[0][1]
-    return [stateid, stateturn, stateidx, pvhand, board, oppohands, statesimilar, action]
+        sbtime.stop("dealmain")
+        return
+    sbtime.start("cal similar")
 
-class SubmitTraverseMain(TraverseHands):
+    statesimilar = trainstate - state
+    sbtime.stop("cal similar")
+    if statesimilar < 0.8:
+        sbtime.stop("dealmain")
+        return
+    # sbtime.start("traverse")
+    # replay.traversepreflop()
+    # sbtime.stop("traverse")
+
+    oppohands = []
+    sbtime.start("work")
+    for pos, inpoolstate in enumerate(trainstate[Constant.INPOOLSTATE]):
+        if inpoolstate != 0 and pos != trainstate[Constant.NEXTPLAYER]:
+            oppohands.append(
+                handsdistribution.HandsDisQuality(prefloprangeengine.gethandsinrange(replay.getprefloprange()[pos])))
+    replay.initboard()
+    board = replay.getboardcard()[:3]
+    # 把pvhand, board, oppohands, statesimilar都返回，由主函数统一写文件
+    action = replay.getspecificturnrealbetdata(curturn)[0][1]
+    sbtime.stop("work")
+    sbtime.start("write")
+    RangeState(board, pvhand, oppohands).checkparavalid()
+    # fnamelist = os.listdir(SUBMITTASKDIR)
+    # while len(fnamelist) >= FILEQUANTITYTHRE:
+    #     time.sleep(10)
+    fname = "_".join([stateid, str(stateturn), str(stateidx), replay["_id"], "0"])
+    # self.m_idx += 1
+    fname = fname.replace(" ", "")
+    ofile = open(TEMPSUBMITTASKDIR + fname, "w")
+    ofile.write(stateid + "\n")
+    ofile.write(str(stateturn) + " " + str(stateidx) + "\n")
+    ofile.write(str(statesimilar) + " " + action + "\n")
+    ofile.write("".join([str(v) for v in pvhand.get()]) + " " + "".join([str(v) for v in board]) + "\n")
+    ofile.write(str(len(oppohands)) + "\n")
+    for handsdis in oppohands:
+        # "0 0" 为标识符，一个该标识符表示接下来的数据为一个新的对手的手牌分布
+        ofile.write(str(len(handsdis)) + "\n")
+        for hands, rate in handsdis.items():
+            ofile.write("".join([str(v) for v in hands.get()]) + " " + str(rate) + "\n")
+    ofile.close()
+    os.system("mv " + TEMPSUBMITTASKDIR + fname + " " + SUBMITTASKDIR + fname)
+    sbtime.stop("write")
+    sbtime.stop("dealmain")
+    return
+    # return [stateid, stateturn, stateidx, pvhand, board, oppohands, statesimilar, action]
+
+    # == == == == == == == == ==
+    # cal
+    # similar: 6.03044581413
+    # prepare
+    # para: 1.02557849884
+    # traverse: 9.71223711967
+    # work: 27.1291205883
+    # prepare
+    # replay: 4040.68550062
+    # == == == == == == == == ==
+    # cal
+    # similar: 0.00147639207904
+    # prepare
+    # para: 0.000251085246231
+    # traverse: 0.0023777794205
+    # work: 0.00664183378518
+    # prepare
+    # replay: 0.989252909469
+
+class SubmitTraverseMain(TraverseHands.FastTraverseHands):
     def initdata(self):
         self.m_idx = 0
+        self.m_tm = Timer()
+
+    def syncmain(self, doclist):
+        self.m_tm.start("syncmain")
+        result = TraverseHands.FastTraverseHands.syncmain(self, doclist)
+        self.m_tm.stop("syncmain")
+        return result
 
     def parttraverse(self, idx):
         # 这里处理1万手牌需要花费125sec,这种速度处理40万手牌需要80分钟
-        tm = Timer()
-        tm.start("process")
-        result = TraverseHands.parttraverse(self, idx)
-        tm.stop("process")
+        # tm = Timer()
+        self.m_tm.start("process")
+        result = TraverseHands.FastTraverseHands.parttraverse(self, idx)
+        self.m_tm.stop("process")
 
-        tm.start("processresult")
-        for subresult in result:
+        # self.m_tm.start("processresult")
+        # for subresult in result:
         # for stateid, stateturn, stateidx, pvhand, board, oppohands, statesimilar in result:
             # 这里把东西写入文件
-            if not subresult:
-                continue
-            stateid, stateturn, stateidx, pvhand, board, oppohands, statesimilar, action = subresult
-            RangeState(board, pvhand, oppohands).checkparavalid()
-            fnamelist = os.listdir(SUBMITTASKDIR)
-            while len(fnamelist) >= FILEQUANTITYTHRE:
-                time.sleep(10)
-            fname = "_".join([stateid, str(stateturn), str(stateidx), str(self.m_idx)])
-            self.m_idx += 1
-            fname = fname.replace(" ", "")
-            ofile = open(TEMPSUBMITTASKDIR + fname, "w")
-            ofile.write(stateid + "\n")
-            ofile.write(str(stateturn)+" "+str(stateidx)+"\n")
-            ofile.write(str(statesimilar)+" "+action+"\n")
-            ofile.write("".join([str(v) for v in pvhand.get()])+" "+"".join([str(v) for v in board])+"\n")
-            ofile.write(str(len(oppohands))+"\n")
-            for handsdis in oppohands:
-                # "0 0" 为标识符，一个该标识符表示接下来的数据为一个新的对手的手牌分布
-                ofile.write(str(len(handsdis))+"\n")
-                for hands,rate in handsdis.items():
-                    ofile.write("".join([str(v) for v in hands.get()])+" "+str(rate)+"\n")
-            ofile.close()
-            os.system("mv "+TEMPSUBMITTASKDIR + fname +" "+SUBMITTASKDIR+fname)
-        tm.stop("processresult")
-        print "===================================================="
-        tm.printdata()
-        print "------------------------"
-        tm.printpcgdata()
+            # if not subresult:
+            #     continue
+            # stateid, stateturn, stateidx, pvhand, board, oppohands, statesimilar, action = subresult
+
+        # self.m_tm.stop("processresult")
+
 
 class TaskSubmitter(threading.Thread):
     def __init__(self, db = HANDSDB, clt = STATEINFOHANDSCLT):
@@ -95,6 +148,14 @@ class TaskSubmitter(threading.Thread):
                 continue
             state = replay.getstate(2, 0)
             self.calstrategyforspecificstate(state, doc["_id"], 2, 0)
+            print "=================="
+            sbtime.printdata()
+            print "=================="
+            sbtime.printpcgdata()
+            print "=================="
+            TraverseHands.testtimer.printdata()
+            print "=================="
+            TraverseHands.testtimer.printpcgdata()
             break
             idx += 1
             if idx == 100:
@@ -102,9 +163,13 @@ class TaskSubmitter(threading.Thread):
 
     def calstrategyforspecificstate(self, state, stateid, turnidx, actionidx):
         # 根据秀牌数据提交强化学习数据
-        submittaskengine = SubmitTraverseMain(self.m_db, self.m_clt, func=submitmainfunc, sync=True, step=10000,
+        submittaskengine = InMemoryTraverse(self.m_db, self.m_clt, func=submitmainfunc, sync=True, step=10000, end=0,
                                           para=[state, stateid, turnidx, actionidx])
         submittaskengine.traverse()
+        # print "========================"
+        # submittaskengine.m_tm.printdata()
+        # print "---------------------"
+        # submittaskengine.m_tm.printdata()
 
 class ResultDealer(threading.Thread):
     def __init__(self):
@@ -204,9 +269,28 @@ class TaskData:
             self.m_taskdata[key] = StateTrainData(stateid, turn, idx)
         return self.m_taskdata[key]
 
+def testdocsize():
+    import copy
+    import time
+    result = DBOperater.Find(HANDSDB,STATEINFOHANDSCLT,{})
+    doclist = []
+    idx = 0
+    for doc in result:
+        idx += 1
+        if idx %1000 == 0:
+            print idx
+        doclist.append(PureHandsReader(doc))
+    time.sleep(100)
+    # 读进所有395000个doc一共27GB内存
+    # 读进所有395000个doc并存为PureHandsReader一共27GB内存
+    # 移除掉rawstr之后一共22GB内存
+    # 但是ReplayEngine的变量太多，占用的内存非常大，是不能够全部存入内存的
+
 if __name__ == "__main__":
     t = TaskSubmitter()
     t.start()
 
     # rsd = ResultDealer()
     # rsd.start()
+
+    # testdocsize()

@@ -165,6 +165,9 @@ class StateCalculator(ReplayEngine):
 
         curplayer = self.m_nextplayer
         statedata = {}
+        statedata[Constant.INPOOLSTATE] = self.m_inpoolstate
+        statedata[Constant.NEXTPLAYER] = self.m_nextplayer
+        statedata[Constant.SHOWCARD] = self.m_handsinfo.gethand(self.m_nextplayer) is not None
         statedata[Constant.ISOPENER] = self.getpreflopinfomation()["raiser"] == self.m_nextplayer
         statedata[Constant.HASOPENER] = self.getpreflopinfomation()["raiser"] != 0
         statedata[Constant.RELATIVETOOPENER] = self.getrelativepostoopener(self.m_nextplayer)
@@ -201,7 +204,7 @@ class StateCalculator(ReplayEngine):
         else:
             ReplayEngine.updatecumuinfo(self,round,actionidx)
             statedata[Constant.ODDS] = self.m_laststate["odds"]
-            [self.m_preflopstate,self.m_flopstate,self.m_turnstate,self.m_riverstate][round-1].append(statedata)
+            [self.m_preflopstate,self.m_flopstate,self.m_turnstate,self.m_riverstate][round-1].append(copy.deepcopy(statedata))
 
         self.m_realbetdata[self.m_handsinfo.getturnstr(round)].append([curplayer,self.actiontransfer(self.m_lastaction),self.m_lastattackrate])
 
@@ -223,7 +226,7 @@ class StateCalculator(ReplayEngine):
             targetdoc["TURN"] = self.m_turnstate
         if self.m_riverstate:
             targetdoc["RIVER"] = self.m_riverstate
-
+        del self.m_handsinfo.m_handsinfo["rawstr"]
         DBOperater.ReplaceOne(Constant.HANDSDB,Constant.STATEINFOHANDSCLT,{"_id":self.m_handsinfo.getid()},self.m_handsinfo.m_handsinfo,True)
 
 # StateCalculator 的使用示例,同时也是用来多线程处理历史牌局的处理函数
@@ -248,6 +251,9 @@ class StateByExpert:
     # 本类并不由用户直接调用其构造函数产生,而是通过StateReaderEngine类从存储了state信息的牌局文档中读取
     def __init__(self,stateinfo):
         self.m_stateinfo = stateinfo
+
+    def __getitem__(self, item):
+        return self.m_stateinfo[item]
 
     # 获取该state属于哪一轮
     def getstateturn(self):
@@ -337,6 +343,23 @@ def teststatesimilarity():
             if idx > 2:
                 break
 
+class countshowcardstatequan(TraverseMultiplayerHands):
+    def initdata(self):
+        self.m_showcard = 0
+
+    def mainfunc(self, handsinfo):
+        replay = StateReaderEngine(handsinfo)
+        turncount = replay.m_handsinfo.getturncount()
+        for turn in xrange(2, turncount+1):
+            for state in replay.getallstate(turn):
+                if state[Constant.SHOWCARD]:
+                    self.m_showcard += 1
+
+def countshowcard():
+    tvs = countshowcardstatequan(Constant.HANDSDB,Constant.STATEINFOHANDSCLT)
+    tvs.traverse()
+    print "showcard:", tvs.m_showcard
+
 if __name__ == "__main__":
     # TraverseHandsWithReplayEngine(Constant.HANDSDB,Constant.HANDSCLT,sync=False,func=mainfunc,handsid="2017-12-10 23:32:41 255").traverse()
 
@@ -345,3 +368,6 @@ if __name__ == "__main__":
 
 
     # teststatesimilarity()
+
+    # 下面这个是用于计算有多少个state是秀了牌的state，结果是一共有572043个秀了牌的state
+    # countshowcard()

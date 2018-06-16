@@ -155,6 +155,9 @@ CURWINRATEDIFFRATE = 25
 THREADNUM = 10
 
 # =========================state related===================================
+INPOOLSTATE = "inpoolstate"
+NEXTPLAYER = "nextplayer"
+SHOWCARD = "showcard"
 ISOPENER = "isopener"
 HASOPENER = "hasopener"
 RELATIVETOOPENER = "relativetoopener"

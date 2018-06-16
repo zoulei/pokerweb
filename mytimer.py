@@ -47,3 +47,4 @@ class Timer:
                 print key,":",value * 1.0 / total
         else:
             print identifier,":",self.m_elapsed.get(identifier,0) * 1.0 / total
+

@@ -46,6 +46,16 @@ tongjiinfo 函数检查该牌局信息是否正确记录
 
 数据从原始数据开始的数据处理过程：
 第一步：
+首先用removestraddle.py移除掉那些straddle的手牌
+第二步：
+首先用handinforrepairer.py修复那种后位提前fold牌的情况
+第三步：
+用staeinfocalculator.py来计算手牌的状态等信息，并移除掉错误的手牌
+第四步：
+用prefloprange.py来计算翻前入池率
+
+# =======以下是旧版代码
+第一步：
 collecthands.uploadHandsInfo
 从客户端接收数据并存储
 
@@ -90,3 +100,4 @@ calpreflopgeneralstatemain()
 StateCalculater(Constant.HANDSDB,Constant.HANDSCLT).traverse()
 更新翻牌后所有行动的状态，该信息直接存储到源数据中
 注：现在这些函数都是批处理，完整系统运行时还需要及时移除数据并通过设置时间间隔等方式来防止对同一个数据的重复计算
+
