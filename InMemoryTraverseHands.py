@@ -12,7 +12,7 @@ def loadhandsintomemory():
     global inmemoryhands
     inmemoryhands = []
     result = DBOperater.Find(HANDSDB,STATEINFOHANDSCLT,{})
-    # for doc in result[:10000]:
+    # for doc in result[:100000]:
     for doc in result:
         docreader = PureHandsReader(doc)
         docreader.initboard()
@@ -60,3 +60,6 @@ class InMemoryTraverse(TraverseHands.TraverseHands):
         print "false value : ", self.m_false
         print "elapsedtime : ", day, "D", hour,"H", min, "M", sec, "S"
         print "elapsedtime : ", self.m_elapsedtime
+
+if __name__ == "__main__":
+    getinmemoryhands()

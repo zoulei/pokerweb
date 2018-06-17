@@ -12,8 +12,6 @@ import handsengine
 import traceback
 from mytimer import Timer
 
-testtimer = Timer()
-
 class TraverseHands:
     def __init__(self, db, clt, func = None, handsid = "", step = 10000,
                  start = 0, end = 0, sync = False, para = None, otherpara = None):
@@ -129,12 +127,9 @@ class TraverseHands:
         return result
 
     def syncmain(self,doclist):
-        testtimer.start("syncmain")
         result = []
         for handsinfo in doclist:
-            testtimer.start("for loop")
             try:
-                testtimer.start("runfunc")
                 if self.m_func:
                     if self.m_para is None:
                         returnvalue = self.m_func(handsinfo)
@@ -142,14 +137,11 @@ class TraverseHands:
                         returnvalue = self.m_func([handsinfo,]+self.m_para)
                 else:
                     returnvalue = self.mainfunc(handsinfo)
-                testtimer.stop("runfunc")
-                testtimer.start("result")
                 result.append(returnvalue)
                 if returnvalue is True:
                     self.m_true += 1
                 else:
                     self.m_false += 1
-                testtimer.stop("result")
             except  KeyboardInterrupt:
                 exit()
             except:
@@ -157,8 +149,6 @@ class TraverseHands:
                 print "error : ", handsinfo["_id"]
                 handsinfocommon.pp.pprint(handsinfo)
                 raise
-            testtimer.stop("for loop")
-        testtimer.stop("syncmain")
         return result
 
     def filter(self, handsinfo):
