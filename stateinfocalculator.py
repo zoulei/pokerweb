@@ -103,18 +103,20 @@ class StateCalculator(ReplayEngine):
             total += 1
         return total
 
-    # raiser's stack pot ratio
+    # raiser's stack pot ratio,如果没有新的raiser则不能行动的人的最大后手
     def getraiserstackpotratio(self):
         myneedtobet = self.m_betvalue - self.m_bethistory.get(self.m_nextplayer,0)
         raisermaxstack = 0
         realpot = self.m_pot + myneedtobet
         if self.m_raiser != 0:
             poslist = range(self.m_raiser,0,-1) + range(9, self.m_raiser,-1)
+            posidx = poslist.index(self.m_nextplayer)
         else:
             poslist = self.getposlist()
-        for pos in poslist:
-            if pos == self.m_nextplayer:
-                break
+            posidx = poslist.index(self.m_nextplayer)
+        for pos in poslist[:posidx]:
+            # if pos == self.m_nextplayer:
+            #     break
             if self.m_inpoolstate[pos] == 0:
                 continue
             if self.m_stacksize[pos] > raisermaxstack:
@@ -125,11 +127,11 @@ class StateCalculator(ReplayEngine):
             raisermaxstack = 0
         return raisermaxstack * 1.0 / realpot
 
-    # players need to bet stack pot ratio
+    # players need to bet stack pot ratio，还能够行动的人的最大后手
     def getneedtobetstackratio(self):
         myneedtobet = self.m_betvalue - self.m_bethistory.get(self.m_nextplayer,0)
         realpot = self.m_pot + myneedtobet
-        targetmaxstack = []
+        targetmaxstack = [0,]
         if self.m_raiser != 0:
             poslist = range(self.m_nextplayer -1,0,-1) + range(9, self.m_nextplayer - 1,-1)
             posidx = poslist.index(self.m_raiser)
@@ -146,7 +148,10 @@ class StateCalculator(ReplayEngine):
                 targetstacksize = 0
             targetmaxstack.append(targetstacksize * 1.0 / targetrealpot)
         targetmaxstack.sort()
-        return targetmaxstack
+        return max(targetmaxstack)
+
+    def getremaintoactstackratio(self):
+        pass
 
     def initalplayerquantity(self,turn):
         if turn == 1:
