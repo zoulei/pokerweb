@@ -280,7 +280,7 @@ class StateByExpert:
                 return 0
         attrsimilar = []
         for attr,weight in [[Constant.RELATIVEPOS,200],]:
-            cursimilar = 1 - (self.m_stateinfo[attr] - other.m_stateinfo[attr])
+            cursimilar = 1 - abs(self.m_stateinfo[attr] - other.m_stateinfo[attr])
             attrsimilar.append([cursimilar,weight])
         for attr,maxima,weight in [[Constant.REMAINTOACT,0,100],[Constant.REMAINRAISER,0,100],[Constant.ODDS,10,100],
                             [Constant.POTSIZE,200,100],
@@ -293,7 +293,7 @@ class StateByExpert:
                 maxima = maxvalue
             minvalue = min(self.m_stateinfo[attr],other.m_stateinfo[attr],maxima)
             maxvalue = min(maxvalue,maxima)
-            cursimilar = (minvalue+1)/(maxvalue+1)
+            cursimilar = (minvalue+1) * 1.0 / (maxvalue+1)
             attrsimilar.append([cursimilar,weight])
         for attr,k,maxima,weight in [[Constant.PREFLOPATTACKVALUE,4,3,200],[Constant.CURRENTATTACKVALUE,4,3,200],
                               [Constant.AFTERFLOPATTACKVALUE,4,3,200]]:

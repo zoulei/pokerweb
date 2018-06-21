@@ -61,5 +61,16 @@ class InMemoryTraverse(TraverseHands.TraverseHands):
         print "elapsedtime : ", day, "D", hour,"H", min, "M", sec, "S"
         print "elapsedtime : ", self.m_elapsedtime
 
+def teststatesimilar():
+    inmemoryhands = getinmemoryhands()
+    for handsdata in inmemoryhands:
+        if handsdata["_id"] == "2017-12-15 16:39:46 66":
+            for subhandsdata in inmemoryhands:
+                if subhandsdata.getturncount() < 2:
+                    continue
+                print subhandsdata["_id"]
+                print handsdata.getstate(2, 0) - subhandsdata.getstate(2, 0)
+
 if __name__ == "__main__":
-    getinmemoryhands()
+    # getinmemoryhands()
+    teststatesimilar()
