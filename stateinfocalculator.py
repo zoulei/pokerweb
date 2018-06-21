@@ -25,6 +25,7 @@ class StateCalculator(ReplayEngine):
             Constant.TURNRIVER:[]
         }
         self.m_preflopinpoolstate = None
+        self.m_handsinfo.m_handsinfo["_id"] = self.m_handsinfo.getid().replace(" ", "_")
 
     def initstaterecorder(self):
         self.m_preflopstate = []
@@ -170,6 +171,8 @@ class StateCalculator(ReplayEngine):
 
         curplayer = self.m_nextplayer
         statedata = {}
+        statedata[Constant.STATEHANDSID] = self.m_handsinfo.getid()
+        statedata[Constant.ACTIONIDX] = actionidx
         statedata[Constant.INPOOLSTATE] = self.m_inpoolstate
         statedata[Constant.NEXTPLAYER] = self.m_nextplayer
         statedata[Constant.SHOWCARD] = self.m_handsinfo.gethand(self.m_nextplayer) is not None

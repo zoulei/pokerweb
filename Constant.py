@@ -155,6 +155,8 @@ CURWINRATEDIFFRATE = 25
 THREADNUM = 10
 
 # =========================state related===================================
+STATEHANDSID = "statehandsid"
+ACTIONIDX = "actionidx"
 INPOOLSTATE = "inpoolstate"
 NEXTPLAYER = "nextplayer"
 SHOWCARD = "showcard"
