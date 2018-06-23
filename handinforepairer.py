@@ -161,6 +161,20 @@ def foldinadvancerepairmainfunc(handsinfo):
     repair.savedata()
     return repair.m_repaired
 
+class RemoveInvalidHands(ReplayEngine):
+    def updatecumuinfo(self,round,actionidx):
+        if self.m_curturn != round:
+            raise
+        ReplayEngine.updatecumuinfo(self,round,actionidx)
+
+def removeinvalidmain(handsinfo):
+    replay = RemoveInvalidHands(handsinfo)
+    try:
+        replay.traversealldata()
+    except:
+        DBOperater.DeleteData(Constant.HANDSDB,Constant.HANDSCLT,{"_id":handsinfo["_id"]})
+        return True
+
 if __name__ == "__main__":
     # RepaireAllStack(Constant.HANDSDB,Constant.TJHANDSCLT,handsid="35357006093039820170309212244").traverse()
     # v = RepaireAllStack(Constant.HANDSDB, Constant.TJHANDSCLT)
@@ -174,3 +188,6 @@ if __name__ == "__main__":
     # 下面这个代码用于修复牌局数据库中那些有人还没轮到他行动就提前fold牌的情况,
     # 并会将结果存回牌局数据库中
     TraverseMultiplayerHands(Constant.HANDSDB,Constant.HANDSCLT,func=foldinadvancerepairmainfunc,handsid="",sync=False).traverse()
+
+    # 下面这个代码用于删除牌局数据中有问题的牌局
+    TraverseMultiplayerHands(Constant.HANDSDB, Constant.HANDSCLT, func=removeinvalidmain, handsid="",sync=False).traverse()

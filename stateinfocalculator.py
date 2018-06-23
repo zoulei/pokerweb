@@ -179,7 +179,7 @@ class StateCalculator(ReplayEngine):
         statedata[Constant.ISOPENER] = self.getpreflopinfomation()["raiser"] == self.m_nextplayer
         statedata[Constant.HASOPENER] = self.getpreflopinfomation()["raiser"] != 0
         statedata[Constant.RELATIVETOOPENER] = self.getrelativepostoopener(self.m_nextplayer)
-        statedata[Constant.TURN] = self.m_curturn
+        statedata[Constant.TURN] = round
         statedata[Constant.RELATIVEPOS] = self.relativepos(self.m_nextplayer)
         statedata[Constant.REMAINTOACT] = self.playerquantitytoact()
         statedata[Constant.REMAINRAISER] = self.raiserquantity()
