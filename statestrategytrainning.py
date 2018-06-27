@@ -85,7 +85,7 @@ class TaskSubmitter():
         self.m_clt = clt
 
     def run(self):
-        result = DBOperater.Find(self.m_db, self.m_clt, {})
+        result = DBOperater.Find(self.m_db, self.m_clt, {"_id":"2017-12-11_20:05:31_116"})
         idx = 0
         for doc in result:
             replay = stateinfocalculator.StateReaderEngine(doc)
@@ -100,7 +100,7 @@ class TaskSubmitter():
 
     def calstrategyforspecificstate(self, state, stateid, turnidx, actionidx):
         # 根据秀牌数据提交强化学习数据
-        submittaskengine = TraverseHands.FastTraverseHands(self.m_db, self.m_clt, func=submitmainfunc, sync=False, step=400000, end=0,
+        submittaskengine = TraverseHands.TraverseMultiplayerHands(self.m_db, self.m_clt, func=submitmainfunc, sync=True, step=10000, end=1,
                                           para=[state, stateid, turnidx, actionidx])
         submittaskengine.traverse()
 
