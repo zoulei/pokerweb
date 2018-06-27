@@ -100,7 +100,7 @@ class TaskSubmitter():
 
     def calstrategyforspecificstate(self, state, stateid, turnidx, actionidx):
         # 根据秀牌数据提交强化学习数据
-        submittaskengine = TraverseHands.TraverseMultiplayerHands(self.m_db, self.m_clt, func=submitmainfunc, sync=True, step=10000, end=1,
+        submittaskengine = TraverseHands.TraverseMultiplayerHands(self.m_db, self.m_clt, func=submitmainfunc, sync=True, step=35, end=1,
                                           para=[state, stateid, turnidx, actionidx])
         submittaskengine.traverse()
 
