@@ -309,6 +309,7 @@ class ReplayEngine:
         self.m_curturnover = False
         self.m_raiser = 0
         self.m_fakeraiser = 0
+        self.m_raisevalue = 0
         self.m_betlevel = 0
         self.m_circle = 1
         self.m_betvalue = 0
@@ -588,22 +589,29 @@ class ReplayEngine:
                     # invalid raise
                     self.m_fakeraiser = pos
                     # self.m_betvalue = value
+
+                    self.m_lastaction = 4.3
                 else:
                     # valid raise
                     self.m_raiser = pos
                     self.m_fakeraiser = 0
                     self.m_raisevalue = value - self.m_betvalue
 
-                givepayoff = (value + self.m_pot - self.m_bethistory.get(pos,0)) * 1.0 / ( value - self.m_betvalue)
-                givepayoff = handsinfocommon.roundhalf(givepayoff)
-                if givepayoff <= 4:
-                    # curstate["raise"] += 1
                     self.m_lastaction = 4.2
                     self.m_betlevel += 1
-                else:
-                    self.m_lastaction = 4.3
-                    # curstate["call"] += 1
+
+
+                # givepayoff = (value + self.m_pot - self.m_bethistory.get(pos,0)) * 1.0 / ( value - self.m_betvalue)
+                # givepayoff = handsinfocommon.roundhalf(givepayoff)
+                # if givepayoff <= 4:
+                #     # curstate["raise"] += 1
+                #     self.m_lastaction = 4.2
+                #     self.m_betlevel += 1
+                # else:
+                #     self.m_lastaction = 4.3
+                #     # curstate["call"] += 1
                 self.m_betvalue = value
+
             self.m_pot += value-self.m_bethistory.get(pos,0)
             self.m_bethistory[pos] = realvalue
             self.m_inpoolstate[pos] = 2
