@@ -55,7 +55,10 @@ class prefloprangge:
 
             # print "getrange : ",curturn,betlevel,ftlevelkey,stlevelkey,thlevelkey,action
             # print "result : ",targetdoc[action],targetfield,lowkey,nearestkey
-            return targetdoc[action]
+            if action == "call":
+                return targetdoc[action] + targetdoc["raise"]
+            else:
+                return targetdoc[action]
         except:
             print "getrange error."
             print "getrange parameter : ",curturn,betlevel,ftlevelkey,stlevelkey,thlevelkey,action
