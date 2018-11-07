@@ -166,7 +166,7 @@ class StateCalculator(ReplayEngine):
         return info["remain"] + info["allin"]
 
     def updatecumuinfo(self,round,actionidx):
-        if round == 1 and actionidx == 0:
+        if round == 2 and actionidx == 0:
             self.m_preflopinpoolstate = copy.deepcopy(self.m_inpoolstate)
 
         curplayer = self.m_nextplayer
