@@ -374,7 +374,6 @@ if __name__ == "__main__":
     # 下面这句话用于将库中的牌谱都计算完state信息,并存入state数据库中
     TraverseMultiplayerHands(Constant.HANDSDB,Constant.HANDSCLT,sync=False,func=mainfunc,handsid="").traverse()
 
-
     # teststatesimilarity()
 
     # 下面这个是用于计算有多少个state是秀了牌的state，结果是一共有572043个秀了牌的state

@@ -716,10 +716,12 @@ class ReplayEngine:
             newrange = self.m_handsrangeobj.getrange(self.m_laststate["circle"],self.m_laststate["betlevel"],
                                                      self.m_laststate["pos"],self.m_laststate["betbb"],self.m_laststate["normalpayoff"],
                                                      self.actiontransfer(self.m_lastaction) )
+            # print "circle 1 prefloprange:",newrange,self.m_laststate["circle"],self.m_laststate["betlevel"],self.m_laststate["pos"],self.m_laststate["betbb"],self.m_laststate["normalpayoff"],self.actiontransfer(self.m_lastaction)
         else: # > 1
             newrange = self.m_handsrangeobj.getrange(self.m_laststate["circle"],self.m_laststate["betlevel"],
                                                      self.m_laststate["relativepos"],self.m_laststate["normalneedtobet"],self.m_laststate["normalpayoff"],
                                                      self.actiontransfer(self.m_lastaction) )
+            # print "circle 2 prefloprange:",newrange,self.m_laststate["circle"],self.m_laststate["betlevel"],self.m_laststate["relativepos"],self.m_laststate["normalneedtobet"],self.m_laststate["normalpayoff"],self.actiontransfer(self.m_lastaction)
 
         if newrange:
             if not self.m_prefloprange[self.m_laststate["pos"]]:
@@ -728,6 +730,7 @@ class ReplayEngine:
             # 这个0.009是表示range里只有AAKK
             if self.m_prefloprange[self.m_laststate["pos"]] < 0.009:
                 self.m_prefloprange[self.m_laststate["pos"]] = 0.009
+        # print "prefloprange:",self.m_prefloprange
 
     def updatepreflopinformation(self):
         if self.m_laststate["round"] != 1:

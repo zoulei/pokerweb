@@ -300,6 +300,8 @@ class Preflopstatemachine(ReplayEngine):
 
         lastaction,lastattack = self.getlastaction()
         realaction = self.actiontransfer(lastaction)
+        if realaction == Constant.CHECK:
+            realaction = Constant.CALL
         if realaction:
             targetdoc[realaction] += 1
             targetdoc["sum"] += 1
@@ -340,7 +342,8 @@ def tongjijoinrate():
                     curfielddoc["sum"] = sumhands
                     curfielddoc["fold"] = round(currawdoc["fold"] * 1.0 / sumhands,3)
                     curfielddoc["raise"] = round(currawdoc["raise"] * 1.0 / sumhands,3)
-                    curfielddoc["call"] = round((currawdoc["raise"] + currawdoc["call"]) * 1.0 / sumhands,3)
+                    curfielddoc["call"] = round(currawdoc["call"] * 1.0 / sumhands,3)
+                    # curfielddoc["call"] = round((currawdoc["raise"] + currawdoc["call"]) * 1.0 / sumhands,3)
     DBOperater.StoreData(Constant.HANDSDB, Constant.CUMUCLT,joinratedoc)
 
 def repairjoinrate():

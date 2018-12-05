@@ -68,8 +68,13 @@ def printcombinationinfo():
     print "possible river:",handsinfocommon.combination(52,5)
 
 
-def preflopftdata():
-    result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPREPAIRJOINRATEDOC})
+def preflopftdata(repair):
+    if repair == 1:
+        result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPREPAIRJOINRATEDOC})
+    elif repair == 2:
+        result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPJOINRATEDOC})
+    else:
+        result = DBOperater.Find(Constant.HANDSDB,Constant.CUMUCLT,{"_id":Constant.PREFLOPRANGEDOC})
     rawdata1 = result.next()
     print "rawkey: ",rawdata1.keys()
     for key in rawdata1.keys():
@@ -196,5 +201,14 @@ if __name__ == "__main__":
         printgameseqdata()
     elif sys.argv[1] == "3":
         printmisscollectgameseq()
+    elif sys.argv[1] == "4":
+        # joinrate after repaired
+        preflopftdata(1)
+    elif sys.argv[1] == "5":
+        # joinrate before repaired
+        preflopftdata(2)
+    elif sys.argv[1] == "6":
+        # joinrate before calculated
+        preflopftdata(3)
     else:
         printhandsinfo(sys.argv[1])
