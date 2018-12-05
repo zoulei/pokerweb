@@ -110,6 +110,7 @@ def printdatalen6():
     print "sumhands :   ",sumhands
 
 def printhandsinfo(handsid):
+    handsid = handsid.replace(" ","_")
     result = DBOperater.Find(Constant.HANDSDB,Constant.STATEINFOHANDSCLT,{"_id":handsid})
     print "handsid:",handsid
     handsinfocommon.pp.pprint(result.next())
