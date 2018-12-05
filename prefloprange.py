@@ -230,7 +230,8 @@ class JoinrateRepairer:
                         believeintervaldict = believeintervaldata[pos][betbb][payoffrate]
                         joinratedict = joinratedata[pos][betbb][payoffrate]
 
-                    callhands = payoffratedata["call"] + payoffratedata["raise"]
+                    # callhands = payoffratedata["call"] + payoffratedata["raise"]
+                    callhands = payoffratedata["call"]
                     raisehands = payoffratedata["raise"]
 
                     believeintervaldict["call"] = believeinterval.calcBin(callhands, sumhands, believerate)
@@ -442,13 +443,13 @@ def testprefloprangemain():
     handsinfocommon.printdictbypercentage(rangeaccuracydict)
 
 if __name__ == "__main__":
-    # 下面这四个函数一起用来激活翻前范围程序
+    # 下面这四个函数一起用来激活翻前范围程序,第三个方法可有可无,因为第四个方法是直接依赖第二个方法的
     removepreflopdoc()
-
+    #
     tongjiftmain()
     tongjijoinrate()
     repairjoinrate()
 
     # 下面这个程序用于测试上面生成的翻前范围配合翻前排力排行的准确率
-    testprefloprangemain()
+    # testprefloprangemain()
 
