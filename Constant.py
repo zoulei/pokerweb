@@ -226,3 +226,6 @@ SYNC = False
 
 # ===============================train state strategy related=================
 FILEQUANTITYTHRE = 1000000
+
+# ================================ml related==================================
+TRAINDATAFILE = CACHEDIR + "TRAINDATAFILE"
