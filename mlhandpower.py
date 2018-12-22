@@ -6,6 +6,11 @@ import tensorflow as tf
 from tensorflow import keras
 import time
 
+class PrintDot(keras.callbacks.Callback):
+  def on_epoch_end(self, epoch, logs):
+    if epoch % 100 == 0: print ''
+    print '.'
+
 class MLHandPower:
     def __init__(self):
         self.m_handsmap = None
@@ -16,6 +21,9 @@ class MLHandPower:
         self.m_model = None
         self.m_cardidx = None
         self.m_alllabel = None
+
+        self.m_winratelabel = None
+        self.m_testwinlabel = None
 
     def run(self):
         self.loaddata(TRAINDATAFILE)
@@ -40,6 +48,33 @@ class MLHandPower:
             binresult = [v * 1.0 / sum(binresult) for v in binresult]
             print binresult
             print self.evaluate()
+
+    def run1(self):
+        self.loaddata(TRAINDATAFILE)
+        self.normalizetraindata()
+        model = keras.Sequential([
+            keras.layers.Dense(64, activation=tf.nn.relu, input_shape=[len(self.m_traindata[0])]),
+            keras.layers.Dense(64, activation=tf.nn.relu),
+            keras.layers.Dense(1)
+          ])
+
+        optimizer = tf.train.RMSPropOptimizer(0.001)
+
+        model.compile(loss='mse',
+                    optimizer=optimizer,
+                    metrics=['mae', 'mse'])
+
+        early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=50)
+
+
+
+        history = model.fit(self.m_traindata, self.m_winratelabel, epochs=EPOCHS,
+                            validation_split = 0.2, verbose=0, callbacks=[early_stop, PrintDot()])
+
+        loss, mae, mse = model.evaluate(self.m_testdata, self.m_testwinlabel, verbose=0)
+
+        print "Testing set Mean Abs Error: {:5.2f} MPG".format(mae)
+        # plot_history(history)
 
     def train(self):
         print "training"
@@ -79,6 +114,9 @@ class MLHandPower:
         traindata = []
         labeldata = []
         self.m_alllabel = []
+        self.m_winratelabel = []
+        self.m_testwinlabel = []
+        winlabel = []
         idxxx = 0
         for line in ifile:
             idxxx += 1
@@ -106,12 +144,15 @@ class MLHandPower:
             hpstr = data[-1]
             hp = HandPower(winratestr = hpstr)
             labeldata.append(hp.m_data[0])
+            winlabel.append(hp.m_curwinrate)
             self.m_alllabel.append(hp.m_data)
         testdatalen = int(len(traindata) * testdatarate)
         self.m_testdata = np.array(traindata[:testdatalen])
         self.m_testlabel = np.array(labeldata[:testdatalen])
         self.m_traindata = np.array(traindata[testdatalen:])
         self.m_trainlabel = np.array(labeldata[testdatalen:])
+        self.m_testwinlabel = np.array(winlabel[:testdatalen])
+        self.m_winratelabel = np.array(winlabel[testdatalen:])
 
     def inithandsmap(self):
         print "initing handsmap"
@@ -126,4 +167,4 @@ class MLHandPower:
             self.m_handsmap[handsstr] = idx
 
 if __name__ == "__main__":
-    MLHandPower().run()
+    MLHandPower().run1()
