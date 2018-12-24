@@ -102,7 +102,7 @@ ANTI = 2
 
 # ========================cache data related=============================
 # CACHEDIR = "/mnt/mfs/users/zoul15/pokercachedata/"
-CACHEDIR = "/dev/shm/home/zoul15/temp/"
+CACHEDIR = "/home/zoul15/temp/"
 SUBMITTASKDIR = CACHEDIR + "submittask/"
 TEMPSUBMITTASKDIR = CACHEDIR + "tmpsubmittask/"
 TASKRESULTDIR = CACHEDIR + "taskresult/"
@@ -229,3 +229,4 @@ FILEQUANTITYTHRE = 1000000
 
 # ================================ml related==================================
 TRAINDATAFILE = CACHEDIR + "TRAINDATAFILE"
+TRAINDATAFILENORMALIZE = CACHEDIR + "TRAINDATAFILENORMALIZE"

@@ -7,9 +7,9 @@ from tensorflow import keras
 import time
 
 class PrintDot(keras.callbacks.Callback):
-  def on_epoch_end(self, epoch, logs):
-    if epoch % 100 == 0: print ''
-    print '.'
+    def on_epoch_end(self, epoch, logs):
+        if epoch % 100 == 0: print ''
+        print '.',
 
 class MLHandPower:
     def __init__(self):
@@ -68,11 +68,11 @@ class MLHandPower:
 
 
 
-        history = model.fit(self.m_traindata, self.m_winratelabel, epochs=EPOCHS,
+        history = model.fit(self.m_traindata, self.m_winratelabel, epochs=1000,
                             validation_split = 0.2, verbose=0, callbacks=[early_stop, PrintDot()])
-
+        starttime = time.time()
         loss, mae, mse = model.evaluate(self.m_testdata, self.m_testwinlabel, verbose=0)
-
+        print "elapsed:",len(self.m_testdata), time.time() - starttime
         print "Testing set Mean Abs Error: {:5.2f} MPG".format(mae)
         # plot_history(history)
 
@@ -146,6 +146,7 @@ class MLHandPower:
             labeldata.append(hp.m_data[0])
             winlabel.append(hp.m_curwinrate)
             self.m_alllabel.append(hp.m_data)
+        ifile.close()
         testdatalen = int(len(traindata) * testdatarate)
         self.m_testdata = np.array(traindata[:testdatalen])
         self.m_testlabel = np.array(labeldata[:testdatalen])
@@ -153,6 +154,49 @@ class MLHandPower:
         self.m_trainlabel = np.array(labeldata[testdatalen:])
         self.m_testwinlabel = np.array(winlabel[:testdatalen])
         self.m_winratelabel = np.array(winlabel[testdatalen:])
+
+    def transferdata(self,fname, ofname):
+        self.inithandsmap()
+        self.m_cardidx = []
+
+        ifile = open(fname)
+        traindata = []
+        hpdata = []
+        idxxx = 0
+        for line in ifile:
+            idxxx += 1
+            if idxxx % 20000 == 0:
+                print idxxx / 2
+            line = line.strip()
+            if line == "":
+                continue
+            data = line.split(" ")
+            myhand = data[0]
+            board = data[1]
+            opponum = int(data[2])
+            oppohandsnum = int(data[3])
+            curdata = [0] * (1326 + 5 * 5)
+            for idx, card in enumerate(hunlgame.generateCards(myhand + board)):
+                curdata[idx * 5] = card.value
+                curdata[idx * 5 + card.symbol + 1] = 1
+                if idxxx == 1:
+                    self.m_cardidx.append(idx * 5)
+            for idx in xrange(oppohandsnum):
+                oppohand = data[4 + idx * 2]
+                oppohandrate = float(data[5 + idx * 2])
+                curdata[5 * 5 + self.m_handsmap[oppohand]] = oppohandrate
+            traindata.append(curdata)
+            hpstr = data[-1]
+            hp = HandPower(winratestr = hpstr)
+            hpdata.append(hp)
+        ifile.close()
+
+        ofile = open(ofname,"a")
+        for curdata, hp in zip(traindata, hpdata):
+            curdata.append(hp.m_curwinrate)
+            curdata.extend(hp.m_data)
+            ofile.write(" ".join([str(v) for v in curdata]) + "\n")
+        ofile.close()
 
     def inithandsmap(self):
         print "initing handsmap"
@@ -168,3 +212,4 @@ class MLHandPower:
 
 if __name__ == "__main__":
     MLHandPower().run1()
+    # MLHandPower().transferdata(TRAINDATAFILE,TRAINDATAFILENORMALIZE)
