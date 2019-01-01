@@ -155,13 +155,19 @@ class MLHandPower:
         self.m_testwinlabel = np.array(winlabel[:testdatalen])
         self.m_winratelabel = np.array(winlabel[testdatalen:])
 
-    def transferdata(self,fname, ofname):
+    def transferdata(self):
         self.inithandsmap()
         self.m_cardidx = []
 
-        ifile = open(fname)
-        traindata = []
-        hpdata = []
+        ifile = open(TRAINDATAFILE)
+        ofile = open(TRAINDATAFILENORMALIZE,"w")
+        testofile = open(TESTDATAFILENORMALIZE,"w")
+        flen = 0
+        for line in ifile:
+            flen += 1
+        ifile.close()
+        ifile = open(TRAINDATAFILE)
+        trainlen = flen * 0.8
         idxxx = 0
         for line in ifile:
             idxxx += 1
@@ -185,18 +191,16 @@ class MLHandPower:
                 oppohand = data[4 + idx * 2]
                 oppohandrate = float(data[5 + idx * 2])
                 curdata[5 * 5 + self.m_handsmap[oppohand]] = oppohandrate
-            traindata.append(curdata)
             hpstr = data[-1]
             hp = HandPower(winratestr = hpstr)
-            hpdata.append(hp)
-        ifile.close()
-
-        ofile = open(ofname,"a")
-        for curdata, hp in zip(traindata, hpdata):
             curdata.append(hp.m_curwinrate)
-            curdata.extend(hp.m_data)
-            ofile.write(" ".join([str(v) for v in curdata]) + "\n")
+            if idxxx < trainlen:
+                ofile.write(" ".join([str(v) for v in curdata]) + "\n")
+            else:
+                testofile.write(" ".join([str(v) for v in curdata]) + "\n")
+        ifile.close()
         ofile.close()
+        testofile.close()
 
     def inithandsmap(self):
         print "initing handsmap"
@@ -211,5 +215,5 @@ class MLHandPower:
             self.m_handsmap[handsstr] = idx
 
 if __name__ == "__main__":
-    MLHandPower().run1()
-    # MLHandPower().transferdata(TRAINDATAFILE,TRAINDATAFILENORMALIZE)
+    # MLHandPower().run1()
+    MLHandPower().transferdata()
