@@ -5,155 +5,49 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 import time
+import logging
 
-class PrintDot(keras.callbacks.Callback):
-    def on_epoch_end(self, epoch, logs):
-        if epoch % 100 == 0: print ''
-        print '.',
+# Metadata describing the text columns
+COLUMNS = [str(i) for i in xrange(1326 + 5 * 5)] + ["label",]
+FIELD_DEFAULTS = [[0.0]] * (1326 + 5 * 5 + 1)
+def _parse_line(line):
+    # Decode the line into its fields
+    fields = tf.decode_csv(line, FIELD_DEFAULTS,field_delim=' ')
+
+    # Pack the result into a dictionary
+    features = dict(zip(COLUMNS,fields))
+
+    # Separate the label from the features
+    label = features.pop('label')
+
+    return features, label
+
+def csv_input_fn(fname):
+    ds = tf.data.TextLineDataset(fname)
+    ds = ds.map(_parse_line)
+    print ds
+    # Shuffle, repeat, and batch the examples.
+    dataset = ds.shuffle(10000).repeat().batch(1000)
+
+    # Return the dataset.
+    return dataset
+
+def train():
+    my_feature_columns = []
+    for key in xrange(1326 + 5 * 5):
+        my_feature_columns.append(tf.feature_column.numeric_column(key=str(key)))
+    estimator = tf.estimator.DNNRegressor(feature_columns = my_feature_columns, hidden_units=[500, 500, 500, 500, 500, 500],model_dir = "")
+    logging.getLogger().setLevel(logging.INFO)
+    estimator.train(input_fn=lambda:csv_input_fn(TRAINDATAFILENORMALIZE),steps=400000)
+    for idx in xrange(26):
+        eval_result = estimator.evaluate(input_fn=lambda:csv_input_fn(TESTDATAFILENORMALIZE+str(idx)+".csv"))
+        print "test idx:",idx
+        for key, value in eval_result.items():
+            print key,"\t",value
 
 class MLHandPower:
     def __init__(self):
         self.m_handsmap = None
-        self.m_traindata = None
-        self.m_trainlabel = None
-        self.m_testdata = None
-        self.m_testlabel = None
-        self.m_model = None
-        self.m_cardidx = None
-        self.m_alllabel = None
-
-        self.m_winratelabel = None
-        self.m_testwinlabel = None
-
-    def run(self):
-        self.loaddata(TRAINDATAFILE)
-        self.normalizetraindata()
-        for i in xrange(len(self.m_alllabel[0])):
-            self.m_trainlabel = []
-            self.m_testlabel = []
-            for j in xrange(len(self.m_testdata)):
-                self.m_testlabel.append(self.m_alllabel[j][i])
-            testlen = len(self.m_testdata)
-            for j in xrange(len(self.m_traindata)):
-                self.m_trainlabel.append(self.m_alllabel[j + testlen][i])
-            print i,"'th train"
-            self.m_testlabel = np.array(self.m_testlabel)
-            self.m_trainlabel = np.array(self.m_trainlabel)
-            self.buildmodel()
-            self.train()
-            binresult = np.bincount(self.m_trainlabel)
-            binresult = [v * 1.0 / sum(binresult) for v in binresult]
-            print binresult
-            binresult = np.bincount(self.m_testlabel)
-            binresult = [v * 1.0 / sum(binresult) for v in binresult]
-            print binresult
-            print self.evaluate()
-
-    def run1(self):
-        self.loaddata(TRAINDATAFILE)
-        self.normalizetraindata()
-        model = keras.Sequential([
-            keras.layers.Dense(64, activation=tf.nn.relu, input_shape=[len(self.m_traindata[0])]),
-            keras.layers.Dense(64, activation=tf.nn.relu),
-            keras.layers.Dense(1)
-          ])
-
-        optimizer = tf.train.RMSPropOptimizer(0.001)
-
-        model.compile(loss='mse',
-                    optimizer=optimizer,
-                    metrics=['mae', 'mse'])
-
-        early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=50)
-
-
-
-        history = model.fit(self.m_traindata, self.m_winratelabel, epochs=1000,
-                            validation_split = 0.2, verbose=0, callbacks=[early_stop, PrintDot()])
-        starttime = time.time()
-        loss, mae, mse = model.evaluate(self.m_testdata, self.m_testwinlabel, verbose=0)
-        print "elapsed:",len(self.m_testdata), time.time() - starttime
-        print "Testing set Mean Abs Error: {:5.2f} MPG".format(mae)
-        # plot_history(history)
-
-    def train(self):
-        print "training"
-        self.m_model.fit(self.m_traindata,self.m_trainlabel, epochs = 5)
-
-    def evaluate(self):
-        print "evaluating"
-        starttime = time.time()
-        test_loss, test_acc = self.m_model.evaluate(self.m_testdata, self.m_testlabel)
-        print "elapsed:",len(self.m_testdata), time.time() - starttime
-        return [test_loss, test_acc]
-
-    def buildmodel(self):
-        print "building model"
-        self.m_model = keras.Sequential([
-            keras.layers.Dense(128, activation=tf.nn.relu),
-            keras.layers.Dense(128, activation=tf.nn.relu),
-            keras.layers.Dense(128, activation=tf.nn.relu),
-            keras.layers.Dense(47, activation=tf.nn.softmax)
-        ])
-        self.m_model.compile(optimizer=tf.train.AdamOptimizer(),
-              loss='sparse_categorical_crossentropy',
-              metrics=['accuracy'])
-
-    def normalizetraindata(self):
-        print "normalizing data:",self.m_cardidx
-        for idx in self.m_cardidx:
-            self.m_traindata[:,idx] = self.m_traindata[:,idx] / 14.0
-            self.m_testdata[:,idx] = self.m_testdata[:,idx] / 14.0
-
-    def loaddata(self, fname, testdatarate = 0.2):
-        print "loading data"
-        self.inithandsmap()
-        self.m_cardidx = []
-
-        ifile = open(fname)
-        traindata = []
-        labeldata = []
-        self.m_alllabel = []
-        self.m_winratelabel = []
-        self.m_testwinlabel = []
-        winlabel = []
-        idxxx = 0
-        for line in ifile:
-            idxxx += 1
-            if idxxx % 20000 == 0:
-                print idxxx / 2
-            line = line.strip()
-            if line == "":
-                continue
-            data = line.split(" ")
-            myhand = data[0]
-            board = data[1]
-            opponum = int(data[2])
-            oppohandsnum = int(data[3])
-            curdata = [0] * (1326 + 5 * 5)
-            for idx, card in enumerate(hunlgame.generateCards(myhand + board)):
-                curdata[idx * 5] = card.value
-                curdata[idx * 5 + card.symbol + 1] = 1
-                if idxxx == 1:
-                    self.m_cardidx.append(idx * 5)
-            for idx in xrange(oppohandsnum):
-                oppohand = data[4 + idx * 2]
-                oppohandrate = float(data[5 + idx * 2])
-                curdata[5 * 5 + self.m_handsmap[oppohand]] = oppohandrate
-            traindata.append(curdata)
-            hpstr = data[-1]
-            hp = HandPower(winratestr = hpstr)
-            labeldata.append(hp.m_data[0])
-            winlabel.append(hp.m_curwinrate)
-            self.m_alllabel.append(hp.m_data)
-        ifile.close()
-        testdatalen = int(len(traindata) * testdatarate)
-        self.m_testdata = np.array(traindata[:testdatalen])
-        self.m_testlabel = np.array(labeldata[:testdatalen])
-        self.m_traindata = np.array(traindata[testdatalen:])
-        self.m_trainlabel = np.array(labeldata[testdatalen:])
-        self.m_testwinlabel = np.array(winlabel[:testdatalen])
-        self.m_winratelabel = np.array(winlabel[testdatalen:])
 
     def transferdata(self):
         self.inithandsmap()
@@ -161,7 +55,9 @@ class MLHandPower:
 
         ifile = open(TRAINDATAFILE)
         ofile = open(TRAINDATAFILENORMALIZE,"w")
-        testofile = open(TESTDATAFILENORMALIZE,"w")
+        testofile = []
+        for idx in xrange(26):
+            testofile.append( open(TESTDATAFILENORMALIZE + str(idx)+".csv","w"))
         flen = 0
         for line in ifile:
             flen += 1
@@ -183,7 +79,7 @@ class MLHandPower:
             oppohandsnum = int(data[3])
             curdata = [0] * (1326 + 5 * 5)
             for idx, card in enumerate(hunlgame.generateCards(myhand + board)):
-                curdata[idx * 5] = card.value
+                curdata[idx * 5] = card.value / 14.0
                 curdata[idx * 5 + card.symbol + 1] = 1
                 if idxxx == 1:
                     self.m_cardidx.append(idx * 5)
@@ -197,10 +93,11 @@ class MLHandPower:
             if idxxx < trainlen:
                 ofile.write(" ".join([str(v) for v in curdata]) + "\n")
             else:
-                testofile.write(" ".join([str(v) for v in curdata]) + "\n")
+                testofile[int(hp.m_curwinrate/0.04)].write(" ".join([str(v) for v in curdata]) + "\n")
         ifile.close()
         ofile.close()
-        testofile.close()
+        for v in testofile:
+            v.close()
 
     def inithandsmap(self):
         print "initing handsmap"
@@ -215,5 +112,5 @@ class MLHandPower:
             self.m_handsmap[handsstr] = idx
 
 if __name__ == "__main__":
-    # MLHandPower().run1()
-    MLHandPower().transferdata()
+    train()
+    # MLHandPower().transferdata()
