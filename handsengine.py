@@ -324,7 +324,7 @@ class ReplayEngine:
 
     def getnextplayer(self):
         if self.m_curturnover:
-            if self.m_curturn + 1 > 1:
+            if self.m_curturn > 1:
                 poslist = self.m_afterflopposlist
             else:
                 poslist = self.m_preflopposlist
@@ -684,7 +684,7 @@ class ReplayEngine:
                 relativepos = 2
 
         realpos = 0
-        for idx in self.m_inpoolstate:
+        for idx in xrange(len(self.m_inpoolstate)):
             if self.m_inpoolstate[idx] == 1:
                 realpos += 1
             if idx == pos:
