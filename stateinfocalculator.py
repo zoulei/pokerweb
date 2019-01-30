@@ -151,9 +151,6 @@ class StateCalculator(ReplayEngine):
         targetmaxstack.sort()
         return max(targetmaxstack)
 
-    def getremaintoactstackratio(self):
-        pass
-
     def initalplayerquantity(self,turn):
         if turn == 1:
             return self.m_handsinfo.getplayerquantity()
