@@ -683,13 +683,6 @@ class ReplayEngine:
                 # raiser
                 relativepos = 2
 
-        realpos = 0
-        for idx in xrange(len(self.m_inpoolstate)):
-            if self.m_inpoolstate[idx] == 1:
-                realpos += 1
-            if idx == pos:
-                break
-
         return {
             "pos":pos,
             "pot":self.m_pot,
