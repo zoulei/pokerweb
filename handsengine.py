@@ -822,7 +822,7 @@ class ReplayEngine:
             for betvalue in inpoolinvestlist[idx + 1:]:
                 newsep[0].extend(inpoolinvest[betvalue])
 
-            for idx,value in enumerate(gameinvest):
+            for _,value in enumerate(gameinvest):
                 if value <= lowbound:
                     continue
                 if value > upperbound:
