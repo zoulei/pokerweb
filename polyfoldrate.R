@@ -10,26 +10,26 @@ if (length(args)>3){
     drawpic = as.numeric(args[4])
 }
 
+#install.packages("/home/zoul15/pcshareddir/MonoPoly", repos = NULL, type = "source")
 suppressMessages(library("MonoPoly"))
 data = read.csv(ifilename,sep="\t",header=FALSE)
 data = subset(data,V1 <= threidx & V2 != NANSYMBOL)
 if (nrow(data) <= 1){
+    print ("error, no valid data.\n")
+    print(args)
     q()
 }
 data[nrow(data),ncol(data)] = 0.0
-#result = tryCatch({
-#    model = monpol(V2~V1,data,degree=10,weights=data$V3,a=0,b=1 / HPVALUESLOT,monotone="decreasing",trace=TRUE)
-#},
-#error=function(cond) {
-#            message("Here's the original error message:")
-#            message(cond)
-#            print(args)
-#        })
-print("stuck")
+result = tryCatch({
+   model = monpol(V2~V1,data,degree=10,weights=data$V3,a=0,b=1 / HPVALUESLOT,monotone="decreasing")
+},
+error=function(cond) {
+           message("Here's the original error message:")
+           message(cond)
+           print(args)
+})
 model = monpol(V2~V1,data,degree=10,weights=data$V3,a=0,b=1 / HPVALUESLOT,monotone="decreasing")
-print("over")
 para = coef(model)
-print("where")
 
 fullx = seq(0,1 / HPVALUESLOT,by=1)
 fitteddata = evalPol(fullx,para)
