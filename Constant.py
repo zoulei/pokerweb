@@ -102,7 +102,8 @@ ANTI = 2
 
 # ========================cache data related=============================
 # CACHEDIR = "/mnt/mfs/users/zoul15/pokercachedata/"
-CACHEDIR = "/home/zoul15/temp/"
+CACHEDIR = "/home/zoul15/pcshareddir/"
+TRAINDATADIR  = CACHEDIR + "TRAINDATADIR/4/"
 SUBMITTASKDIR = CACHEDIR + "submittask/"
 TEMPSUBMITTASKDIR = CACHEDIR + "tmpsubmittask/"
 TASKRESULTDIR = CACHEDIR + "taskresult/"

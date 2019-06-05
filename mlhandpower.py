@@ -4,10 +4,13 @@ import tensorflow as tf
 import logging
 import time
 import pandas
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
-FEATURELEN = 22
+FEATURELEN = 123
 # Metadata describing the text columns
-COLUMNS = [str(i) for i in range(FEATURELEN)]# + ["label", ]
+COLUMNS = [str(i) for i in range(FEATURELEN)] + ["label", ]
 FIELD_DEFAULTS = [[0.0]] * (FEATURELEN+1)
 
 
@@ -110,66 +113,89 @@ def train1():
     my_feature_columns = []
     for key in range(FEATURELEN):
         my_feature_columns.append(tf.feature_column.numeric_column(key=str(key)))
-    head = tf.contrib.estimator.regression_head(
-        loss_reduction=tf.losses.Reduction.MEAN,
-        loss_fn=absdifloss
-    )
-    estimator = tf.contrib.estimator.DNNEstimator(
-        head=head,
-        activation_fn=tf.nn.relu,
+    # head = tf.estimator.regression_head(
+    #     loss_reduction=tf.losses.Reduction.MEAN,
+    #     loss_fn=absdifloss
+    # )
+    estimator = tf.estimator.DNNRegressor(
+        # head=head,
+        # activation_fn=tf.nn.relu,
         feature_columns = my_feature_columns,
         hidden_units=[500, 500, 500, 500, 500, 500],
         model_dir = "/home/zoul15/pcshareddir/riverregressor/",
         optimizer=lambda: tf.train.AdamOptimizer(learning_rate=tf.train.piecewise_constant(
-            tf.train.get_global_step(), boundaries, values))
+            tf.train.get_global_step(), boundaries, values)),
+        loss_reduction = tf.losses.Reduction.MEAN
     )
     logging.getLogger().setLevel(logging.INFO)
-    estimator.train(input_fn=lambda:get_dataset(CACHEDIR+"1.tfrecords"), steps=3500000)
-    # estimator.train(input_fn=lambda: csv_input_fn(CACHEDIR + "1.csv"), steps=300)
-
-    starttime = time.time()
-    print ("start evaluate")
-    # for idx in range(3,4):
-    eval_result = estimator.evaluate(input_fn=lambda: csv_input_fn_evaluate(CACHEDIR + "7.csv"))
-    # print ("test idx:",idx)
-    for key, value in eval_result.items():
-        print (key, "\t", value)
-    print ("finish evaluate")
-    print (time.time() - starttime)
-
-    starttime = time.time()
-    print ("start evaluate")
-    # for idx in range(3,4):
-    eval_result = estimator.evaluate(input_fn=lambda: csv_input_fn_evaluate(CACHEDIR + "1.csv"))
-    # print ("test idx:",idx)
-    for key, value in eval_result.items():
-        print (key, "\t", value)
-    print ("finish evaluate")
-    print (time.time() - starttime)
+    # estimator.train(input_fn=lambda:get_dataset(TRAINDATADIR+"1.tfrecords"), steps=3500000)
+    estimator.train(input_fn=lambda: csv_input_fn(TRAINDATADIR + "1.csv"), steps=3500000)
 
     # starttime = time.time()
-    # predict_result = estimator.predict(input_fn=lambda: csv_input_fn_predict(CACHEDIR + "7.csv"))
-    # print ("predict time:", time.time() - starttime)
+    # print ("start evaluate")
+    # # for idx in range(3,4):
+    # eval_result = estimator.evaluate(input_fn=lambda: csv_input_fn_evaluate(TRAINDATADIR + "1.csv"))
+    # # print ("test idx:",idx)
+    # for key, value in eval_result.items():
+    #     print (key, "\t", value)
+    # print ("finish evaluate")
+    # print (time.time() - starttime)
     #
-    # ifile = open(CACHEDIR + "7.csv")
-    # real_data = []
-    # for line in ifile:
-    #     real_data.append(line.strip().split(" ")[-1])
-    # ifile.close()
-    # lossdata = []
-    # nonabslossdata = []
-    # # print ("predict_result:",len(predict_result),type(predict_result))
-    # for i, v in enumerate(predict_result):
-    #     # print (i,"\tv:",type(v),v)
-    #     # for k,value in v.items():
-    #     #     print (k,value)
-    #     try:
-    #         lossdata.append(abs(float(real_data[i]) - v["predictions"][0]))
-    #         nonabslossdata.append(float(real_data[i]) - v["predictions"][0])
-    #     except:
-    #         print (i, "\tv:", type(v), v)
-    #         print ("avgloss:", sum(lossdata) / len(lossdata))
-    #         raise
+    # starttime = time.time()
+    # print ("start evaluate")
+    # # for idx in range(3,4):
+    # eval_result = estimator.evaluate(input_fn=lambda: csv_input_fn_evaluate(TRAINDATADIR + "1.csv"))
+    # # print ("test idx:",idx)
+    # for key, value in eval_result.items():
+    #     print (key, "\t", value)
+    # print ("finish evaluate")
+    # print (time.time() - starttime)
+
+    starttime = time.time()
+    predict_result = estimator.predict(input_fn=lambda: csv_input_fn_predict(TRAINDATADIR + "1.csv"))
+    print ("predict time:", time.time() - starttime)
+
+    ifile = open(TRAINDATADIR + "1.csv")
+    real_data = []
+    for line in ifile:
+        real_data.append(line.strip().split(" ")[-1])
+    ifile.close()
+    lossdata = []
+    for i, v in enumerate(predict_result):
+        try:
+            lossdata.append(abs(float(real_data[i]) - v["predictions"][0])/float(real_data[i]))
+        except:
+            print (i, "\tv:", type(v), v)
+            print ("avgloss:", sum(lossdata) / len(lossdata))
+            raise
+
+    step = 5
+    resultdata = dict()
+    for data in lossdata:
+        # data = float(line.strip().split(" ")[-1])
+        key = int(data / step)
+        if key not in resultdata:
+            resultdata[key] = 0
+        resultdata[key] += 1
+    ifile.close()
+    maxkey = max(resultdata.keys())
+    keylist = range(maxkey + 1)[:20]
+    valuelist = []
+    for v in keylist:
+        if v in resultdata:
+            valuelist.append(resultdata[v])
+        else:
+            valuelist.append(0)
+    for i in range(1, len(valuelist)):
+        valuelist[i] += valuelist[i - 1]
+    for i in range(len(valuelist)):
+        valuelist[i] = valuelist[i] * 1.0 / sum(resultdata.values())
+    # Plotting the Results
+    plt.plot(keylist, valuelist, 'ro', label='Original data')
+    plt.title('Linear Regression Result')
+    # plt.legend()
+    plt.savefig("/home/zoul15/pcshareddir/gnuresult/mllossdata.png")
+
     # print ("sum:",sum(lossdata),len(lossdata))
     # print ("avgloss:",sum(lossdata)/len(lossdata))
     # print ("nonavgloss:",sum(nonabslossdata)/len(nonabslossdata))
@@ -192,20 +218,51 @@ def train():
         loss_reduction=tf.losses.Reduction.MEAN,
     )
     logging.getLogger().setLevel(logging.INFO)
-    # estimator.train(input_fn=lambda:csv_input_fn(CACHEDIR+"1.csv"), steps=3500000)
-    estimator.train(input_fn=lambda: csv_input_fn(CACHEDIR + "1.csv"), steps=1000)
+    # estimator.train(input_fn=lambda:csv_input_fn(TRAINDATADIR+"1.csv"), steps=3500000)
+    estimator.train(input_fn=lambda: csv_input_fn(TRAINDATADIR + "1.csv"), steps=1000)
     starttime = time.time()
     print ("start evaluate")
     # for idx in range(3,4):
-    eval_result = estimator.evaluate(input_fn=lambda: csv_input_fn_evaluate(CACHEDIR + "1.csv"))
+    eval_result = estimator.evaluate(input_fn=lambda: csv_input_fn_evaluate(TRAINDATADIR + "1.csv"))
     # print ("test idx:",idx)
     for key, value in eval_result.items():
         print (key, "\t", value)
     print ("finish evaluate")
     print (time.time() - starttime)
 
+def tongjiinfo():
+    # inputdata = pandas.read_csv(TRAINDATADIR+"4", sep=" ", usecols=[FEATURELEN], names=["label"])
+    ifile = open(TRAINDATADIR+"2")
+    idx=0
+    step = 10
+    resultdata = dict()
+    for line in ifile:
+        idx+=1
+        data = float(line.strip().split(" ")[-1])
+        key = int(data / step)
+        if key not in resultdata:
+            resultdata[key] = 0
+        resultdata[key]+=1
+    ifile.close()
+    maxkey = max(resultdata.keys())
+    keylist = range(maxkey + 1)
+    valuelist = []
+    for v in keylist:
+        if v in resultdata:
+            valuelist.append(resultdata[v])
+        else:
+            valuelist.append(0)
+    for i in range(1, len(valuelist)):
+        valuelist[i] += valuelist[i - 1]
+    # Plotting the Results
+    plt.plot(keylist, valuelist, 'ro', label='Original data')
+    plt.title('Linear Regression Result')
+    # plt.legend()
+    plt.savefig("/home/zoul15/pcshareddir/gnuresult/mlfoldrate.png")
+
 if __name__ == "__main__":
-    # savedatatotfrecord(CACHEDIR+"1.csv")
+    # tongjiinfo()
+    # savedatatotfrecord(TRAINDATADIR+"1.csv")
     train1()
     # tf.logging.set_verbosity(tf.logging.INFO)
     # tf.app.run(main=train)
