@@ -105,29 +105,13 @@ def absdifloss(labels, logits):
     return tf.math.abs(tf.math.subtract(labels, logits))
 
 def serving_input_receiver_fn():
-    # my_feature_columns = []
-    # for key in range(FEATURELEN):
-    #     my_feature_columns.append(tf.feature_column.numeric_column(key=str(key)))
-    # feature_spec = tf.feature_column.make_parse_example_spec(my_feature_columns)
-    # return tf.estimator.export.build_parsing_serving_input_receiver_fn(feature_spec)
-    # feature_spec = {'foo': tf.FixedLenFeature([], dtype=tf.float32),
-    #                 'bar': tf.FixedLenFeature([], dtype=tf.float32)}
     feature_spec = {}
-    for key in range(FEATURELEN):
-    #     # feature_spec[str(key)] = tf.FixedLenFeature([], dtype=tf.float32)
-        feature_spec[str(key)] = tf.placeholder(dtype=tf.float32, shape=[1], name=str(key))
-    # serialized_tf_example = tf.placeholder(dtype=tf.float32, shape=[9], name='input_example_tensor')
-    # receiver_tensors = {'examples': serialized_tf_example}
-    # features = tf.parse_example(serialized_tf_example, feature_spec)
-    # return tf.estimator.export.ServingInputReceiver(feature_spec, feature_spec)
-    return tf.estimator.export.build_raw_serving_input_receiver_fn(feature_spec)
-
-    """Build the serving inputs."""
-    # The outer dimension (None) allows us to batch up inputs for
-    # efficiency. However, it also means that if we want a prediction
-    # for a single instance, we'll need to wrap it in an outer list.
-    # inputs = {"x": tf.placeholder(shape=[None, FEATURELEN], dtype=tf.float32)}
-    # return tf.estimator.export.ServingInputReceiver(inputs, inputs)
+    for i in range(FEATURELEN):
+        feature_spec[str(i)] = tf.FixedLenFeature(shape=[1], dtype=tf.float32)
+    serialized_tf_example = tf.placeholder(dtype=tf.string, shape=[None], name="input_example_tensor")
+    receiver_tensors = {"examples": serialized_tf_example}
+    features = tf.parse_example(serialized_tf_example, feature_spec)
+    return tf.estimator.export.ServingInputReceiver(features, receiver_tensors)
 
 def train1():
     # global_step = tf.Variable(0, trainable=False)
@@ -158,7 +142,7 @@ def train1():
     logging.getLogger().setLevel(logging.INFO)
     # estimator.train(input_fn=lambda:get_dataset(TRAINDATADIR+"1.tfrecords"), steps=3500000)
     # estimator.train(input_fn=lambda: csv_input_fn(TRAINDATADIR + "train.csv"), steps=3500000)
-    # estimator.export_saved_model("/home/zoul15/pcshareddir/rivermodel/", serving_input_receiver_fn)
+    # estimator.export_saved_model("/home/zoul15/pcshareddir/rivermodel/", serving_input_receiver_fn, as_text=True)
     # return
     starttime = time.time()
     print ("start evaluate test")
@@ -169,7 +153,7 @@ def train1():
         print (key, "\t", value)
     print ("finish evaluate")
     print (time.time() - starttime)
-    #
+
     starttime = time.time()
     print ("start evaluate train")
     # for idx in range(3,4):
@@ -180,54 +164,56 @@ def train1():
     print ("finish evaluate")
     print (time.time() - starttime)
 
-    # starttime = time.time()
-    # predict_result = estimator.predict(input_fn=lambda: csv_input_fn_predict(TRAINDATADIR + "train.csv"))
-    # print ("predict time:", time.time() - starttime)
 
-    # ifile = open(TRAINDATADIR + "train.csv")
-    # real_data = []
-    # for line in ifile:
-    #     real_data.append(line.strip().split(" ")[-1])
-    # ifile.close()
-    # lossdata = []
-    # for i, v in enumerate(predict_result):
-    #     try:
-    #         lossdata.append(abs(float(real_data[i]) - v["predictions"][0])/float(real_data[i]))
-    #     except:
-    #         print (i, "\tv:", type(v), v)
-    #         print ("avgloss:", sum(lossdata) / len(lossdata))
-    #         raise
-    #
-    # step = 5
-    # resultdata = dict()
-    # for data in lossdata:
-    #     # data = float(line.strip().split(" ")[-1])
-    #     key = int(data / step)
-    #     if key not in resultdata:
-    #         resultdata[key] = 0
-    #     resultdata[key] += 1
-    # ifile.close()
-    # maxkey = max(resultdata.keys())
-    # keylist = range(maxkey + 1)[:20]
-    # valuelist = []
-    # for v in keylist:
-    #     if v in resultdata:
-    #         valuelist.append(resultdata[v])
-    #     else:
-    #         valuelist.append(0)
-    # for i in range(1, len(valuelist)):
-    #     valuelist[i] += valuelist[i - 1]
-    # for i in range(len(valuelist)):
-    #     valuelist[i] = valuelist[i] * 1.0 / sum(resultdata.values())
-    # # Plotting the Results
-    # plt.plot(keylist, valuelist, 'ro', label='Original data')
-    # plt.title('Linear Regression Result')
-    # # plt.legend()
-    # plt.savefig("/home/zoul15/pcshareddir/gnuresult/mllossdata.png")
 
-    # print ("sum:",sum(lossdata),len(lossdata))
-    # print ("avgloss:",sum(lossdata)/len(lossdata))
-    # print ("nonavgloss:",sum(nonabslossdata)/len(nonabslossdata))
+    starttime = time.time()
+    predict_result = estimator.predict(input_fn=lambda: csv_input_fn_predict(TRAINDATADIR + "test.csv"))
+    print ("predict time:", time.time() - starttime)
+
+    ifile = open(TRAINDATADIR + "test.csv")
+    real_data = []
+    for line in ifile:
+        real_data.append(float(line.strip().split(" ")[-1]))
+
+    ifile.close()
+    lossdata = []
+    for i, v in enumerate(predict_result):
+        try:
+            lossdata.append(abs(float(real_data[i]) - v["predictions"][0]))
+        except:
+            print (i, "\tv:", type(v), v)
+            print ("avgloss:", sum(lossdata) / len(lossdata))
+            raise
+
+    print("real sum:",sum(real_data),"\tloss sum:",sum(lossdata),"\trate:",sum(lossdata) / sum(real_data))
+
+    step = 5
+    resultdata = dict()
+    for data in lossdata:
+        # data = float(line.strip().split(" ")[-1])
+        key = int(data / step)
+        if key not in resultdata:
+            resultdata[key] = 0
+        resultdata[key] += 1
+    ifile.close()
+    maxkey = max(resultdata.keys())
+    keylist = range(maxkey + 1)[:20]
+    valuelist = []
+    for v in keylist:
+        if v in resultdata:
+            valuelist.append(resultdata[v])
+        else:
+            valuelist.append(0)
+    for i in range(1, len(valuelist)):
+        valuelist[i] += valuelist[i - 1]
+    for i in range(len(valuelist)):
+        valuelist[i] = valuelist[i] * 1.0 / sum(resultdata.values())
+    # Plotting the Results
+    plt.plot(keylist, valuelist, 'ro', label='Original data')
+    plt.title('Linear Regression Result')
+    # plt.legend()
+    plt.savefig("/home/zoul15/pcshareddir/gnuresult/mllossdata.png")
+
 
 def train():
     # global_step = tf.Variable(0, trainable=False)
@@ -292,7 +278,7 @@ def tongjiinfo():
 def testloadsavedmodel():
     from tensorflow.contrib import predictor
 
-    predict_fn = predictor.from_saved_model("/home/zoul15/pcshareddir/rivermodel/1559756321/")
+    predict_fn = predictor.from_saved_model("/home/zoul15/pcshareddir/rivermodel/1559839163/")
     print("feed_tensors:\n", predict_fn.feed_tensors)
     print("\nkeys:\n", predict_fn.feed_tensors.keys())
     testfeature = []
@@ -301,7 +287,7 @@ def testloadsavedmodel():
     idx = 0
     for line in ifile:
         idx += 1
-        if idx == 10:
+        if idx == 2:
             break
         data = line.strip().split(" ")
         data = [float(v) for v in data]
@@ -312,8 +298,16 @@ def testloadsavedmodel():
     for i in range(len(testfeature[0])):
         featuredict[str(i)] = []
         for j in range(len(testfeature)):
-            featuredict[str(i)].append([testfeature[j][i],])
-    predictions = predict_fn(featuredict)
+            featuredict[str(i)]= testfeature[j][i]
+    print(featuredict)
+
+    feature = {}
+    for k, v in featuredict.items():
+        feature[k] = tf.train.Feature(float_list=tf.train.FloatList(value=[v]))
+    model_input = tf.train.Example(features=tf.train.Features(feature=feature))
+    model_input = model_input.SerializeToString()
+
+    predictions = predict_fn({"inputs":[model_input,]})
     # predictions = predict_fn({"inputs": testfeature})
     print (predictions)
     # predictions = predict_fn(

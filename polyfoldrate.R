@@ -18,6 +18,7 @@ data[1,2] = 1
 data[threidx+1,2] = 0
 data[threidx+1,3] = 0
 data = subset(data,V1 <= threidx & V2 != NANSYMBOL)
+
 if (nrow(data) <= 2){
     # print ("error, no valid data.\n")
     # print(args)
@@ -28,10 +29,10 @@ if (nrow(data) <= 2){
     nr = 1
     nc = length(fully) / nr
     wdata <- matrix(c(nc,fully), nr, nc+1)
-    write.table(wdata, ofilename, row.names = FALSE, col.names=FALSE, sep = "\t", append = TRUE)
+    write.table(wdata, ofilename, row.names = FALSE, col.names=FALSE, sep = "\t", append = FALSE)
     q()
 }
-data[nrow(data),ncol(data)] = 0.0
+# data[nrow(data),ncol(data)] = 0.0
 # data[nrow(data),2] = 0.0
 # data
 result = tryCatch({
@@ -51,7 +52,7 @@ fullx = seq(0,1 / HPVALUESLOT,by=1)
 fitteddata = evalPol(fullx,para)
 fitteddata[fitteddata < 0] <- 0
 fittedcurve = data.frame(x=fullx,y=fitteddata)
-realvaluepart = subset(fittedcurve,x <= threidx)
+realvaluepart = subset(fittedcurve,x < threidx)
 realy = realvaluepart$y
 filly = rep(0, length(fullx) - length(realy))
 fully = c(realy,filly)
@@ -60,7 +61,7 @@ nr = 1
 nc = length(fully) / nr
 
 wdata <- matrix(c(nc,fully), nr, nc+1)
-write.table(wdata, ofilename, row.names = FALSE, col.names=FALSE, sep = "\t", append = TRUE)
+write.table(wdata, ofilename, row.names = FALSE, col.names=FALSE, sep = "\t", append = FALSE)
 
 if (drawpic == 1){
     png(filename=args[5])
