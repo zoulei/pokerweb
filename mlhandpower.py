@@ -8,7 +8,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-FEATURELEN = 123
+FEATURELEN = 1023
 # Metadata describing the text columns
 COLUMNS = [str(i) for i in range(FEATURELEN)] + ["label", ]
 FIELD_DEFAULTS = [[0.0]] * (FEATURELEN+1)
@@ -46,25 +46,35 @@ def parse_function(example_proto):
 def get_dataset(fname):
     dataset = tf.data.TFRecordDataset([fname])
     dataset = dataset.map(parse_function, 22)
-    dataset = dataset.shuffle(100000).repeat().batch(1000)
-    dataset = dataset.prefetch(10000)
+    dataset = dataset.shuffle(50000).repeat().batch(1000)
+    # dataset = dataset.prefetch(10000)
     dataset = dataset.make_one_shot_iterator().get_next()
     # return features, labels
     return dataset
 
 def csv_input_fn(fname):
-    ds = tf.data.TextLineDataset(fname)
-    ds = ds.map(_parse_line, 22)
-    # print ds
-    # Shuffle, repeat, and batch the examples.
-    dataset = ds.shuffle(100000).batch(1000).repeat()
-    dataset = dataset.prefetch(1000)
+    dataset = tf.data.TextLineDataset(fname)
+    dataset = dataset.apply(tf.data.experimental.shuffle_and_repeat(50000))
+    dataset = dataset.apply(tf.data.experimental.map_and_batch(map_func=_parse_line, batch_size=1000,num_parallel_calls=56))
+    dataset = dataset.prefetch(50000)
+
+    # dataset = tf.data.experimental.make_csv_dataset(
+    #     fname,
+    #     batch_size=1000,
+    #     column_names=COLUMNS,
+    #     column_defaults=FIELD_DEFAULTS,
+    #     label_name="label",
+    #     field_delim=" ",
+    #     header=False,
+    #     shuffle_buffer_size=100000,
+    #     num_parallel_reads=56
+    # )
     # Return the dataset.
     return dataset
 
 def csv_input_fn_evaluate(fname):
     ds = tf.data.TextLineDataset(fname)
-    ds = ds.map(_parse_line)
+    ds = ds.map(_parse_line,56)
     # print ds
     # Shuffle, repeat, and batch the examples.
     dataset = ds.batch(1000)
@@ -93,6 +103,7 @@ def csv_input_fn_predict(fname):
 def _parse_line(line):
     # Decode the line into its fields
     fields = tf.decode_csv(line, FIELD_DEFAULTS, field_delim=' ')
+    # fields = map(float, line.split(" "))
     # Pack the result into a dictionary
     features = dict(zip(COLUMNS, fields))
     # Separate the label from the features
@@ -134,14 +145,14 @@ def train1():
         # activation_fn=tf.nn.relu,
         feature_columns=my_feature_columns,
         hidden_units=[500, 500, 500, 500, 500, 500],
-        model_dir="/home/zoul15/pcshareddir/riverregressor/",
+        model_dir="/home/zoul15/pcshareddir/riverregressor1000/",
         optimizer=lambda: tf.train.AdamOptimizer(learning_rate=tf.train.piecewise_constant(
             tf.train.get_global_step(), boundaries, values)),
         loss_reduction=tf.losses.Reduction.MEAN
     )
     logging.getLogger().setLevel(logging.INFO)
     # estimator.train(input_fn=lambda:get_dataset(TRAINDATADIR+"1.tfrecords"), steps=3500000)
-    # estimator.train(input_fn=lambda: csv_input_fn(TRAINDATADIR + "train.csv"), steps=3500000)
+    estimator.train(input_fn=lambda: csv_input_fn(TRAINDATADIR + "train.csv"), steps=3500000)
     # estimator.export_saved_model("/home/zoul15/pcshareddir/rivermodel/", serving_input_receiver_fn, as_text=True)
     # return
     starttime = time.time()
@@ -177,16 +188,19 @@ def train1():
 
     ifile.close()
     lossdata = []
+    nonabslossdata = 0
     for i, v in enumerate(predict_result):
         try:
+            nonabslossdata += float(real_data[i]) - v["predictions"][0]
             lossdata.append(abs(float(real_data[i]) - v["predictions"][0]))
         except:
             print (i, "\tv:", type(v), v)
             print ("avgloss:", sum(lossdata) / len(lossdata))
             raise
 
-    print("real sum:",sum(real_data),"\tloss sum:",sum(lossdata),"\trate:",sum(lossdata) / sum(real_data))
-
+    print("real sum:", sum(real_data), "\tloss sum:", sum(lossdata), "\trate:", sum(lossdata) / sum(real_data))
+    print("nonabslossdata:", nonabslossdata)
+    print("abslossdata:", sum(lossdata))
     step = 5
     resultdata = dict()
     for data in lossdata:
@@ -315,7 +329,57 @@ def testloadsavedmodel():
     #            [5.8, 3.1, 5.0, 1.7]]})
     # print(predictions['scores'])
 
+def testpipline():
+    ifile = open(TRAINDATADIR + "test.csv")
+    nousedata = []
+    idx = 1
+    parsetime = 0
+    floattime = 0
+    ziptime = 0
+    for line in ifile:
+        start = time.time()
+        for _ in range(10000):
+            data = line.strip().split(" ")
+            nousedata.append(data)
+        data = line.strip().split(" ")
+        if idx % 1 == 0:
+            print ("|||||||||||||||||||||||||||||||", idx)
+            parsetime += time.time() - start
+            print ("parsetime:", parsetime)
+        for _ in range(10000):
+            data = list(map(float, data))
+            # data = [float(v) for v in data]
+            nousedata.append(data)
+        if idx % 1 == 0:
+            print ("-------------------------------", idx)
+            # print (time.time() - start)
+            # print (idx)
+            # print ((time.time() - start) / idx)
+            floattime += time.time() - start
+            print ("floattime:", floattime)
+
+        start = time.time()
+        data = line.strip().split(" ")
+        for _ in range(10000):
+            # features = {"pp":data}
+            features = dict(zip(COLUMNS, data))
+            label = features.pop("label")
+            nousedata.append(label)
+        if idx % 1 == 0:
+            print ("===============================",idx)
+            # print (time.time() - start)
+            # print (idx)
+            # print ((time.time() - start) / idx)
+            ziptime += time.time() - start
+            print ("ziptime:", ziptime)
+        nousedata = []
+        idx += 1
+    # print (time.time() - start)
+    # print (idx)
+    # print ((time.time() - start) / idx)
+
 if __name__ == "__main__":
+    # testpipline()
     # tongjiinfo()
     # savedatatotfrecord(TRAINDATADIR+"train.csv")
     train1()
