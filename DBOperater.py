@@ -26,6 +26,8 @@ def StoreData(db,clt,data):
     global client
     if not client:
         Connect()
+    if clt not in client[db].list_collection_names():
+        client[db].create_collection(clt)
     return client[db][clt].insert(data)
 
 def DeleteData(db,clt,query):
@@ -38,6 +40,8 @@ def Find(db,clt,query):
     global client
     if not client:
         Connect()
+    if clt not in client[db].list_collection_names():
+        client[db].create_collection(clt)
     return client[db][clt].find(query)
 
 # upsert为真时,如果没有通过query查到doc,那么会插入这个doc,
@@ -46,14 +50,29 @@ def ReplaceOne(db,clt,query,newdoc,upsert = False):
     global client
     if not client:
         Connect()
+    if clt not in client[db].list_collection_names():
+        client[db].create_collection(clt)
     return client[db][clt].replace_one(query,newdoc,upsert)
 
 def testconnectdb():
     result = Find(HANDSDB,HANDSCLT,{"_id":"2017-12-15 00:43:13 84"})
     for v in result:
         print v
+
+def DropCollection(db, clt):
+    global client
+    if not client:
+        Connect()
+    client[db][clt].drop()
 #
 # Connect()
+def dropclt():
+    global client
+    if not client:
+        Connect()
+    for clt in client[HANDSDB].list_collection_names():
+        if clt.startswith("1054988_"):
+            client[HANDSDB][clt].drop()
 
 if __name__ == "__main__":
-    testconnectdb()
+    dropclt()

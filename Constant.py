@@ -1,7 +1,10 @@
 # MONGOHOST = '192.168.112.111'
 # MONGOHOST = '192.168.66.1'
-MONGOHOST = "data3,data2,data1"
-#MONGOHOST = 'localhost'
+# MONGOHOST = "data3,data2,data1"
+MONGOHOST = "192.168.0.11"
+
+# MONGOHOST = "39.98.238.20"
+# MONGOHOST = 'localhost'
 # MONGOPORT = 27017
 # DBUSERNAME = 'root'
 # DBPWD = "123459"
@@ -14,8 +17,13 @@ LOGINCLT = "loginclt"
 
 # HANDSDB = "handsdb"
 HANDSDB = "cltreedb"
-HANDSCLT = "handsclt"
-STATEINFOHANDSCLT = "stateinfohandsclt"
+# HANDSCLT = "handsclt"
+HANDSCLT = "1054988"
+# STATEINFOHANDSCLT = "stateinfohandsclt"
+STATEINFOHANDSCLT = "stateinfo1054988"
+
+JOINEDROOMCLT = "joinedroom"
+UPLOADSUCCESS = "uploadsuccess"
 
 TESTCLT = "testclt"
 RAWHANDSCLT = "rawhandsclt"
@@ -97,8 +105,8 @@ def getprefloprangefield(curturn,betlevel):
 
 
 # ========================game level related=============================
-BB = 10
-ANTI = 2
+BB = 4
+ANTI = 1
 
 # ========================cache data related=============================
 # CACHEDIR = "/mnt/mfs/users/zoul15/pokercachedata/"

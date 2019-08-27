@@ -441,8 +441,8 @@ class ReplayEngine:
         return self.m_afterflopposlist
 
     def update(self,actionpos,action,value):
-        # print "-----------------------------------"
-        # print "update:",actionpos,action,value
+        print "-----------------------------------"
+        print "update:",actionpos,action,value
         if self.isgameover():
             print "game has over"
             handsinfocommon.pp.pprint(self.m_handsinfo.m_handsinfo)
@@ -925,6 +925,7 @@ class ReplayEngine:
     # This function make sure that after this function is called,
     # the action update procedure stops right at the end of this turn.
     def traversespecificturn(self,turn):
+        print "---traversespecificturn:",turn,self.m_lastupdateturn,self.m_lastupdateidx
         if self.m_lastupdateturn == turn:
             preflopdata = self.m_handsinfo.getspecificturnbetdata(turn)
             if self.m_lastupdateidx + 1 == len(preflopdata):
@@ -969,6 +970,7 @@ class ReplayEngine:
 
     # actionidx starts from 0
     def updatecumuinfo(self,round,actionidx):
+        print "updatecumuinfo:",round,actionidx
         self.update(*self.m_handsinfo.getspecificturnbetdata(round)[actionidx])
         self.m_lastupdateturn = round
         self.m_lastupdateidx = actionidx

@@ -96,9 +96,25 @@ def collectgamehandidx(seq,phoneid):
 def completegamecollect(seq):
     return collecthands.completegamecollect(seq)
 
-@app.route('/uploadhandsurl/<int:gameidx>/<int:handidx>/<path:handsurl>')
-def uploadhandsurl(gameidx,handidx,handsurl):
-    return collecthands.uploadhandsurl(gameidx,handidx,handsurl)
+@app.route('/uploadhandsurl/<string:club>/<int:room>/<int:handstotal>/<int:handidx>/<path:handsurl>')
+def uploadhandsurl(club, room, handstotal, handidx, handsurl):
+    return collecthands.uploadhandsurl(club, room, handstotal, handidx, handsurl)
+
+@app.route('/joinedroom/')
+def fetchjoinedroom():
+    return collecthands.fetchjoinedroom()
+
+@app.route('/joinroom/<int:roomid>')
+def joinroom(roomid):
+    return collecthands.joinroom(roomid)
+
+@app.route('/uploadsuccess/')
+def fetchuploadsuccess():
+    return collecthands.fetchuploadsuccess()
+
+@app.route('/cleanroom/')
+def cleanroom():
+    return collecthands.cleanroom()
 
 if __name__ == '__main__':
     #logging.info("start server")

@@ -10,6 +10,7 @@ import os
 from werkzeug import secure_filename
 import urllib2
 import time
+import traceback
 
 # For a given file, return whether it's an allowed type or not
 def allowed_file(filename):
@@ -34,7 +35,7 @@ def uploadHandsInfo(request):
     if not contents:
         return "0"
     for content in contents:
-        DBOperater.StoreData(Constant.HANDSDB,Constant.RAWHANDSCLT,content)
+        DBOperater.StoreData(Constant.HANDSDB, Constant.RAWHANDSCLT, content)
     return "1"
 
 
@@ -149,8 +150,8 @@ class ReconstructHandsdata:
         anti = handsdata["TABLE"]["ante"]
         playernum = len(handsdata["TABLE"]["SEAT"])
         stack = [0] * 10
-        stack[9] = int(handsdata["TABLE"]["SEAT"][0]["CHIPS"])
-        stack[8] = int(handsdata["TABLE"]["SEAT"][1]["CHIPS"])
+        stack[9] = float(handsdata["TABLE"]["SEAT"][0]["CHIPS"])
+        stack[8] = float(handsdata["TABLE"]["SEAT"][1]["CHIPS"])
         name = [0] * 10
         name[9] = handsdata["TABLE"]["SEAT"][0]["NAME"]
         name[8] = handsdata["TABLE"]["SEAT"][1]["NAME"]
@@ -159,12 +160,12 @@ class ReconstructHandsdata:
         idlist[8] = handsdata["TABLE"]["SEAT"][1]["ID"]
 
         for idx in xrange(len(handsdata["TABLE"]["SEAT"]) - 2):
-            stack[idx + 1] = int(handsdata["TABLE"]["SEAT"][- idx - 1]["CHIPS"])
+            stack[idx + 1] = float(handsdata["TABLE"]["SEAT"][- idx - 1]["CHIPS"])
             name[idx + 1] = handsdata["TABLE"]["SEAT"][- idx - 1]["NAME"]
             idlist[idx + 1] = handsdata["TABLE"]["SEAT"][- idx - 1]["ID"]
         rawhandsdoc["data"] = {}
         rawhandsdata = rawhandsdoc["data"]
-        rawhandsdata["BB"] = int(sb) * 2
+        rawhandsdata["BB"] = float(sb) * 2
         rawhandsdata["ante"] = anti
         rawhandsdata["PLAYQUANTITY"] = playernum
         rawhandsdata["STACK"] = stack
@@ -189,7 +190,7 @@ class ReconstructHandsdata:
                     continue
                 action,value = action.split(" ")
                 pos = self.number2pos(number)
-                newbetdata.append([pos,action,int(value)])
+                newbetdata.append([pos,action,float(value)])
             if newbetdata:
                 rawhandsdata["BETDATA"][pokerturn] = newbetdata
             if "CARD" in betdata[pokerturn]:
@@ -222,8 +223,15 @@ def generateurl(rawurl):
         rawurl = rawurl.replace(value,key)
     return rawurl
 
-def uploadhandsurl(gameidx,handidx,handsurl):
+
+
+
+
+
+
+def uploadhandsurl(club, room, handstotal, handidx, handsurl):
     handsurl = generateurl(handsurl)
+    print "-------------==========:", handsurl
     try:
         htmldoc = urllib2.urlopen(handsurl).read()
     except:
@@ -233,27 +241,111 @@ def uploadhandsurl(gameidx,handidx,handsurl):
     prefixidx = htmldoc.find(prefix)
     postfixidx = htmldoc.find(postfix,prefixidx)
     handsdatastr = htmldoc[prefixidx+len(prefix):postfixidx]
-    handsdata = json.loads(handsdatastr)
-    handsdata = ReconstructHandsdata(handsdata).getrawhanddatastruct()
-    handsdata["rawstr"] = handsdatastr
-    # import pprint
-    # pp = pprint.PrettyPrinter(indent=4)
-    # pp.pprint(handsdata)
-    # print "===================================="
+    # print "------handsdatastr:", handsdatastr
+    try:
+        handsdata = json.loads(handsdatastr)
+        handsdata = ReconstructHandsdata(handsdata).getrawhanddatastruct()
+        handsdata["rawstr"] = handsdatastr
+    except:
+        traceback.print_exc()
+        return "2"
+    DBOperater.ReplaceOne(Constant.HANDSDB, str(club), {"_id": handsdata["_id"]}, handsdata, True)
 
-    DBOperater.ReplaceOne(Constant.HANDSDB,Constant.HANDSCLT,{"_id":handsdata["_id"]},handsdata,True)
-
-    # update collect information
-    result = DBOperater.Find(Constant.HANDSDB,Constant.COLLECTGAMECLT,{})
+    result = DBOperater.Find(Constant.HANDSDB, str(club) + "_" + str(room), {})
     result = list(result)
+    data = {}
     if not len(result):
-        data = {str(gameidx):[handidx,time.time()]}
+        data = {}
+        data[str(handidx)] = 1
     else:
         data = result[0].get("data")
-    data[str(gameidx)]["handidx"] = handidx
-    DBOperater.ReplaceOne(Constant.HANDSDB,Constant.COLLECTGAMECLT,{"_id":"onlyone"},{"_id":"onlyone","data":data},True)
+        data[str(handidx)] = 1
+    # if len(data) == handstotal:
+    if handidx == handstotal:
+        DBOperater.DropCollection(Constant.HANDSDB, str(club) + "_" + str(room))
+        result = DBOperater.Find(Constant.HANDSDB, Constant.JOINEDROOMCLT, {})
+        result = list(result)
+        if len(result):
+            data = result[0].get("data")
+            del data[str(room)]
+            DBOperater.ReplaceOne(Constant.HANDSDB, Constant.JOINEDROOMCLT, {"_id": "onlyone"},
+                                  {"_id": "onlyone", "data": data}, True)
+        DBOperater.ReplaceOne(Constant.HANDSDB, Constant.UPLOADSUCCESS, {"_id": "onlyone"},
+                              {"_id": "onlyone", "data": True}, True)
+        print "uploadsuccess:", room
+        return "1"
+    else:
+        DBOperater.ReplaceOne(Constant.HANDSDB, str(club) + "_" + str(room), {"_id": "onlyone"},
+                              {"_id": "onlyone", "data": data}, True)
+    return "0"
 
+def fetchjoinedroom():
+    result = DBOperater.Find(Constant.HANDSDB, Constant.JOINEDROOMCLT, {})
+    result = list(result)
+
+    if not len(result):
+        return json.dumps([])
+
+    data = result[0].get("data")
+    # delete data of 24 hours ago
+    for seq, gameinfo in data.items():
+        if time.time() - gameinfo["time"] > 3600 * 24:
+            del data[seq]
+
+    DBOperater.ReplaceOne(Constant.HANDSDB, Constant.JOINEDROOMCLT, {"_id": "onlyone"},
+                          {"_id": "onlyone", "data": data}, True)
+    return json.dumps([int(v[0]) for v in data.items()])
+
+def joinroom(roomid):
+    seq = int(roomid)
+    # this deals with the collect game information, add this seq to the to be collected list
+    result = DBOperater.Find(Constant.HANDSDB, Constant.JOINEDROOMCLT, {})
+    result = list(result)
+    if not len(result):
+        data = {}
+    else:
+        data = result[0].get("data")
+    data[str(seq)] = {
+        # "handidx": 0,
+        "time": time.time(),
+        # "phoneid": None
+    }
+    DBOperater.ReplaceOne(Constant.HANDSDB, Constant.JOINEDROOMCLT, {"_id": "onlyone"},
+                          {"_id": "onlyone", "data": data}, True)
     return "1"
 
-# if __name__ == "__main__":
-#     uploadhandsurl("http0018fenghao0018zhexian0018zhexianreplay0018dotpaiyou0018dotme0018fenghao80800018zhexianhandplayer0018zhexianreplay0018zhexian0018questionurl0018equalnew9492ecaf53d5d99072cb2fea860ed4a866e7337dff285bdec167db9f68bfd74177afbc0bb01945005689caa07c2c97eb917b5bc07d4b2ba5")
+def fetchuploadsuccess():
+    result = DBOperater.Find(Constant.HANDSDB, Constant.UPLOADSUCCESS, {})
+    result = list(result)
+
+    if not len(result):
+        return "0"
+    else:
+        success = result[0].get("data")
+        if success:
+            DBOperater.ReplaceOne(Constant.HANDSDB, Constant.UPLOADSUCCESS, {"_id": "onlyone"},
+                                  {"_id": "onlyone", "data": False}, True)
+            print "success:", success
+            return "1"
+        return "0"
+
+def cleanroom():
+    DBOperater.ReplaceOne(Constant.HANDSDB, Constant.JOINEDROOMCLT, {"_id": "onlyone"},
+                          {"_id": "onlyone", "data": {}}, True)
+    return "1"
+
+
+def reconstructallhands():
+    result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
+    for doc in result:
+        # if doc["_id"] != "2019-07-23 19:19:42 133":
+        #     continue
+        handsdatastr = doc["rawstr"]
+        handsdata = json.loads(handsdatastr)
+        handsdata = ReconstructHandsdata(handsdata).getrawhanddatastruct()
+        handsdata["rawstr"] = handsdatastr
+        DBOperater.ReplaceOne(Constant.HANDSDB,Constant.HANDSCLT,{"_id":doc["_id"]},handsdata)
+
+
+if __name__ == "__main__":
+    reconstructallhands()

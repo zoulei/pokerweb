@@ -114,7 +114,10 @@ class FoldInAdvanceRepair(ReplayEngine):
         self.m_repaired = False
 
     def updatecumuinfo(self,round,actionidx):
+        print "updatecumuinfo from FoldInAdvanceRepair:", round, actionidx
+
         actionpos,action,value = self.m_handsinfo.getspecificturnbetdata(round)[actionidx]
+        print "actionpos:", actionpos, self.m_nextplayer
         if actionpos != self.m_nextplayer:
             self.m_repaired = True
             for idx in xrange(len(self.m_cachebetdata)):
@@ -187,7 +190,7 @@ if __name__ == "__main__":
 
     # 下面这个代码用于修复牌局数据库中那些有人还没轮到他行动就提前fold牌的情况,
     # 并会将结果存回牌局数据库中
-    TraverseMultiplayerHands(Constant.HANDSDB,Constant.HANDSCLT,func=foldinadvancerepairmainfunc,handsid="",sync=False).traverse()
+    TraverseMultiplayerHands(Constant.HANDSDB,Constant.HANDSCLT,func=foldinadvancerepairmainfunc,handsid="",sync=True).traverse()
 
     # 下面这个代码用于删除牌局数据中有问题的牌局
     TraverseMultiplayerHands(Constant.HANDSDB, Constant.HANDSCLT, func=removeinvalidmain, handsid="",sync=False).traverse()

@@ -74,7 +74,7 @@ def csv_input_fn(fname):
 
 def csv_input_fn_evaluate(fname):
     ds = tf.data.TextLineDataset(fname)
-    ds = ds.map(_parse_line,56)
+    ds = ds.map(_parse_line,44)
     # print ds
     # Shuffle, repeat, and batch the examples.
     dataset = ds.batch(1000)
@@ -152,9 +152,9 @@ def train1():
     )
     logging.getLogger().setLevel(logging.INFO)
     # estimator.train(input_fn=lambda:get_dataset(TRAINDATADIR+"1.tfrecords"), steps=3500000)
-    estimator.train(input_fn=lambda: csv_input_fn(TRAINDATADIR + "train.csv"), steps=3500000)
-    # estimator.export_saved_model("/home/zoul15/pcshareddir/rivermodel/", serving_input_receiver_fn, as_text=True)
-    # return
+    # estimator.train(input_fn=lambda: csv_input_fn(TRAINDATADIR + "train.csv"), steps=3500000)
+    estimator.export_saved_model("/home/zoul15/pcshareddir/rivermodel/", serving_input_receiver_fn, as_text=True)
+    return
     starttime = time.time()
     print ("start evaluate test")
     # # for idx in range(3,4):
@@ -261,7 +261,7 @@ def train():
 
 def tongjiinfo():
     # inputdata = pandas.read_csv(TRAINDATADIR+"4", sep=" ", usecols=[FEATURELEN], names=["label"])
-    ifile = open(TRAINDATADIR+"2")
+    ifile = open(TRAINDATADIR+"train.csv")
     idx=0
     step = 10
     resultdata = dict()
