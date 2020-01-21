@@ -1,6 +1,10 @@
 
-from Constant import *
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
+
+from Constant import *
+# import tensorflow as tf
 import logging
 import time
 import pandas
@@ -8,7 +12,8 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-FEATURELEN = 1023
+# FEATURELEN = 1023
+FEATURELEN = 123
 # Metadata describing the text columns
 COLUMNS = [str(i) for i in range(FEATURELEN)] + ["label", ]
 FIELD_DEFAULTS = [[0.0]] * (FEATURELEN+1)
@@ -55,7 +60,7 @@ def get_dataset(fname):
 def csv_input_fn(fname):
     dataset = tf.data.TextLineDataset(fname)
     dataset = dataset.apply(tf.data.experimental.shuffle_and_repeat(50000))
-    dataset = dataset.apply(tf.data.experimental.map_and_batch(map_func=_parse_line, batch_size=1000,num_parallel_calls=56))
+    dataset = dataset.apply(tf.data.experimental.map_and_batch(map_func=_parse_line, batch_size=1000,num_parallel_calls=48))
     dataset = dataset.prefetch(50000)
 
     # dataset = tf.data.experimental.make_csv_dataset(
@@ -67,7 +72,7 @@ def csv_input_fn(fname):
     #     field_delim=" ",
     #     header=False,
     #     shuffle_buffer_size=100000,
-    #     num_parallel_reads=56
+    #     num_parallel_reads=48
     # )
     # Return the dataset.
     return dataset
@@ -126,7 +131,9 @@ def serving_input_receiver_fn():
 
 def train1():
     # global_step = tf.Variable(0, trainable=False)
-    boundaries = [2000000, ]
+    # boundaries = [1900000, ]
+    boundaries = [400000, ]
+    # values = [0.001, 0.0001]
     values = [0.001, 0.0001]
     # learning_rate = tf.train.piecewise_constant(tf.train.get_global_step(), boundaries, values)
 
@@ -144,21 +151,26 @@ def train1():
         # head=head,
         # activation_fn=tf.nn.relu,
         feature_columns=my_feature_columns,
-        hidden_units=[500, 500, 500, 500, 500, 500],
-        model_dir="/home/zoul15/pcshareddir/riverregressor1000/",
+        hidden_units=[500, 500, 500, 500, 500, 500, 500, ],
+        model_dir="/home/zoul15/pcshareddir/1007layeruniversalturnregressor/",
         optimizer=lambda: tf.train.AdamOptimizer(learning_rate=tf.train.piecewise_constant(
             tf.train.get_global_step(), boundaries, values)),
         loss_reduction=tf.losses.Reduction.MEAN
     )
+    print("=========================================TRAINDATAFILE::", TRAINDATAFILE)
     logging.getLogger().setLevel(logging.INFO)
     # estimator.train(input_fn=lambda:get_dataset(TRAINDATADIR+"1.tfrecords"), steps=3500000)
-    # estimator.train(input_fn=lambda: csv_input_fn(TRAINDATADIR + "train.csv"), steps=3500000)
+    # estimator.train(input_fn=lambda: csv_input_fn(TRAINDATAFILE), steps=1750000)
+    estimator.train(input_fn=lambda: csv_input_fn(TRAINDATAFILE), steps=700000)
+    # estimator.train(input_fn=lambda: csv_input_fn(TRAINDATAFILE), steps=2800000)
     estimator.export_saved_model("/home/zoul15/pcshareddir/rivermodel/", serving_input_receiver_fn, as_text=True)
-    return
+    # return
     starttime = time.time()
     print ("start evaluate test")
     # # for idx in range(3,4):
-    eval_result = estimator.evaluate(input_fn=lambda: csv_input_fn_evaluate(TRAINDATADIR + "test.csv"))
+    eval_result = estimator.evaluate(input_fn=lambda: csv_input_fn_evaluate(TESTDATAFILE))
+    # print ("test idx:",idx)
+    # eval_result = estimator.evaluate(input_fn=lambda: csv_input_fn_evaluate(TRAINDATADIR + "test.csv"))
     # print ("test idx:",idx)
     for key, value in eval_result.items():
         print (key, "\t", value)
@@ -168,31 +180,30 @@ def train1():
     starttime = time.time()
     print ("start evaluate train")
     # for idx in range(3,4):
-    eval_result = estimator.evaluate(input_fn=lambda: csv_input_fn_evaluate(TRAINDATADIR + "train.csv"))
+    eval_result = estimator.evaluate(input_fn=lambda: csv_input_fn_evaluate(TRAINDATAFILE))
     # print ("test idx:",idx)
     for key, value in eval_result.items():
         print (key, "\t", value)
     print ("finish evaluate")
     print (time.time() - starttime)
 
-
-
     starttime = time.time()
-    predict_result = estimator.predict(input_fn=lambda: csv_input_fn_predict(TRAINDATADIR + "test.csv"))
+    predict_result = estimator.predict(input_fn=lambda: csv_input_fn_predict(TESTDATAFILE))
     print ("predict time:", time.time() - starttime)
 
-    ifile = open(TRAINDATADIR + "test.csv")
+    ifile = open(TESTDATAFILE)
     real_data = []
+    pot_data = []
     for line in ifile:
-        real_data.append(float(line.strip().split(" ")[-1]))
-
+        real_data.append(float(line.strip().split(" ")[-1]) * float(line.strip().split(" ")[21]))
+        pot_data.append(float(line.strip().split(" ")[21]))
     ifile.close()
     lossdata = []
     nonabslossdata = 0
     for i, v in enumerate(predict_result):
         try:
-            nonabslossdata += float(real_data[i]) - v["predictions"][0]
-            lossdata.append(abs(float(real_data[i]) - v["predictions"][0]))
+            nonabslossdata += float(real_data[i]) - v["predictions"][0] * pot_data[i]
+            lossdata.append(abs(float(real_data[i]) - v["predictions"][0] * pot_data[i]))
         except:
             print (i, "\tv:", type(v), v)
             print ("avgloss:", sum(lossdata) / len(lossdata))
@@ -259,16 +270,33 @@ def train():
     print ("finish evaluate")
     print (time.time() - starttime)
 
+def testdata():
+    ifile = open(TRAINDATAFILE)
+    for line in ifile:
+        data = line.strip().split(" ")[24:-1]
+        for v in data:
+            if 0 < float(v) < 1:
+                print (line)
+    ifile.close()
+
 def tongjiinfo():
     # inputdata = pandas.read_csv(TRAINDATADIR+"4", sep=" ", usecols=[FEATURELEN], names=["label"])
-    ifile = open(TRAINDATADIR+"train.csv")
-    idx=0
-    step = 10
+    ifile = open(TRAINDATAFILE)
+    idx = 0
+    step = 1
     resultdata = dict()
+    import math
+    nannumber = 0
     for line in ifile:
-        idx+=1
+        idx += 1
         data = float(line.strip().split(" ")[-1])
-        key = int(data / step)
+        key = data / step
+        if math.isnan(key):
+            nannumber += 1
+            continue
+        key = int(key)
+        if key > 200:
+            continue
         if key not in resultdata:
             resultdata[key] = 0
         resultdata[key]+=1
@@ -283,11 +311,15 @@ def tongjiinfo():
             valuelist.append(0)
     for i in range(1, len(valuelist)):
         valuelist[i] += valuelist[i - 1]
+    for i in range(0, len(valuelist)):
+        valuelist[i] /= valuelist[- 1] * 1.0
+        print (i, ":", valuelist[i])
     # Plotting the Results
     plt.plot(keylist, valuelist, 'ro', label='Original data')
-    plt.title('Linear Regression Result')
+    plt.title('Label distribution')
     # plt.legend()
-    plt.savefig("/home/zoul15/pcshareddir/gnuresult/mlfoldrate.png")
+    plt.savefig("/home/zoul15/pcshareddir/gnuresult/mlev.png")
+    print ("nannumber:", nannumber)
 
 def testloadsavedmodel():
     from tensorflow.contrib import predictor
@@ -378,11 +410,16 @@ def testpipline():
     # print (idx)
     # print ((time.time() - start) / idx)
 
+
+
 if __name__ == "__main__":
     # testpipline()
+    # testdata()
     # tongjiinfo()
     # savedatatotfrecord(TRAINDATADIR+"train.csv")
+
     train1()
+
     # testloadsavedmodel()
     # tf.logging.set_verbosity(tf.logging.INFO)
     # tf.app.run(main=train)

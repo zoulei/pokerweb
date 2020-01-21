@@ -1,8 +1,9 @@
+import sys
+# sys.path.append('/home/zoul15/pokerweb')
 import DBOperater
 import Constant
 import pprint
 import handsinfocommon
-import sys
 import time
 import random
 
@@ -120,8 +121,24 @@ def printhandsinfo(handsid):
     print "handsid:",handsid
     handsinfocommon.pp.pprint(result.next())
 
+def printhandsinfodetail(handsid):
+    handsid = handsid.replace(" ", "_")
+    result = DBOperater.Find(Constant.HANDSDB, Constant.STATEINFOHANDSCLT, {"_id": handsid})
+    print "handsid:", handsid
+    doc = result.next()
+    print "BETDATA:"
+    handsinfocommon.pp.pprint(doc["data"]["BETDATA"])
+    print "BOARD:\t",
+    handsinfocommon.pp.pprint(doc["data"]["BOARD"])
+    print "PVCARD:",
+    for i in range(len(doc["data"]["PVCARD"])):
+        if doc["data"]["PVCARD"][i] is not None:
+            print "\t", i, ":", doc["data"]["PVCARD"][i],
+    print ""
+    # handsinfocommon.pp.pprint(doc["data"]["PVCARD"])
+
 def printrandomhandsinfo():
-    result = DBOperater.Find(Constant.HANDSDB,Constant.HANDSCLT,{})
+    result = DBOperater.Find(Constant.HANDSDB, Constant.HANDSCLT, {})
     doclen = result.count()
     rate = 1.0 / min(doclen,10000)
     for doc in result:
@@ -210,5 +227,7 @@ if __name__ == "__main__":
     elif sys.argv[1] == "6":
         # joinrate before calculated
         preflopftdata(3)
+    elif sys.argv[1] == "7":
+        printhandsinfodetail(sys.argv[2])
     else:
         printhandsinfo(sys.argv[1])
