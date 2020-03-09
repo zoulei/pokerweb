@@ -8,7 +8,8 @@ import datetime
 import json
 import os
 from werkzeug import secure_filename
-import urllib2
+from urllib2 import urlopen
+# from urllib.request import urlopen
 import time
 import traceback
 
@@ -178,7 +179,7 @@ class ReconstructHandsdata:
         # import pprint
         # pp = pprint.PrettyPrinter(indent=4)
         # pp.pprint(self.m_handsdata)
-        for turnidx, pokerturn in enumerate(["PREFLOP","FLOP","TURN","RIVER"]):
+        for turnidx, pokerturn in enumerate(["PREFLOP", "FLOP", "TURN", "RIVER"]):
             if pokerturn not in betdata:
                 continue
             curturnbetdata = betdata[pokerturn]["PLAYER"]
@@ -186,11 +187,12 @@ class ReconstructHandsdata:
             for actiondata in curturnbetdata:
                 number = actiondata["NUMBER"]
                 action = actiondata["ACTION"]
-                if action == "showwait":
+                if action == "showwait" or action.find("straddle") != -1:
                     continue
-                action,value = action.split(" ")
+                # print action
+                action, value = action.split(" ")
                 pos = self.number2pos(number)
-                newbetdata.append([pos,action,float(value)])
+                newbetdata.append([pos, action, float(value)])
             if newbetdata:
                 rawhandsdata["BETDATA"][pokerturn] = newbetdata
             if "CARD" in betdata[pokerturn]:
@@ -227,22 +229,57 @@ def generateurl(rawurl):
 
 
 
+def checkroom(club, room, identifier):
+    room = str(room)
+    result = DBOperater.Find(Constant.HANDSDB, Constant.COLLECTCHECKROOM, {})
+    data = {}
+    if result.count() != 0:
+        # data = {room: [identifier, time.time()]}
+        for doc in result:
+            data = doc["data"]
+    nowtime = time.time()
+    for curroom in data.keys():
+        if nowtime - data[curroom][1] > 36000:
+            del data[curroom]
+    resultvalue = "0"
+    if room not in data:
+        resultvalue = "1"
+        data[room] = [identifier, time.time()]
+    elif data[room][0] == identifier:
+        resultvalue = "1"
+    DBOperater.ReplaceOne(Constant.HANDSDB, Constant.COLLECTCHECKROOM, {"_id":"onlyone"}, {"_id":"onlyone", "data":data}, True)
+    return resultvalue
 
-
-def uploadhandsurl(club, room, handstotal, handidx, handsurl):
+def uploadhandsurl(club, room, handsurl):
+    room = str(room)
     handsurl = generateurl(handsurl)
     print "-------------==========:", handsurl
     try:
-        htmldoc = urllib2.urlopen(handsurl).read()
+        htmldoc = urlopen(handsurl).read()
+        # print "======================"
+        # print "======================"
+        # print "======================"
+        # print htmldoc
+        # print "======================"
+        # print "======================"
+        # print "======================"
     except:
-        return "0"
-    prefix = "recordHelper.data = $.parseJSON('"
-    postfix = "');"
+        return "2"
+    prefix = str("recordHelper.data = $.parseJSON('")
+    postfix = str("');")
+    # print("================:", type(htmldoc))
     prefixidx = htmldoc.find(prefix)
-    postfixidx = htmldoc.find(postfix,prefixidx)
+    postfixidx = htmldoc.find(postfix, prefixidx)
     handsdatastr = htmldoc[prefixidx+len(prefix):postfixidx]
     # print "------handsdatastr:", handsdatastr
     try:
+        # print ("======================", prefixidx)
+        # print ("======================", postfixidx)
+        # print ("======================")
+        # print(handsdatastr)
+        # print ("======================")
+        # print ("======================")
+        # print ("======================")
         handsdata = json.loads(handsdatastr)
         handsdata = ReconstructHandsdata(handsdata).getrawhanddatastruct()
         handsdata["rawstr"] = handsdatastr
@@ -250,34 +287,27 @@ def uploadhandsurl(club, room, handstotal, handidx, handsurl):
         traceback.print_exc()
         return "2"
     DBOperater.ReplaceOne(Constant.HANDSDB, str(club), {"_id": handsdata["_id"]}, handsdata, True)
+    handsidx = int(handsdata["_id"].split(" ")[-1])
+    print "---------------------------------------------------------:",handsidx
 
-    result = DBOperater.Find(Constant.HANDSDB, str(club) + "_" + str(room), {})
-    result = list(result)
+    result = DBOperater.Find(Constant.HANDSDB, Constant.COLLECTINFOCLT, {})
     data = {}
-    if not len(result):
-        data = {}
-        data[str(handidx)] = 1
+    if result.count() != 0:
+        for doc in result:
+            data = doc["data"]
+    for curroom in data.keys():
+        if time.time() - data[curroom]["time"] > 36000:
+            del data[curroom]
+    if room not in data:
+        data[room] = {"time": time.time(), "hands": []}
+    if handsidx == 1 or handsidx - 1 in data[room]["hands"]:
+    # if handsidx in data[room]["hands"]:
+        return "2"
     else:
-        data = result[0].get("data")
-        data[str(handidx)] = 1
-    # if len(data) == handstotal:
-    if handidx == handstotal:
-        DBOperater.DropCollection(Constant.HANDSDB, str(club) + "_" + str(room))
-        result = DBOperater.Find(Constant.HANDSDB, Constant.JOINEDROOMCLT, {})
-        result = list(result)
-        if len(result):
-            data = result[0].get("data")
-            del data[str(room)]
-            DBOperater.ReplaceOne(Constant.HANDSDB, Constant.JOINEDROOMCLT, {"_id": "onlyone"},
-                                  {"_id": "onlyone", "data": data}, True)
-        DBOperater.ReplaceOne(Constant.HANDSDB, Constant.UPLOADSUCCESS, {"_id": "onlyone"},
-                              {"_id": "onlyone", "data": True}, True)
-        print "uploadsuccess:", room
-        return "1"
-    else:
-        DBOperater.ReplaceOne(Constant.HANDSDB, str(club) + "_" + str(room), {"_id": "onlyone"},
+        data[room]["hands"].append(handsidx)
+        DBOperater.ReplaceOne(Constant.HANDSDB, Constant.COLLECTINFOCLT, {"_id": "onlyone"},
                               {"_id": "onlyone", "data": data}, True)
-    return "0"
+        return "1"
 
 def fetchjoinedroom():
     result = DBOperater.Find(Constant.HANDSDB, Constant.JOINEDROOMCLT, {})

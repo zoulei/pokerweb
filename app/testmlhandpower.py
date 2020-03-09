@@ -20,7 +20,7 @@ from __future__ import print_function
 import logging
 import tensorflow as tf
 
-import imports85  # pylint: disable=g-bad-import-order
+from app import imports85
 
 STEPS = 5000
 PRICE_NORM_FACTOR = 1000

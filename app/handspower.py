@@ -108,7 +108,7 @@ def testcurwinrate():
     board =  hunlgame.generateCards("ASTS4H")
     winratedata = []
     for hand in ophandsrange:
-        rangestate = handsdistribution.RangeState(board,hand,handsdistribution.HandsDisQuality(ophandsrange))
+        rangestate = handsdistribution.RangeState(board, hand, handsdistribution.HandsDisQuality(ophandsrange))
         if not rangestate:
             continue
         curwinrate = winratecalculator.WinrateCalculator(rangestate).calmywinrate()
@@ -135,10 +135,11 @@ def testwinratestack():
     myhand = hunlgame.generateHands("AD5D")
     hplist = []
     for board in boardlist:
-        rangestate = handsdistribution.RangeState(board,myhand,handsdistribution.HandsDisQuality(ophandsrange))
+        rangestate = handsdistribution.RangeState(board, myhand, handsdistribution.HandsDisQuality(ophandsrange))
         if not rangestate:
             continue
-        hplist.append(HandPower(handsdistribution.RangeState(board,myhand,[handsdistribution.HandsDisQuality(ophandsrange),handsdistribution.HandsDisQuality(ophandsrange)])))
+        hplist.append(HandPower(handsdistribution.RangeState(board, myhand, [
+            handsdistribution.HandsDisQuality(ophandsrange), handsdistribution.HandsDisQuality(ophandsrange)])))
     for board, hp in zip(boardlist,hplist):
         diflist = []
         for board1, hp1 in zip(boardlist,hplist):
@@ -158,7 +159,7 @@ class RandomHandPower(HandPower):
         for idx in xrange(opponentqt):
             self.generaterandomrange(cardlist)
             self.m_ophands.append(handsdistribution.HandsDisQuality(copy.deepcopy(self.m_handsdis)))
-        rangestate = handsdistribution.RangeState(self.m_board,self.m_myhand,self.m_ophands)
+        rangestate = handsdistribution.RangeState(self.m_board, self.m_myhand, self.m_ophands)
         if not rangestate:
             print "random hand power not valid, this situation happens rare."
             raise
@@ -244,7 +245,7 @@ def testrandompowerquality():
             ophanddis = handsdistribution.HandsDisQuality(ophanddis)
             ophanddis.normalize()
             for hand in rangelist[0]:
-                rangestate = handsdistribution.RangeState(replay.getcurboard(),hand,[ophanddis])
+                rangestate = handsdistribution.RangeState(replay.getcurboard(), hand, [ophanddis])
                 # if rangestate:
                 #     print "True"
                 # else:
@@ -259,7 +260,7 @@ def testrandompowerquality():
                     disdata[mindisstr] = 0
                 disdata[mindisstr] += 1
             for hand in rangelist[1]:
-                rangestate = handsdistribution.RangeState(replay.getcurboard(),hand,[myhanddis])
+                rangestate = handsdistribution.RangeState(replay.getcurboard(), hand, [myhanddis])
                 if not rangestate:
                     continue
                 curhp = HandPower(rangestate)
@@ -350,12 +351,12 @@ class MarkerGeneraterTraverser(TraverseHands):
         ophanddis.normalize()
         rangestatelist = []
         for hand in rangelist[0]:
-            rangestate = handsdistribution.RangeState(copy.deepcopy(replay.getcurboard()),copy.deepcopy(hand),copy.deepcopy(ophanddis))
+            rangestate = handsdistribution.RangeState(copy.deepcopy(replay.getcurboard()), copy.deepcopy(hand), copy.deepcopy(ophanddis))
             if not rangestate:
                 continue
             rangestatelist.append(rangestate)
         for hand in rangelist[1]:
-            rangestate = handsdistribution.RangeState(copy.deepcopy(replay.getcurboard()),copy.deepcopy(hand),copy.deepcopy(myhanddis))
+            rangestate = handsdistribution.RangeState(copy.deepcopy(replay.getcurboard()), copy.deepcopy(hand), copy.deepcopy(myhanddis))
             if not rangestate:
                 continue
             rangestatelist.append(rangestate)

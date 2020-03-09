@@ -3,7 +3,6 @@ from handsengine import HandsInfo, ReplayEngine
 from TraverseHands import TraverseHands, TraverseMultiplayerHands
 import DBOperater
 import Constant
-import handsinfocommon
 import handsinfoexception
 from handcheck import LastAllinErrorChecker
 

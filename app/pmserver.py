@@ -4,16 +4,12 @@ from flask import Flask
 from flask import request
 
 import logging
-import logging.config
 import DBOperater
 
 import requestfoldstrategy
 import collecthands
 
-from flask import  render_template, redirect, url_for, send_from_directory
 from werkzeug import secure_filename
-
-import os
 
 #configrate logging
 # logging.config.dictConfig({
@@ -82,7 +78,7 @@ def gameseq(phoneid):
 
 @app.route('/joingame/<int:seq>/<path:phoneid>')
 def joingame(seq,phoneid):
-    return collecthands.joingame(seq,phoneid)
+    return collecthands.joingame(seq, phoneid)
 
 @app.route('/collectgamelist/<path:phoneid>')
 def collectgamelist(phoneid):
@@ -90,15 +86,23 @@ def collectgamelist(phoneid):
 
 @app.route('/collectgamehandidx/<int:seq>/<path:phoneid>')
 def collectgamehandidx(seq,phoneid):
-    return collecthands.collectgamehandidx(seq,phoneid)
+    return collecthands.collectgamehandidx(seq, phoneid)
 
 @app.route('/completegamecollect/<int:seq>')
 def completegamecollect(seq):
     return collecthands.completegamecollect(seq)
 
-@app.route('/uploadhandsurl/<string:club>/<int:room>/<int:handstotal>/<int:handidx>/<path:handsurl>')
-def uploadhandsurl(club, room, handstotal, handidx, handsurl):
-    return collecthands.uploadhandsurl(club, room, handstotal, handidx, handsurl)
+# @app.route('/uploadhandsurl/<string:club>/<int:room>/<int:handstotal>/<int:handidx>/<path:handsurl>')
+# def uploadhandsurl(club, room, handstotal, handidx, handsurl):
+#     return collecthands.uploadhandsurl(club, room, handstotal, handidx, handsurl)
+
+@app.route('/uploadhandsurl/<string:club>/<int:room>/<path:handsurl>')
+def uploadhandsurl(club, room, handsurl):
+    return collecthands.uploadhandsurl(club, room, handsurl)
+
+@app.route('/checkroom/<string:club>/<int:room>/<string:identifier>')
+def checkroom(club, room, identifier):
+    return collecthands.checkroom(club, room, identifier)
 
 @app.route('/joinedroom/')
 def fetchjoinedroom():

@@ -1,17 +1,9 @@
 # -*- coding:utf-8 -*-
 from statestrategycalculator import *
-from Constant import *
-import DBOperater
-from stateinfocalculator import *
-from purehandsreader import *
 import threading
 import handsengine
-import TraverseHands
-import hunlgame
 import os
-import time
 from handsdistribution import RangeState
-from mytimer import Timer
 from InMemoryTraverseHands import *
 
 def submitmainfunc(para):
@@ -203,7 +195,6 @@ class TaskData:
         return self.m_taskdata[key]
 
 def testdocsize():
-    import copy
     import time
     result = DBOperater.Find(HANDSDB,STATEINFOHANDSCLT,{})
     doclist = []

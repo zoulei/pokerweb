@@ -6,7 +6,7 @@ import urllib
 import logging
 from Constant import *
 
-password = urllib.quote_plus("pass/word")
+# password = urllib.parse.quote("pass/word")
 client = None
 
 #connect to mongodb
@@ -16,6 +16,9 @@ def Connect():
         # client = MongoClient("mongodb://"+DBUSERNAME+":"+DBPWD+"@"+MONGOHOST+":"+str(MONGOPORT)+"/?authSource="+AUTHDBNAME,connect=False)
         # client = MongoClient("mongodb://"+DBUSERNAME+":"+DBPWD+"@"+MONGOHOST+"/?authSource="+AUTHDBNAME,connect=False)
         client = MongoClient("mongodb://" + MONGOHOST, connect=False)
+        # client = MongoClient("mongodb://localhost:27017", connect=False)
+        # print ("===============================")
+        # print ("")
 
 def Disconnect():
     global client
@@ -58,7 +61,7 @@ def ReplaceOne(db,clt,query,newdoc,upsert = False):
 def testconnectdb():
     result = Find(HANDSDB,HANDSCLT,{"_id":"2017-12-15 00:43:13 84"})
     for v in result:
-        print v
+        print (v)
 
 def DropCollection(db, clt):
     global client

@@ -8,7 +8,7 @@ MONGOHOST = "192.168.0.11"
 # MONGOPORT = 27017
 # DBUSERNAME = 'root'
 # DBPWD = "123459"
-DBUSERNAME = 'cltreedb'
+DBUSERNAME = 'straddlecltreedb'
 DBPWD = "Wv8Yg5gJD"
 AUTHDBNAME = "admin"
 
@@ -16,11 +16,14 @@ LOGINDB = "pmdb"
 LOGINCLT = "loginclt"
 
 # HANDSDB = "handsdb"
-HANDSDB = "cltreedb_1000"
+HANDSDB = "straddlecltreedb"
 # HANDSCLT = "handsclt"
-HANDSCLT = "1054988"
+# HANDSCLT = "1054988"
+HANDSCLT = "111111"
+COLLECTINFOCLT = "collectinfo"
+COLLECTCHECKROOM = "collectcheckroom"
 # STATEINFOHANDSCLT = "stateinfohandsclt"
-STATEINFOHANDSCLT = "stateinfo1054988"
+STATEINFOHANDSCLT = "stateinfo111111"
 
 JOINEDROOMCLT = "joinedroom"
 UPLOADSUCCESS = "uploadsuccess"
@@ -109,11 +112,14 @@ BB = 4
 ANTI = 1
 
 # ========================cache data related=============================
+TRAINTURN = 2
+TRAINALLIN = False
 # CACHEDIR = "/mnt/mfs/users/zoul15/pokercachedata/"
 CACHEDIR = "/home/zoul15/pcshareddir/"
-TRAINDATADIR  = CACHEDIR + "TRAINDATADIR/3/"
-TRAINDATAFILE = TRAINDATADIR + "100universallabelfloattrain.csv"
-TESTDATAFILE = TRAINDATADIR + "100universallabelfloattest.csv"
+TRAINDATADIR  = CACHEDIR + "TRAINDATADIR/" + str(TRAINTURN) + "/"
+TRAINDATAFILE = TRAINDATADIR + "randomtrain" + ("allin" if TRAINALLIN else "") + ".csv"
+TESTDATAFILE = TRAINDATADIR + "test" + ("allin" if TRAINALLIN else "") + ".csv"
+REGRESSORDIR = CACHEDIR + "regressor/" + str(TRAINTURN) + ("allin" if TRAINALLIN else "") + "/"
 SUBMITTASKDIR = CACHEDIR + "submittask/"
 TEMPSUBMITTASKDIR = CACHEDIR + "tmpsubmittask/"
 TASKRESULTDIR = CACHEDIR + "taskresult/"

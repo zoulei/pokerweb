@@ -2,7 +2,6 @@ from handsengine import HandsInfo
 from TraverseHands import TraverseHands
 import DBOperater
 import Constant
-import traceback
 import handsinfoexception
 import handsinfocommon
 

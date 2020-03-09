@@ -169,7 +169,8 @@ def reinlearningmainfunc(para):
     oppohands = []
     for pos, inpoolstate in enumerate(replay.m_inpoolstate):
         if inpoolstate != 0 and pos != replay.m_nextplayer:
-            oppohands.append(handsdistribution.HandsDisQuality(prefloprangeengine.gethandsinrange(replay.m_prefloprange[pos])))
+            oppohands.append(
+                handsdistribution.HandsDisQuality(prefloprangeengine.gethandsinrange(replay.m_prefloprange[pos])))
     # oppohands = handsdistribution.HandsDisQuality(prefloprangeengine.gethandsinrange(replay.m_prefloprange[replay.m_nextplayer]))
     if syncflag:
         timer.stop("handsquality")
@@ -177,7 +178,7 @@ def reinlearningmainfunc(para):
     if syncflag:
         timer.start("handspower")
     try:
-        targethp = handspower.HandPower(handsdistribution.RangeState(board,pvhand,oppohands))
+        targethp = handspower.HandPower(handsdistribution.RangeState(board, pvhand, oppohands))
     except:
         return []
     if syncflag:
