@@ -132,7 +132,8 @@ def serving_input_receiver_fn():
 def train1():
     # global_step = tf.Variable(0, trainable=False)
     # boundaries = [1900000, ]
-    boundaries = [800000, ] if (TRAINTURN == 4 or (TRAINTURN == 3 and TRAINALLIN)) else [400000, ]
+    # boundaries = [800000, ] if (TRAINTURN == 4 or (TRAINTURN == 3 and TRAINALLIN)) else [400000, ]
+    boundaries = [320000, ] if (TRAINTURN == 4 or (TRAINTURN == 3 and TRAINALLIN)) else [160000, ]
     # values = [0.001, 0.0001]
     values = [0.001, 0.0001]
     # learning_rate = tf.train.piecewise_constant(tf.train.get_global_step(), boundaries, values)
@@ -160,7 +161,9 @@ def train1():
     print("=========================================TRAINDATAFILE::", TRAINDATAFILE)
     logging.getLogger().setLevel(logging.INFO)
     # estimator.train(input_fn=lambda:get_dataset(TRAINDATADIR+"1.tfrecords"), steps=3500000)
-    estimator.train(input_fn=lambda: csv_input_fn(TRAINDATAFILE), steps=1400000 if (TRAINTURN == 4 or (TRAINTURN == 3 and TRAINALLIN)) else 700000)
+    # estimator.train(input_fn=lambda: csv_input_fn(TRAINDATAFILE), steps=1400000 if (TRAINTURN == 4 or (TRAINTURN == 3 and TRAINALLIN)) else 700000)
+    estimator.train(input_fn=lambda: csv_input_fn(TRAINDATAFILE),
+                    steps=560000 if (TRAINTURN == 4 or (TRAINTURN == 3 and TRAINALLIN)) else 280000)
     # estimator.train(input_fn=lambda: csv_input_fn(TRAINDATAFILE), steps=700000)
     # estimator.train(input_fn=lambda: csv_input_fn(TRAINDATAFILE), steps=2800000)
     estimator.export_saved_model("/home/zoul15/pcshareddir/rivermodel/", serving_input_receiver_fn, as_text=True)
