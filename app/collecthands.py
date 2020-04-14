@@ -141,16 +141,117 @@ class ReconstructHandsdata:
             return 8
         return self.getplayernum() - number + 1
 
+    def myselfnumber2pos(self, number, dealerpos, playernum):
+        playerposdata = [0] * (playernum + 1)
+        poslist = range(dealerpos, 0, -1) + range(playernum, dealerpos, -1)
+        playerposdata[poslist[-1]] = 9
+        playerposdata[poslist[-2]] = 8
+        for idx, pos in enumerate(poslist[:-2]):
+            playerposdata[pos] = idx + 1
+
     def getplayernum(self):
         return len(self.m_handsdata["STAGE"]["TABLE"]["SEAT"])
 
+    def getmyselfrawhanddatastruct(self):
+        handsdata = self.m_handsdata["STAGE"]
+        rawhandsdoc = {"_id": str(handsdata["TIME"]) + " " + str(handsdata["ID"])}
+        sb = handsdata["TABLE"]["SBLIND"]["CHIPS"]
+        anti = handsdata["TABLE"]["ante"]
+        playernum = len(handsdata["TABLE"]["SEAT"])
+
+        sbpos = handsdata["TABLE"]["SBLIND"]["NUMBER"]
+        bbpos = handsdata["TABLE"]["BBLIND"]["NUMBER"]
+        dealerpos = handsdata["TABLE"]["DEALER"]
+
+        stack = [0.0] * 10
+        stack[9] = float(handsdata["TABLE"]["SEAT"][sbpos-1]["CHIPS"])
+        stack[8] = float(handsdata["TABLE"]["SEAT"][bbpos-1]["CHIPS"])
+        name = [0] * 10
+        name[9] = handsdata["TABLE"]["SEAT"][sbpos-1]["NAME"]
+        name[8] = handsdata["TABLE"]["SEAT"][bbpos-1]["NAME"]
+        idlist = [0] * 10
+        idlist[9] = handsdata["TABLE"]["SEAT"][sbpos-1]["ID"]
+        idlist[8] = handsdata["TABLE"]["SEAT"][bbpos-1]["ID"]
+        for idx,pos in enumerate(range(dealerpos, 0, -1) + range(playernum, dealerpos + 2, -1)):
+        # for idx in xrange(len(handsdata["TABLE"]["SEAT"]) - 2):
+            stack[idx + 1] = float(handsdata["TABLE"]["SEAT"][pos - 1]["CHIPS"])
+            name[idx + 1] = handsdata["TABLE"]["SEAT"][pos - 1]["NAME"]
+            idlist[idx + 1] = handsdata["TABLE"]["SEAT"][pos - 1]["ID"]
+
+        rawhandsdoc["data"] = {}
+        rawhandsdata = rawhandsdoc["data"]
+        rawhandsdata["BB"] = float(sb) * 2
+        rawhandsdata["ante"] = anti
+        rawhandsdata["PLAYQUANTITY"] = playernum
+        rawhandsdata["STACK"] = stack
+        rawhandsdata["NAME"] = name
+        rawhandsdata["ID"] = idlist
+        rawhandsdata["BETDATA"] = {}
+
+        betdata = handsdata["POKERCARD"]
+        boarddata = ""
+
+        playerposdata = [0] * (playernum + 1)
+        poslist = range(dealerpos, 0, -1) + range(playernum, dealerpos, -1)
+        playerposdata[poslist[-1]] = 9
+        playerposdata[poslist[-2]] = 8
+        for idx, pos in enumerate(poslist[:-2]):
+            playerposdata[pos] = idx + 1
+
+
+        for turnidx, pokerturn in enumerate(["PREFLOP", "FLOP", "TURN", "RIVER"]):
+            if pokerturn not in betdata:
+                continue
+            curturnbetdata = betdata[pokerturn]["PLAYER"]
+            newbetdata = []
+            for actiondata in curturnbetdata:
+                number = actiondata["NUMBER"]
+                action = actiondata["ACTION"]
+                if action == "showwait" or action.find("straddle") != -1:
+                    continue
+                # print action
+                action, value = action.split(" ")
+                pos = playerposdata[number]
+                # pos = self.number2pos(number)
+                newbetdata.append([pos, action, float(value)])
+            if newbetdata:
+                rawhandsdata["BETDATA"][pokerturn] = newbetdata
+            if "CARD" in betdata[pokerturn]:
+                boarddata += " "+betdata[pokerturn]["CARD"]
+
+        myhand = betdata["HOLECARD"]["CARD"]
+        myhand = myhand.replace(" ", "")
+        mypos = playerposdata[1]
+        rawhandsdata["MYPOS"] = mypos
+        rawhandsdata["MYHAND"] = myhand
+
+        showcarddata = handsdata["SHOWDOWN"]["PLAYER"]
+        pvcards = [None] * 10
+        for showcardinfo in showcarddata:
+            if "CARD" not in showcardinfo:
+                break
+            pvcardsstr = showcardinfo["CARD"]
+            number = showcardinfo["NUMBER"]
+            pvcards[playerposdata[number]] = pvcardsstr
+        rawhandsdata["PVCARD"] = pvcards
+        if boarddata:
+            rawhandsdata["BOARD"] = boarddata[1:]
+        else:
+            rawhandsdata["BOARD"] = boarddata
+
+        return rawhandsdoc
+
     def getrawhanddatastruct(self):
         handsdata = self.m_handsdata["STAGE"]
+        if not handsdata["TABLE"]["look"]:
+            return self.getmyselfrawhanddatastruct()
+
         rawhandsdoc = {"_id":str(handsdata["TIME"]) + " " + str(handsdata["ID"])}
         sb = handsdata["TABLE"]["SBLIND"]["CHIPS"]
         anti = handsdata["TABLE"]["ante"]
         playernum = len(handsdata["TABLE"]["SEAT"])
-        stack = [0] * 10
+
+        stack = [0.0] * 10
         stack[9] = float(handsdata["TABLE"]["SEAT"][0]["CHIPS"])
         stack[8] = float(handsdata["TABLE"]["SEAT"][1]["CHIPS"])
         name = [0] * 10
@@ -159,11 +260,11 @@ class ReconstructHandsdata:
         idlist = [0] * 10
         idlist[9] = handsdata["TABLE"]["SEAT"][0]["ID"]
         idlist[8] = handsdata["TABLE"]["SEAT"][1]["ID"]
-
         for idx in xrange(len(handsdata["TABLE"]["SEAT"]) - 2):
             stack[idx + 1] = float(handsdata["TABLE"]["SEAT"][- idx - 1]["CHIPS"])
             name[idx + 1] = handsdata["TABLE"]["SEAT"][- idx - 1]["NAME"]
             idlist[idx + 1] = handsdata["TABLE"]["SEAT"][- idx - 1]["ID"]
+
         rawhandsdoc["data"] = {}
         rawhandsdata = rawhandsdoc["data"]
         rawhandsdata["BB"] = float(sb) * 2
