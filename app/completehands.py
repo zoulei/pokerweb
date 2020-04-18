@@ -110,7 +110,7 @@ def completehands():
             traceback.print_exc()
         # 1022
 
-def maincompleteh1023
+def maincompletehands():
     while True:
         try:
             completehands()

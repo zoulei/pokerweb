@@ -13,7 +13,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 # FEATURELEN = 1023
-FEATURELEN = 123
+FEATURELEN = 124
 # Metadata describing the text columns
 COLUMNS = [str(i) for i in range(FEATURELEN)] + ["label", ]
 FIELD_DEFAULTS = [[0.0]] * (FEATURELEN+1)
@@ -198,8 +198,8 @@ def train1():
     real_data = []
     pot_data = []
     for line in ifile:
-        real_data.append(float(line.strip().split(" ")[-1]) * float(line.strip().split(" ")[21]))
-        pot_data.append(float(line.strip().split(" ")[21]))
+        real_data.append(float(line.strip().split(" ")[-1]) * float(line.strip().split(" ")[0]))
+        pot_data.append(float(line.strip().split(" ")[0]))
     ifile.close()
     lossdata = []
     nonabslossdata = 0
@@ -286,14 +286,24 @@ def tongjiinfo():
     # inputdata = pandas.read_csv(TRAINDATADIR+"4", sep=" ", usecols=[FEATURELEN], names=["label"])
     ifile = open(TRAINDATAFILE)
     idx = 0
-    step = 1
+    step = 0.01
     resultdata = dict()
     import math
     nannumber = 0
+    spenumber = 0
     for line in ifile:
         idx += 1
         data = float(line.strip().split(" ")[-1])
-        key = data / step
+        key = int(data / step)
+        if key == 0:
+            tmpdata = line.strip().split(" ")
+            printline = ""
+            for idx, v in enumerate(tmpdata):
+                printline += str(idx) + ":" + v + "  "
+            print (printline + "\n")
+            if float(tmpdata[3]) > 0.03:
+                print("=================================\n")
+                spenumber += 1
         if math.isnan(key):
             nannumber += 1
             continue
@@ -302,7 +312,7 @@ def tongjiinfo():
             continue
         if key not in resultdata:
             resultdata[key] = 0
-        resultdata[key]+=1
+        resultdata[key] += 1
     ifile.close()
     maxkey = max(resultdata.keys())
     keylist = range(maxkey + 1)
@@ -323,6 +333,7 @@ def tongjiinfo():
     # plt.legend()
     plt.savefig("/home/zoul15/pcshareddir/gnuresult/mlev.png")
     print ("nannumber:", nannumber)
+    print ("spenumber:", spenumber)
 
 def testloadsavedmodel():
     from tensorflow.contrib import predictor
@@ -418,10 +429,10 @@ def testpipline():
 if __name__ == "__main__":
     # testpipline()
     # testdata()
-    # tongjiinfo()
+    tongjiinfo()
     # savedatatotfrecord(TRAINDATADIR+"train.csv")
 
-    train1()
+    # train1()
 
     # testloadsavedmodel()
     # tf.logging.set_verbosity(tf.logging.INFO)

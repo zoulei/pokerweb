@@ -135,6 +135,10 @@ def printhandsinfodetail(handsid):
         if doc["data"]["PVCARD"][i] is not None:
             print "\t", i, ":", doc["data"]["PVCARD"][i],
     print ""
+    if "MYPOS" in doc["data"]:
+        print "MYPOS:", doc["data"]["MYPOS"]
+    if "MYHAND" in doc["data"]:
+        print "MYHAND:", doc["data"]["MYHAND"]
     # handsinfocommon.pp.pprint(doc["data"]["PVCARD"])
 
 def printrandomhandsinfo():
