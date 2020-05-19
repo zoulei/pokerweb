@@ -129,11 +129,21 @@ def serving_input_receiver_fn():
     features = tf.parse_example(serialized_tf_example, feature_spec)
     return tf.estimator.export.ServingInputReceiver(features, receiver_tensors)
 
+def countfile(fname):
+    ifile = open(fname)
+    cnt = 0
+    for line in ifile:
+        cnt += 1
+    return cnt
+
 def train1():
+    linecnt = countfile(TRAINDATAFILE)
+    print ("===========================steps:", linecnt * 3 // 10)
     # global_step = tf.Variable(0, trainable=False)
     # boundaries = [1900000, ]
     # boundaries = [800000, ] if (TRAINTURN == 4 or (TRAINTURN == 3 and TRAINALLIN)) else [400000, ]
-    boundaries = [320000, ] if (TRAINTURN == 4 or (TRAINTURN == 3 and TRAINALLIN)) else [160000, ]
+    # boundaries = [320000, ] if (TRAINTURN == 4 or (TRAINTURN == 3 and TRAINALLIN)) else [160000, ]
+    boundaries = [linecnt * 200 // 1000, ]
     # values = [0.001, 0.0001]
     values = [0.001, 0.0001]
     # learning_rate = tf.train.piecewise_constant(tf.train.get_global_step(), boundaries, values)
@@ -162,8 +172,12 @@ def train1():
     logging.getLogger().setLevel(logging.INFO)
     # estimator.train(input_fn=lambda:get_dataset(TRAINDATADIR+"1.tfrecords"), steps=3500000)
     # estimator.train(input_fn=lambda: csv_input_fn(TRAINDATAFILE), steps=1400000 if (TRAINTURN == 4 or (TRAINTURN == 3 and TRAINALLIN)) else 700000)
-    estimator.train(input_fn=lambda: csv_input_fn(TRAINDATAFILE),
-                    steps=560000 if (TRAINTURN == 4 or (TRAINTURN == 3 and TRAINALLIN)) else 280000)
+    # estimator.train(input_fn=lambda: csv_input_fn(TRAINDATAFILE),
+    #                 steps=560000 if (TRAINTURN == 4 or (TRAINTURN == 3 and TRAINALLIN)) else 280000)
+    estimator.train(input_fn=lambda: csv_input_fn(TRAINDATAFILE), steps=linecnt * 300 // 1000)
+    # estimator.train(input_fn=lambda: csv_input_fn(TRAINDATAFILE), steps=80000)
+
+                    # steps=560000 if (TRAINTURN == 4 or (TRAINTURN == 3 and TRAINALLIN)) else 280000)
     # estimator.train(input_fn=lambda: csv_input_fn(TRAINDATAFILE), steps=700000)
     # estimator.train(input_fn=lambda: csv_input_fn(TRAINDATAFILE), steps=2800000)
     estimator.export_saved_model("/home/zoul15/pcshareddir/rivermodel/", serving_input_receiver_fn, as_text=True)
@@ -283,6 +297,7 @@ def testdata():
     ifile.close()
 
 def tongjiinfo():
+    plt.clf()
     # inputdata = pandas.read_csv(TRAINDATADIR+"4", sep=" ", usecols=[FEATURELEN], names=["label"])
     ifile = open(TRAINDATAFILE)
     idx = 0
@@ -297,13 +312,13 @@ def tongjiinfo():
         key = int(data / step)
         if key == 0:
             tmpdata = line.strip().split(" ")
-            printline = ""
-            for idx, v in enumerate(tmpdata):
-                printline += str(idx) + ":" + v + "  "
-            print (printline + "\n")
-            if float(tmpdata[3]) > 0.03:
-                print("=================================\n")
-                spenumber += 1
+            # printline = ""
+            # for idx, v in enumerate(tmpdata):
+            #     printline += str(idx) + ":" + v + "  "
+            # print (printline + "\n")
+            # if float(tmpdata[3]) > 0.03:
+            #     print("=================================\n")
+            #     spenumber += 1
         if math.isnan(key):
             nannumber += 1
             continue
@@ -322,6 +337,11 @@ def tongjiinfo():
             valuelist.append(resultdata[v])
         else:
             valuelist.append(0)
+    plt.plot(keylist, valuelist, 'ro', label='Original data')
+    plt.title('Label distribution')
+    # plt.legend()
+    plt.savefig("/home/zoul15/pcshareddir/gnuresult/ml" + str(TRAINTURN) + str(TRAINALLIN) + "ev.png")
+    plt.clf()
     for i in range(1, len(valuelist)):
         valuelist[i] += valuelist[i - 1]
     for i in range(0, len(valuelist)):
@@ -331,7 +351,7 @@ def tongjiinfo():
     plt.plot(keylist, valuelist, 'ro', label='Original data')
     plt.title('Label distribution')
     # plt.legend()
-    plt.savefig("/home/zoul15/pcshareddir/gnuresult/mlev.png")
+    plt.savefig("/home/zoul15/pcshareddir/gnuresult/ml" + str(TRAINTURN) + str(TRAINALLIN) + "cdfev.png")
     print ("nannumber:", nannumber)
     print ("spenumber:", spenumber)
 
@@ -424,16 +444,22 @@ def testpipline():
     # print (idx)
     # print ((time.time() - start) / idx)
 
-
+def findtargetdata():
+    for i in [1,2,3,4]:
+        print (i,"====================================================")
+        ifile = open(TRAINDATADIR + str(i) )
+        for line in ifile:
+            if line.startswith("25 26.33") and float(line.split(" ")[2]) > 0.95:
+                print(line)
 
 if __name__ == "__main__":
     # testpipline()
     # testdata()
-    tongjiinfo()
+    # tongjiinfo()
     # savedatatotfrecord(TRAINDATADIR+"train.csv")
 
     # train1()
-
+    findtargetdata()
     # testloadsavedmodel()
     # tf.logging.set_verbosity(tf.logging.INFO)
     # tf.app.run(main=train)

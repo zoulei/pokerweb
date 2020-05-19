@@ -17,7 +17,7 @@ LOGINCLT = "loginclt"
 
 # HANDSDB = "handsdb"
 # HANDSDB = "myhandsdb"
-HANDSDB = "newstraddlecltreedb"
+HANDSDB = "testnewstraddlecltreedb"
 # HANDSCLT = "handsclt"
 # HANDSCLT = "1054988"
 HANDSCLT = "111111"
@@ -113,7 +113,7 @@ BB = 4
 ANTI = 1
 
 # ========================cache data related=============================
-TRAINTURN = 3
+TRAINTURN = 4
 TRAINALLIN = False
 # CACHEDIR = "/mnt/mfs/users/zoul15/pokercachedata/"
 CACHEDIR = "/home/zoul15/pcshareddir/"
