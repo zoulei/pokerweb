@@ -11,9 +11,10 @@ import pandas
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import math
 
 # FEATURELEN = 1023
-FEATURELEN = 124
+FEATURELEN = 128
 # Metadata describing the text columns
 COLUMNS = [str(i) for i in range(FEATURELEN)] + ["label", ]
 FIELD_DEFAULTS = [[0.0]] * (FEATURELEN+1)
@@ -108,6 +109,7 @@ def csv_input_fn_predict(fname):
 def _parse_line(line):
     # Decode the line into its fields
     fields = tf.decode_csv(line, FIELD_DEFAULTS, field_delim=' ')
+    # fields[0] = 0
     # fields = map(float, line.split(" "))
     # Pack the result into a dictionary
     features = dict(zip(COLUMNS, fields))
@@ -288,27 +290,38 @@ def train():
     print (time.time() - starttime)
 
 def testdata():
-    ifile = open(TRAINDATAFILE)
+    ifile = open(TRAINDATADIR + "4_allin")
+    idx =0
     for line in ifile:
-        data = line.strip().split(" ")[24:-1]
-        for v in data:
-            if 0 < float(v) < 1:
-                print (line)
+        data = line.strip().split(" ")
+        idx += 1
+        if len(data) != 125:
+            print(line)
+            print (len(data))
+            print ("idx:",idx)
+            break
     ifile.close()
 
-def tongjiinfo():
+def tongjiinfo(step, dataidx, maxvalue, pngidentity):
     plt.clf()
     # inputdata = pandas.read_csv(TRAINDATADIR+"4", sep=" ", usecols=[FEATURELEN], names=["label"])
     ifile = open(TRAINDATAFILE)
     idx = 0
-    step = 0.01
+    # step = 0.01
+    # step = 1
     resultdata = dict()
     import math
     nannumber = 0
     spenumber = 0
     for line in ifile:
         idx += 1
-        data = float(line.strip().split(" ")[-1])
+        if idx == 10000:
+            break
+        # data = float(line.strip().split(" ")[-1])
+        # data = float(line.strip().split(" ")[0])
+        data = float(line.strip().split(" ")[dataidx])
+        if data > maxvalue:
+            data = maxvalue
         key = int(data / step)
         if key == 0:
             tmpdata = line.strip().split(" ")
@@ -323,8 +336,12 @@ def tongjiinfo():
             nannumber += 1
             continue
         key = int(key)
-        if key > 200:
-            continue
+        # if key > 200:
+        #     key = 200
+        # if key > 800:
+        #     key = 800
+        # if key > maxvalue:
+        #     key = maxvalue
         if key not in resultdata:
             resultdata[key] = 0
         resultdata[key] += 1
@@ -340,60 +357,184 @@ def tongjiinfo():
     plt.plot(keylist, valuelist, 'ro', label='Original data')
     plt.title('Label distribution')
     # plt.legend()
-    plt.savefig("/home/zoul15/pcshareddir/gnuresult/ml" + str(TRAINTURN) + str(TRAINALLIN) + "ev.png")
+    plt.savefig("/home/zoul15/pcshareddir/gnuresult/ml" + str(TRAINTURN) + str(TRAINALLIN) + pngidentity + ".png")
     plt.clf()
     for i in range(1, len(valuelist)):
         valuelist[i] += valuelist[i - 1]
     for i in range(0, len(valuelist)):
         valuelist[i] /= valuelist[- 1] * 1.0
-        print (i, ":", valuelist[i])
+        if dataidx==3:
+            print (i, ":", valuelist[i])
     # Plotting the Results
     plt.plot(keylist, valuelist, 'ro', label='Original data')
     plt.title('Label distribution')
     # plt.legend()
-    plt.savefig("/home/zoul15/pcshareddir/gnuresult/ml" + str(TRAINTURN) + str(TRAINALLIN) + "cdfev.png")
-    print ("nannumber:", nannumber)
-    print ("spenumber:", spenumber)
+    plt.savefig("/home/zoul15/pcshareddir/gnuresult/ml" + str(TRAINTURN) + str(TRAINALLIN) + "cdf" + pngidentity + ".png")
+    # print ("nannumber:", nannumber)
+    # print ("spenumber:", spenumber)
+
+class ErrorData:
+    def __init__(self, step, maxvalue):
+        self.m_error = 0.0
+        self.m_bindata = []
+        self.m_step = step
+        self.m_binsize = int(maxvalue / step)
+        for _ in range(self.m_binsize):
+            self.m_bindata.append([0, 0])
+        self.m_size = 0
+
+    def AddData(self, value, realvalue):
+        self.m_error += value
+        binnumber = int(realvalue / self.m_step)
+        if binnumber >= self.m_binsize:
+            binnumber = self.m_binsize - 1
+        self.m_bindata[binnumber][1] += 1
+        self.m_bindata[binnumber][0] += value
+        self.m_size += 1
+
+    def PrintData(self, msg):
+        print (msg)
+        print ("error:", self.m_error if self.m_error == 0 else self.m_error / abs(self.m_error) * math.sqrt(abs(self.m_error) / self.m_size))
+        print ("data size:", self.m_size)
+        for i in range(len(self.m_bindata)):
+            if self.m_bindata[i][1] != 0:
+                print (i * self.m_step, ":", abs(self.m_bindata[i][0]) / self.m_bindata[i][0] * math.sqrt(abs(self.m_bindata[i][0]) / self.m_bindata[i][1]))
+
+    def Plot(self, identifier):
+        keylist = range(len(self.m_bindata))
+        valuelist = []
+        for v in self.m_bindata:
+            if v[1]:
+                valuelist.append(abs(v[0]) / v[0] * math.sqrt(abs(v[0]) / v[1]))
+            else:
+                valuelist.append(0)
+        # valuelist = [math.sqrt(v[0] / v[1]) for v in self.m_bindata]
+        plt.plot(keylist, valuelist, 'ro', label='Original data')
+        plt.title('Label distribution')
+        # plt.legend()
+        plt.savefig(
+            "/home/zoul15/pcshareddir/gnuresult/ml" + str(TRAINTURN) + str(TRAINALLIN) + identifier + ".png")
 
 def testloadsavedmodel():
     from tensorflow.contrib import predictor
+    import math
 
-    predict_fn = predictor.from_saved_model("/home/zoul15/pcshareddir/rivermodel/1559839163/")
+    predict_fn = predictor.from_saved_model("/home/zoul15/pcshareddir/rivermodel/1593740822/")
     print("feed_tensors:\n", predict_fn.feed_tensors)
     print("\nkeys:\n", predict_fn.feed_tensors.keys())
     testfeature = []
-    testlabel = []
-    ifile = open(TRAINDATADIR+"test.csv")
+    # testlabel = []
+    ifile = open(TESTDATAFILE)
     idx = 0
+    # error = 0.0
+    # rawmseerror = 0.0
+    # mahatonerror = 0.0
+    # rawmahatonerror = 0.0
+    # bindata = []
+    # rawmse = []
+    # mahaton = []
+    # rawmahaton = []
+    # step = 0.01
+    # binsize = int(2.0/step)
+    # for i in range(binsize):
+    #     bindata.append([0, 0])
+    #     rawmse.append([0, 0])
+    #     mahaton.append([0, 0])
+    #     rawmahaton.append([0, 0])
+
+    mseobj = ErrorData(0.01, 2)
+    absmseobj = ErrorData(0.01, 2)
+    mahatonobj = ErrorData(0.01, 2)
+    absmahatonobj = ErrorData(0.01, 2)
     for line in ifile:
         idx += 1
-        if idx == 2:
-            break
+        # if idx == 300:
+        #     break
         data = line.strip().split(" ")
         data = [float(v) for v in data]
         testfeature.append(data[:-1])
-        testlabel.append(data[-1])
+        # testlabel.append(data[-1])
+
+        featuredict = {}
+        for i in range(len(data)-1):
+            featuredict[str(i)] = data[i]
+        # print(featuredict)
+
+        feature = {}
+        for k, v in featuredict.items():
+            feature[k] = tf.train.Feature(float_list=tf.train.FloatList(value=[v]))
+        model_input = tf.train.Example(features=tf.train.Features(feature=feature))
+        model_input = model_input.SerializeToString()
+
+        predictions = predict_fn({"inputs":[model_input,]})
+        # print (predictions["outputs"][0][0])
+        # print ("truth:", data[-1])
+        curerror = (predictions["outputs"][0][0] - data[-1])*(predictions["outputs"][0][0] - data[-1])
+        mseobj.AddData(curerror, data[-1])
+        currawmseerror = (predictions["outputs"][0][0] - data[-1])*abs(predictions["outputs"][0][0] - data[-1])
+        absmseobj.AddData(currawmseerror, data[-1])
+        curmahatonerror = abs(predictions["outputs"][0][0] - data[-1])
+        mahatonobj.AddData(curmahatonerror, data[-1])
+        if data[-1] < 0.01 and curmahatonerror > 0.1:
+            print(predictions["outputs"][0][0])
+            print(line)
+        currawmahatonerror = predictions["outputs"][0][0] - data[-1]
+        absmahatonobj.AddData(currawmahatonerror, data[-1])
+        # error += curerror
+        # rawmseerror += currawmseerror
+        # mahatonerror += curmahatonerror
+        # rawmahatonerror += currawmahatonerror
+        # binnumber = int(data[-1]/step)
+        # if binnumber >= binsize:
+        #     binnumber = binsize - 1
+        # bindata[binnumber][1] += 1
+        # bindata[binnumber][0] += curerror
+        # rawmse[binnumber][1] += 1
+        # rawmse[binnumber][0] += currawmseerror
+        # mahaton[binnumber][1] += 1
+        # mahaton[binnumber][0] += curmahatonerror
+        # rawmahaton[binnumber][1] += 1
+        # rawmahaton[binnumber][0] += currawmahatonerror
     ifile.close()
-    featuredict = {}
-    for i in range(len(testfeature[0])):
-        featuredict[str(i)] = []
-        for j in range(len(testfeature)):
-            featuredict[str(i)]= testfeature[j][i]
-    print(featuredict)
+    mseobj.PrintData("mse result:")
+    mseobj.Plot("mse_result")
+    absmseobj.PrintData("nonabs mse result:")
+    absmseobj.Plot("nonabs_mse_result")
+    mahatonobj.PrintData("mahaton result:")
+    mahatonobj.Plot("mahaton_result")
+    absmahatonobj.PrintData("nonabs mahaton result:")
+    absmahatonobj.Plot("nonabs_mahaton_result")
 
-    feature = {}
-    for k, v in featuredict.items():
-        feature[k] = tf.train.Feature(float_list=tf.train.FloatList(value=[v]))
-    model_input = tf.train.Example(features=tf.train.Features(feature=feature))
-    model_input = model_input.SerializeToString()
 
-    predictions = predict_fn({"inputs":[model_input,]})
-    # predictions = predict_fn({"inputs": testfeature})
-    print (predictions)
-    # predictions = predict_fn(
-    #     {"x": [[6.4, 3.2, 4.5, 1.5],
-    #            [5.8, 3.1, 5.0, 1.7]]})
-    # print(predictions['scores'])
+    # print ("error:", math.sqrt(error/idx))
+    # print ("data size:", idx)
+    # for i in range(len(bindata)):
+    #     if bindata[i][1] != 0:
+    #         print (i*step, ":", math.sqrt(bindata[i][0]/bindata[i][1]))
+    #
+    # keylist = range(len(bindata))
+    # valuelist = [math.sqrt(v[0]/v[1]) for v in bindata]
+    # plt.plot(keylist, valuelist, 'ro', label='Original data')
+    # plt.title('Label distribution')
+    # # plt.legend()
+    # plt.savefig(
+    #     "/home/zoul15/pcshareddir/gnuresult/ml" + str(TRAINTURN) + str(TRAINALLIN) + "msedistribution" + ".png")
+    #
+    #
+    # print ("error:", math.sqrt(error/idx))
+    # print ("data size:", idx)
+    # for i in range(len(bindata)):
+    #     if bindata[i][1] != 0:
+    #         print (i*step, ":", math.sqrt(bindata[i][0]/bindata[i][1]))
+    #
+    # keylist = range(len(bindata))
+    # valuelist = [math.sqrt(v[0]/v[1]) for v in bindata]
+    # plt.plot(keylist, valuelist, 'ro', label='Original data')
+    # plt.title('Label distribution')
+    # # plt.legend()
+    # plt.savefig(
+    #     "/home/zoul15/pcshareddir/gnuresult/ml" + str(TRAINTURN) + str(TRAINALLIN) + "msedistribution" + ".png")
+
 
 def testpipline():
     ifile = open(TRAINDATADIR + "test.csv")
@@ -455,11 +596,31 @@ def findtargetdata():
 if __name__ == "__main__":
     # testpipline()
     # testdata()
-    # tongjiinfo()
+
+    # typeone = [[1, "isopener"], [2, "hasopener"], [3, "relativetoopener"], [17, "hasflopraiser"], [18, "flopraiser"],
+    #            [19, "hasturnraiser"], [20, "turnraiser"]]
+    # typetwo = [[4, "turn"], [6, "remaintoact"], [7, "remainraiser"], [8, "preflopinitialpq"], [9, "flopinitialpq"],
+    #            [10, "turninitialpq"], [11, "riverinitialpq"]]
+    # typethree = [[12, "raiserstackvalue"], [13, "remainstackvalue"], [14, "preflopattackvalue"], [15, "currentattackvalue"],
+    #              [16, "afterflopattackvalue"]]
+    # featureinfo = [[1, 0, 800, "pot"], [0.01, -1, 2, "ev"], [0.1, 1, 10, "stackpotratio"], [0.05, 2, 1, "curwinrate"], [0.05, 3, 1, "hpvalue"],
+    #                [0.1, 4, 1, "relativepos"], [1, 5, 1, "cancheck"], [0.5, 6, 10, "odds"], ]
+    # for idx, identi in typeone:
+    #     featureinfo.append([1, idx + 6, 1, identi])
+    # for idx, identi in typetwo:
+    #     featureinfo.append([1, idx + 6, 10, identi])
+    # for idx, identi in typethree:
+    #     featureinfo.append([0.1, idx + 6, 10, identi])
+    # for idx in range(27, FEATURELEN):
+    #     featureinfo.append([0.1, idx, 10, "winrate_" + str(idx - 27)])
+    # for v in featureinfo:
+    #     print ("v:::::", v)
+    #     tongjiinfo(*v)
+
     # savedatatotfrecord(TRAINDATADIR+"train.csv")
 
     # train1()
-    findtargetdata()
-    # testloadsavedmodel()
+    # findtargetdata()
+    testloadsavedmodel()
     # tf.logging.set_verbosity(tf.logging.INFO)
     # tf.app.run(main=train)

@@ -17,7 +17,7 @@ LOGINCLT = "loginclt"
 
 # HANDSDB = "handsdb"
 # HANDSDB = "myhandsdb"
-HANDSDB = "testnewstraddlecltreedb"
+HANDSDB = "straddlecltreedb"
 # HANDSCLT = "handsclt"
 # HANDSCLT = "1054988"
 HANDSCLT = "111111"
