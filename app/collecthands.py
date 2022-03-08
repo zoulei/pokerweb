@@ -9,9 +9,12 @@ import json
 import os
 from werkzeug import secure_filename
 from urllib2 import urlopen
+import urllib2
 # from urllib.request import urlopen
 import time
 import traceback
+import requests
+from fake_useragent import UserAgent
 
 # For a given file, return whether it's an allowed type or not
 def allowed_file(filename):
@@ -351,27 +354,93 @@ def checkroom(club, room, identifier):
     DBOperater.ReplaceOne(Constant.HANDSDB, Constant.COLLECTCHECKROOM, {"_id":"onlyone"}, {"_id":"onlyone", "data":data}, True)
     return resultvalue
 
+def get_url_content(url):
+    ua = UserAgent()
+    i_headers = {
+        "User-Agent": str(ua.random)
+    }
+    response = requests.get(url, headers=i_headers, allow_redirects=False)
+    if 'Location' in response.headers:
+        proxyMeta = "http://6398bdb3f1ec4a079b57f48bc32b9556:@proxy.crawlera.com:8011/"
+        proxies = {"http": proxyMeta, "https": proxyMeta}
+        response = requests.get(url, headers=i_headers, proxies=proxies, verify="./zyte-smartproxy-ca.crt")
+        print len(response.content)
+        return response.content
+
+
+    # ua = UserAgent()
+    # i_headers = {
+    #     "User-Agent": str(ua.random)
+    # }
+    # response = requests.get(url, headers=i_headers, allow_redirects=False)
+    #
+    #
+    # proxyMeta = "http://6398bdb3f1ec4a079b57f48bc32b9556:@proxy.crawlera.com:8011/"
+    # proxies = {"http": proxyMeta, "https": proxyMeta}
+    # i_headers = {
+    #     "User-Agent": "Mozilla/5.0 (Windows; U; Windows NT 5.1; zh-CN; rv:1.9.1) Gecko/20090624 Firefox/3.5",
+    #     "Referer": 'https://www.google.com',
+    #     "X-Crawlera-cookies": "disable",
+    #     "accept-encoding": "gzip, deflate, br",
+    #     "X-Crawlera-Session": "create"}
+
+
+
+    # # opener = urllib2.build_opener(urllib2.ProxyHandler(proxies), urllib2.HTTPHandler(debuglevel=1))
+    # # urllib2.install_opener(opener)
+    # req = urllib2.Request(url, headers=i_headers)
+    # res = urllib2.urlopen(req, timeout=30, cafile="./zyte-smartproxy-ca.crt")
+    # print "status code : ", res.getcode()
+    # print "header : ", res.info()
+    # res_url = res.geturl()
+    # print "url : ", res_url
+    # res_content = res.read()
+    # print "res content lenght : ", len(res_content)
+    # return res_content
+
+# def get_url_content(url):
+#     res_context, res_url = get_url_content_(url)
+#     return res_context
+
 def uploadhandsurl(club, room, handsurl):
     room = str(room)
     handsurl = generateurl(handsurl)
     print "-------------==========:", handsurl
-    try:
-        htmldoc = urlopen(handsurl).read()
-        # print "======================"
-        # print "======================"
-        # print "======================"
-        # print htmldoc
-        # print "======================"
-        # print "======================"
-        # print "======================"
-    except:
-        return "2"
-    prefix = str("recordHelper.data = $.parseJSON('")
-    postfix = str("');")
-    # print("================:", type(htmldoc))
-    prefixidx = htmldoc.find(prefix)
-    postfixidx = htmldoc.find(postfix, prefixidx)
-    handsdatastr = htmldoc[prefixidx+len(prefix):postfixidx]
+    handsdatastr = ""
+    while True:
+        try:
+            htmldoc = get_url_content("http://" + handsurl)
+            # print htmldoc
+            # return htmldoc
+            # return "ddd"
+            # htmldoc = urlopen(handsurl).read()
+            # print "======================"
+            # print "======================"
+            # print "======================"
+            # print htmldoc
+            # print "======================"
+            # print "======================"
+            # print "======================"
+        except:
+            print "open url error"
+            traceback.print_exc()
+            return "2"
+        prefix = str("recordHelper.data = $.parseJSON('")
+        postfix = str("');")
+
+        # print("================:", type(htmldoc))
+        prefixidx = htmldoc.find(prefix)
+        postfixidx = htmldoc.find(postfix, prefixidx)
+        handsdatastr = htmldoc[prefixidx+len(prefix):postfixidx]
+        print "prefix : ", prefixidx, "\tpostfix : ", postfixidx
+        if prefixidx != -1 and postfixidx != -1:
+            print "success"
+            break
+        else:
+            print "htmldoc : ", htmldoc
+            # print "sleep"
+            # time.sleep(10)
+            return "3"
     # print "------handsdatastr:", handsdatastr
     try:
         # print ("======================", prefixidx)
@@ -382,10 +451,15 @@ def uploadhandsurl(club, room, handsurl):
         # print ("======================")
         # print ("======================")
         handsdata = json.loads(handsdatastr)
+        player_id_list = list()
+        for seat_data in handsdata["STAGE"]["TABLE"]["SEAT"]:
+            player_id_list.append(seat_data["ID"])
+        # urlopen("http://{}/update_player_id/{}".format(Constant.REALTIMESERVERHOST, "_".join(player_id_list)))
         handsdata = ReconstructHandsdata(handsdata).getrawhanddatastruct()
         handsdata["rawstr"] = handsdatastr
     except:
         traceback.print_exc()
+        print "error"
         return "2"
     DBOperater.ReplaceOne(Constant.HANDSDB, str(club), {"_id": handsdata["_id"]}, handsdata, True)
     handsidx = int(handsdata["_id"].split(" ")[-1])
@@ -403,11 +477,13 @@ def uploadhandsurl(club, room, handsurl):
         data[room] = {"time": time.time(), "hands": []}
     if handsidx == 1 or handsidx - 1 in data[room]["hands"]:
     # if handsidx in data[room]["hands"]:
+        print "finish"
         return "2"
     else:
         data[room]["hands"].append(handsidx)
         DBOperater.ReplaceOne(Constant.HANDSDB, Constant.COLLECTINFOCLT, {"_id": "onlyone"},
                               {"_id": "onlyone", "data": data}, True)
+        print "insert success"
         return "1"
 
 def fetchjoinedroom():
@@ -479,4 +555,5 @@ def reconstructallhands():
 
 
 if __name__ == "__main__":
-    reconstructallhands()
+    get_url_content()
+    # reconstructallhands()

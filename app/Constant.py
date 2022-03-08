@@ -2,6 +2,7 @@
 # MONGOHOST = '192.168.66.1'
 # MONGOHOST = "data3,data2,data1"
 MONGOHOST = "192.168.0.11"
+REALTIMESERVERHOST = "192.168.0.11"
 
 # MONGOHOST = "39.98.238.20"
 # MONGOHOST = 'localhost'
@@ -119,8 +120,34 @@ TRAINALLIN = False
 CACHEDIR = "/home/zoul15/pcshareddir/"
 TRAINDATADIR  = CACHEDIR + "TRAINDATADIR/" + str(TRAINTURN) + "/"
 TRAINDATAFILE = TRAINDATADIR + "randomtrain" + ("allin" if TRAINALLIN else "") + ".csv"
+NORMALIZEDTRAINDATAFILE = TRAINDATADIR + "normalizedrandomtrain" + ("allin" if TRAINALLIN else "") + ".csv"
+COMBINEDTRAINDATAFILE = TRAINDATADIR + "combinedrandomtrain" + ("allin" if TRAINALLIN else "") + ".csv"
+def get_combined_train_data_file(step):
+    return COMBINEDTRAINDATAFILE + "_" + str(step)
+def get_normalized_train_data_file(step):
+    return NORMALIZEDTRAINDATAFILE + "_" + str(step)
+
 TESTDATAFILE = TRAINDATADIR + "test" + ("allin" if TRAINALLIN else "") + ".csv"
-REGRESSORDIR = CACHEDIR + "regressor/" + str(TRAINTURN) + ("allin" if TRAINALLIN else "") + "/"
+NORMALIZEDTESTDATAFILE = TRAINDATADIR + "normalizedtest" + ("allin" if TRAINALLIN else "") + ".csv"
+COMBINEDTESTDATAFILE = TRAINDATADIR + "combinedtest" + ("allin" if TRAINALLIN else "") + ".csv"
+def get_combined_test_data_file(step):
+    return COMBINEDTESTDATAFILE + "_" + str(step)
+def get_normalized_test_data_file(step):
+    return NORMALIZEDTESTDATAFILE + "_" + str(step)
+
+REGRESSORDIR = CACHEDIR + "regressor_combined/" + str(TRAINTURN) + ("allin" if TRAINALLIN else "") + "/"
+def get_regressor_dir(step, layer):
+    return CACHEDIR + "regressor_{}_{}/".format(str(step), "_".join([str(v) for v in layer])) + str(TRAINTURN) + ("allin" if TRAINALLIN else "") + "/"
+
+
+def get_train_data_schema_file(step=0):
+    if step==0:
+        return "data/train_data_schema"
+    else:
+        return "data/train_data_schema_{}".format(step)
+
+# REGRESSORDIR = CACHEDIR + "regressor_250/" + str(TRAINTURN) + ("allin" if TRAINALLIN else "") + "/"
+# REGRESSORDIR = CACHEDIR + "regressor_three_layer/" + str(TRAINTURN) + ("allin" if TRAINALLIN else "") + "/"
 SUBMITTASKDIR = CACHEDIR + "submittask/"
 TEMPSUBMITTASKDIR = CACHEDIR + "tmpsubmittask/"
 TASKRESULTDIR = CACHEDIR + "taskresult/"
