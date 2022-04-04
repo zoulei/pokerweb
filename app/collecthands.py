@@ -15,6 +15,8 @@ import time
 import traceback
 import requests
 from fake_useragent import UserAgent
+from requests.auth import HTTPBasicAuth
+import socket
 
 # For a given file, return whether it's an allowed type or not
 def allowed_file(filename):
@@ -354,53 +356,59 @@ def checkroom(club, room, identifier):
     DBOperater.ReplaceOne(Constant.HANDSDB, Constant.COLLECTCHECKROOM, {"_id":"onlyone"}, {"_id":"onlyone", "data":data}, True)
     return resultvalue
 
-def get_url_content(url):
-    ua = UserAgent()
-    i_headers = {
-        "User-Agent": str(ua.random)
-    }
-    response = requests.get(url, headers=i_headers, allow_redirects=False)
-    if 'Location' in response.headers:
+class Crawler:
+    def __init__(self):
+        self.create_sessions()
+
+    # def __del__(self):
+    #     self.delete_sessions()
+
+    def create_sessions(self):
+        resopnse = requests.post("http://proxy.zyte.com:8011/sessions/", auth=HTTPBasicAuth('6398bdb3f1ec4a079b57f48bc32b9556', ''))
+        print "===create session : ", resopnse.headers
+        self.m_session = resopnse.headers["X-Crawlera-Session"]
+
+    def delete_sessions(self):
+        requests.delete('http://proxy.zyte.com:8011/sessions/' + self.m_session, auth=HTTPBasicAuth('6398bdb3f1ec4a079b57f48bc32b9556', ''))
+
+    def get_real_url(self, url):
+        ua = UserAgent()
+        i_headers = {
+            "User-Agent": str(ua.random),
+        }
+        print "get redirect url"
+        response = requests.get(url, headers=i_headers, allow_redirects=False, timeout=30)
+        print "get redirect url finish"
+        print response.headers
+        if 'Location' in response.headers:
+            return response.headers["Location"]
+        else:
+            return self.get_real_url(url)
+
+    def get_url_content(self, url):
+        # url = self.get_real_url(url)
+        ua = UserAgent()
+        i_headers = {
+            "User-Agent": str(ua.random),
+            "X-Crawlera-cookies": "disable",
+            "accept-encoding": "gzip, deflate, br",
+            "X-Crawlera-Session": self.m_session
+        }
         proxyMeta = "http://6398bdb3f1ec4a079b57f48bc32b9556:@proxy.crawlera.com:8011/"
         proxies = {"http": proxyMeta, "https": proxyMeta}
-        response = requests.get(url, headers=i_headers, proxies=proxies, verify="./zyte-smartproxy-ca.crt")
-        print len(response.content)
-        return response.content
+        # response = requests.get(url, headers=i_headers, proxies=proxies, verify="./zyte-smartproxy-ca.crt")
+        response = requests.get(url, headers=i_headers)
+        print "length : ", len(response.content)
+        length = len(response.content)
+        if length <= 1000:
+            self.delete_sessions()
+            self.create_sessions()
+            print response.content
+            return self.get_url_content(url)
+        else:
+            return response.content
 
-
-    # ua = UserAgent()
-    # i_headers = {
-    #     "User-Agent": str(ua.random)
-    # }
-    # response = requests.get(url, headers=i_headers, allow_redirects=False)
-    #
-    #
-    # proxyMeta = "http://6398bdb3f1ec4a079b57f48bc32b9556:@proxy.crawlera.com:8011/"
-    # proxies = {"http": proxyMeta, "https": proxyMeta}
-    # i_headers = {
-    #     "User-Agent": "Mozilla/5.0 (Windows; U; Windows NT 5.1; zh-CN; rv:1.9.1) Gecko/20090624 Firefox/3.5",
-    #     "Referer": 'https://www.google.com',
-    #     "X-Crawlera-cookies": "disable",
-    #     "accept-encoding": "gzip, deflate, br",
-    #     "X-Crawlera-Session": "create"}
-
-
-
-    # # opener = urllib2.build_opener(urllib2.ProxyHandler(proxies), urllib2.HTTPHandler(debuglevel=1))
-    # # urllib2.install_opener(opener)
-    # req = urllib2.Request(url, headers=i_headers)
-    # res = urllib2.urlopen(req, timeout=30, cafile="./zyte-smartproxy-ca.crt")
-    # print "status code : ", res.getcode()
-    # print "header : ", res.info()
-    # res_url = res.geturl()
-    # print "url : ", res_url
-    # res_content = res.read()
-    # print "res content lenght : ", len(res_content)
-    # return res_content
-
-# def get_url_content(url):
-#     res_context, res_url = get_url_content_(url)
-#     return res_context
+crawler = Crawler()
 
 def uploadhandsurl(club, room, handsurl):
     room = str(room)
@@ -409,7 +417,7 @@ def uploadhandsurl(club, room, handsurl):
     handsdatastr = ""
     while True:
         try:
-            htmldoc = get_url_content("http://" + handsurl)
+            htmldoc = crawler.get_url_content("http://" + handsurl)
             # print htmldoc
             # return htmldoc
             # return "ddd"
@@ -553,7 +561,35 @@ def reconstructallhands():
         handsdata["rawstr"] = handsdatastr
         DBOperater.ReplaceOne(Constant.HANDSDB,Constant.HANDSCLT,{"_id":doc["_id"]},handsdata)
 
+class SocketServer:
+    def __init__(self):
+        ip_port = ("192.168.0.21", 9998)
+        web = socket.socket()
+        web.bind(ip_port)
+        web.listen(5)
+        while True:
+            print "wati for accept"
+            conn, addr = web.accept()
+            print "wati for data"
+            data = conn.recv(1024)
+            print "data : ", data + "123"
+
+            response = requests.get(data.strip(), timeout=1800)
+            print "response : ", response.content
+            print "header : ", response.headers
+
+            # data = data.split("/")
+            print data[-3], data[-2], data[-1]
+            # conn.send(bytes(uploadhandsurl(data[-3], data[-2], data[-1])))
+            conn.send(bytes(response.content))
+            # import time
+            # time.sleep(20)
+            # conn.send(bytes("1"))
+            conn.close()
+
 
 if __name__ == "__main__":
-    get_url_content()
+    # response = requests.get(bytes("http://192.168.0.21:8080/init/8_2_1_0S0S_5_0_424_303_809_329_143_559_0_596_369_0_0_0_0_0_0_0_0_0_0"), timeout=30)
+    # print "response : ", response.content
+    SocketServer()
     # reconstructallhands()
