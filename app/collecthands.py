@@ -408,7 +408,7 @@ class Crawler:
         else:
             return response.content
 
-crawler = Crawler()
+# crawler = Crawler()
 
 def uploadhandsurl(club, room, handsurl):
     room = str(room)
