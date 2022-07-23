@@ -7,7 +7,6 @@ import Constant
 import datetime
 import json
 import os
-from werkzeug import secure_filename
 from urllib2 import urlopen
 import urllib2
 # from urllib.request import urlopen
@@ -17,24 +16,14 @@ import requests
 from fake_useragent import UserAgent
 from requests.auth import HTTPBasicAuth
 import socket
+import threading
 
 # For a given file, return whether it's an allowed type or not
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in Constant.ALLOWED_EXTENSIONS
 
-def uploadNameImg(request):
-    # Get the name of the uploaded file
-    filelist = request.files.getlist("file[]")
-    # Check if the file is one of the allowed types/extensions
-    for file in filelist:
-        if file and allowed_file(file.filename):
-            # Make the filename safe, remove unsupported chars
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(Constant.UPLOAD_FOLDER, filename))
-        else:
-            return "0"
-    return "1"
+
 
 def uploadHandsInfo(request):
     contents = request.get_json(silent=True)
@@ -560,6 +549,26 @@ def reconstructallhands():
         handsdata = ReconstructHandsdata(handsdata).getrawhanddatastruct()
         handsdata["rawstr"] = handsdatastr
         DBOperater.ReplaceOne(Constant.HANDSDB,Constant.HANDSCLT,{"_id":doc["_id"]},handsdata)
+
+static_joined_room = dict()
+
+def enterroom(roomid):
+    mutex = threading.Lock()
+    mutex.acquire()
+    if roomid in static_joined_room and and time.time() - static_joined_room[roomid] < 3600 * 24:
+        mutex.release()
+        return "2"
+    else:
+        static_joined_room[roomid] = time.time()
+        mutex.release()
+        return "1"
+
+def exitroom(roomid):
+    mutex = threading.Lock()
+    mutex.acquire()
+    del static_joined_room[roomid]
+    mutex.release()
+    return "1"
 
 class SocketServer:
     def __init__(self):

@@ -64,9 +64,6 @@ def index():
     #return render_template('index.html')
 
 # Route that will process the file upload
-@app.route('/upload', methods=['POST'])
-def upload():
-    return collecthands.uploadNameImg(request)
 
 @app.route('/uploadhandsinfo', methods=["POST"])
 def uploadhandsinfo():
@@ -119,6 +116,14 @@ def fetchuploadsuccess():
 @app.route('/cleanroom/')
 def cleanroom():
     return collecthands.cleanroom()
+
+@app.route('/exitroom/<int:roomid>')
+def exitroom(roomid):
+    return collecthands.exitroom(roomid)
+
+@app.route('/enterroom/<int:roomid>')
+def enterroom(roomid):
+    return collecthands.enterroom(roomid)
 
 if __name__ == '__main__':
     #logging.info("start server")
