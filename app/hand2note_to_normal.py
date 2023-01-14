@@ -24,14 +24,14 @@ class HandsTransformer:
         while True:
             line = ifile.readline()
             if not line:
-                return 2
+                return None
             if line.startswith("PokerStars"):
                 result = re.match("PokerStars Hand.*\(¥(.*)/¥.* - (.*) UTC", line)
                 bb = 2 * int(result.group(1))
                 time_str = result.group(2)
                 if bb != self.m_bb:
                     print "bb is not equal to target bb, bb : ", bb
-                    return 3
+                    return None
                 break
         first_line = line
         line = ifile.readline()
@@ -81,7 +81,7 @@ class HandsTransformer:
             print "straddle player id is 0"
             print line
             print first_line
-            return
+            return None
         stack = [0] * 10
         for seat, player_id, chips in player_info:
             stack[player_id_to_pos[player_id]] = float(chips)
@@ -189,21 +189,21 @@ class HandsTransformer:
         hands_json["data"]["ante"] = self.m_ante
         hands_json["data"]["ID"] = id_list
         hands_json["data"]["BOARD"] = board
-        # if "2022/06/21 1:35:15 75988" == time_str + " " + str(hands_idx):
-        #     exit(0)
+        return hands_json
 
-        # import pprint
-        # pprint.pprint(hands_json)
-        # exit(0)
-        DBOperater.ReplaceOne(Constant.HANDSDB, "flh", {"_id": time_str + " " + str(hands_idx)}, hands_json, True)
-        return 0
+    def write_to_db(self, hands_json):
+        DBOperater.ReplaceOne(Constant.HANDSDB, "flh", {"_id": hands_json["_id"]}, hands_json, True)
 
     def process_all(self, fname):
         print "fname : ", fname
         ifile = open(fname)
-        while self.process_one_hand(ifile, self.m_idx) == 0:
-            self.m_idx += 1
-            # break
+        while True:
+            hands_json = self.process_one_hand(ifile, self.m_idx)
+            if hands_json:
+                self.m_idx += 1
+                self.write_to_db(hands_json)
+            else:
+                break
         print "finish"
 
     def process_directory(self, dir_name):
