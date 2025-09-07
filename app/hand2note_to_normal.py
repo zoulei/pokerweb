@@ -4,6 +4,7 @@ import pprint
 import os
 import DBOperater
 import Constant
+import time
 
 class HandsTransformer:
     ACTION_MAP = {
@@ -20,19 +21,39 @@ class HandsTransformer:
         self.m_straddle = straddle
         self.m_idx = 1
 
-    def process_one_hand(self, ifile, hands_idx):
+    def process_one_hand(self, ifile, hands_idx, start_hands_idx):
+        # print ("=======", hands_idx, start_hands_idx)
         while True:
             line = ifile.readline()
+            # print(line)
             if not line:
+                # print ("=======efef")
                 return None
+            line = line.strip()
             if line.startswith("PokerStars"):
+                # print(repr(line))
                 result = re.match("PokerStars Hand.*\(¥(.*)/¥.* - (.*) UTC", line)
-                bb = 2 * int(result.group(1))
+                # result = re.match(r"PokerStars Hand.*\(\¥(\d+)/\¥\d+ RMB\) - (.*?) UTC", line)
+                # print (line)
+                # print (result)
+                bb = 2 * float(result.group(1))
                 time_str = result.group(2)
-                if bb != self.m_bb:
-                    print "bb is not equal to target bb, bb : ", bb
+                if bb == 100:
+                    self.m_bb = 100
+                    self.m_ante = 50
+                elif bb == 1:
+                    self.m_bb = 1
+                    self.m_ante = 0.5
+                else:
+                    print ("bb is not equal to target bb, bb : ", bb, self.m_bb)
                     return None
-                break
+                if start_hands_idx == 0:
+                    break
+                else:
+                    start_hands_idx -= 1
+                # print ("0000:", start_hands_idx)
+        # print("09-90-0==")
+                
         first_line = line
         line = ifile.readline()
         result = re.match(".*#([1-9]) is the button.*", line)
@@ -50,6 +71,8 @@ class HandsTransformer:
                 player_info.append([seat, player_id, chips])
             else:
                 break
+        if len(player_info) <= 2:
+            return
         while True:
             line = ifile.readline()
             if line.startswith("*** HOLE CARDS ***"):
@@ -77,16 +100,18 @@ class HandsTransformer:
                 bb_player_id = player_id
             elif player_id_to_pos[player_id] == player_quantity - 2:
                 straddle_player_id = player_id
+        # print ("===-----=")
         if straddle_player_id == 0:
-            print "straddle player id is 0"
-            print line
-            print first_line
+            print ("straddle player id is 0")
+            print (line)
+            print (first_line)
             return None
         stack = [0] * 10
         for seat, player_id, chips in player_info:
             stack[player_id_to_pos[player_id]] = float(chips)
-
+        # print ("=====")
         board = ""
+        my_hands = ""
         turn_actions = {}
         while True:
             # print "deal turn : ", line
@@ -148,11 +173,14 @@ class HandsTransformer:
                         curent_turn_actions.append([player_id_to_pos[player_id], self.ACTION_MAP[action], round(value, 2)])
                         break
                     elif "Dealt to" in line:
+                        result = re.match(".*\[(.*)\].*", line)
+                        my_hands = result.group(1)
                         break
                 else:
                     # print "????????????uuuu"
                     break
             board = board.replace("A", "1")
+            my_hands = my_hands.replace("A", "1")
             if curent_turn_actions:
                 turn_actions[turn_str] = curent_turn_actions
             # line = ifile.readline().strip()
@@ -189,22 +217,54 @@ class HandsTransformer:
         hands_json["data"]["ante"] = self.m_ante
         hands_json["data"]["ID"] = id_list
         hands_json["data"]["BOARD"] = board
+        if my_hands:
+            hands_json["data"]["MYCARD"] = my_hands
         return hands_json
 
     def write_to_db(self, hands_json):
-        DBOperater.ReplaceOne(Constant.HANDSDB, "flh", {"_id": hands_json["_id"]}, hands_json, True)
+        DBOperater.ReplaceOne(Constant.HANDSDB, Constant.ONLINECLT, {"_id": hands_json["_id"]}, hands_json, True)
+
+    def continue_process_file(self, fname):
+        ifile = open(fname,encoding="utf-8")
+        first_start = self.m_idx
+        while True:
+            hands_json = self.process_one_hand(ifile, self.m_idx, first_start)
+            if hands_json:
+                self.m_idx += 1
+                self.write_to_db(hands_json)
+                first_start = 0
+                # print (hands_json["_id"])
+            else:
+                break
+        print (fname, self.m_idx)
+
+    def online_process_thread(self, dir_fname):
+        last_fname = None
+        while True:
+            files = [(f, os.path.getmtime(os.path.join(dir_fname, f))) for f in os.listdir(dir_fname)]
+            files.sort(key=lambda x: x[1], reverse=True)
+            if not files:
+                continue
+            cur_fname = files[0][0]
+            if cur_fname != last_fname:
+                self.m_idx = 0
+                last_fname = cur_fname
+            # print (dir_fname, cur_fname)
+            self.continue_process_file(os.path.join(dir_fname,cur_fname))
+            time.sleep(10)
+
 
     def process_all(self, fname):
-        print "fname : ", fname
-        ifile = open(fname)
+        print ("fname : ", fname)
+        ifile = open(fname, encoding='utf-8')
         while True:
-            hands_json = self.process_one_hand(ifile, self.m_idx)
+            hands_json = self.process_one_hand(ifile, self.m_idx, 0)
             if hands_json:
                 self.m_idx += 1
                 self.write_to_db(hands_json)
             else:
                 break
-        print "finish"
+        print ("finish")
 
     def process_directory(self, dir_name):
         files = os.listdir(dir_name)
@@ -212,14 +272,16 @@ class HandsTransformer:
             # if "2022_6_20" not in fname:
             #     continue
             self.process_all(dir_name + "/" + fname)
-        print "m_idx : ", self.m_idx
-        print "file number : ", len(files)
+        print ("m_idx : ", self.m_idx)
+        print ("file number : ", len(files))
 
-def test():
-    transformer = HandsTransformer(2, 1, True)
-    # transformer.process_all("C:\Hand2NoteHh\PokerMaster\PokerMaster_2022_6_21_PMS_87792185.txt")
-    # transformer.process_directory("C:\Hand2NoteHh\PokerMaster")
-    transformer.process_directory("/home/zoul15/pcshareddir/download/PokerMaster")
+def online_process():
+    transformer = HandsTransformer(100, 50, True)
+    transformer.online_process_thread("C:\Hand2NoteHh\PokerMaster")
+
+def batch_process():
+    transformer = HandsTransformer(100, 50, True)
+    transformer.process_directory("C:\Hand2NoteHh\PokerMaster")
 
 if __name__ == "__main__":
-    test()
+    batch_process()

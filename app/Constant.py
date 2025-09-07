@@ -1,7 +1,7 @@
 # MONGOHOST = '192.168.112.111'
 # MONGOHOST = '192.168.66.1'
 # MONGOHOST = "data3,data2,data1"
-MONGOHOST = "192.168.0.11"
+MONGOHOST = "192.168.1.7"
 REALTIMESERVERHOST = "192.168.0.11"
 
 # MONGOHOST = "39.98.238.20"
@@ -22,6 +22,7 @@ HANDSDB = "straddlecltreedb"
 # HANDSCLT = "handsclt"
 # HANDSCLT = "1054988"
 HANDSCLT = "111111"
+ONLINECLT = "online_111111"
 COLLECTINFOCLT = "collectinfo"
 COLLECTCHECKROOM = "collectcheckroom"
 # STATEINFOHANDSCLT = "stateinfohandsclt"

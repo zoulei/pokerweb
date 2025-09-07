@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="b2625968-71f7-4219-a833-8d3e097542b6" name="cpu3.cluster.peidan.me" url="http://cpu3.cluster.peidan.me">
+        <fileTransfer host="cpu3.cluster.peidan.me" port="22" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+      <webServer id="cbb8ca29-a50a-471b-8573-cd4c3f204413" name="cpu0" url="http://192.168.0.11">
+        <fileTransfer host="192.168.0.11" port="22" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+      <webServer id="b2e1c00f-096e-4747-8b6f-055df07ea122" name="aliyun" url="http://39.98.135.31">
+        <fileTransfer host="39.98.135.31" port="22" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
