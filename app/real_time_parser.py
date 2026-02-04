@@ -15,6 +15,7 @@ import glob
 import json
 import datetime
 from typing import Optional, Dict, Any, List, Tuple
+from decimal import Decimal
 
 # ================ 配置 ================
 LOG_DIR = r"C:\Program Files\Hand2Note 4.1\logs"
@@ -26,7 +27,7 @@ HEARTBEAT_SEC = 10
 DEBUG = False
 
 USE_HTTP = True
-SERVER_BASE_URL = "http://192.168.1.7:8080"
+SERVER_BASE_URL = "http://192.168.5.7:8080"
 INIT_PATH   = "/init"
 UPDATE_PATH = "/update"
 NEWBOARD_PATH = "/newboard"
@@ -47,10 +48,19 @@ RE_HAND_START_HEAD = re.compile(
 )
 RE_JSON_BLOCK = re.compile(r'\{.*\}', re.DOTALL)
 
+# RE_ACTION = re.compile(
+#     rf'{DISPATCH_RE}\s+Dynamic Message:\s*ActionMessage:\s*Seat\s*#(?P<SeatNumber>\d+):\s*'
+#     r'(?P<Action>CHECK|CALL|BET|RAISE|FOLD|ALL-?IN|CHECKS?|CALLS?|BETS?|RAISES?|FOLDS?)'
+#     r'(?:\s+(?P<Amount>-?\d+))?'
+#     r'(?:\s*,?\s*)'
+#     r'.*?gameNumber\s*=\s*(?P<GameNumber>\d+)\s*,\s*windowId\s*=\s*(?P<WindowId>\d+)',
+#     re.IGNORECASE | re.DOTALL
+# )
+
 RE_ACTION = re.compile(
     rf'{DISPATCH_RE}\s+Dynamic Message:\s*ActionMessage:\s*Seat\s*#(?P<SeatNumber>\d+):\s*'
     r'(?P<Action>CHECK|CALL|BET|RAISE|FOLD|ALL-?IN|CHECKS?|CALLS?|BETS?|RAISES?|FOLDS?)'
-    r'(?:\s+(?P<Amount>-?\d+))?'
+    r'(?:\s+(?P<Amount>-?\d+(?:[.,]\d+)?))?'
     r'(?:\s*,?\s*)'
     r'.*?gameNumber\s*=\s*(?P<GameNumber>\d+)\s*,\s*windowId\s*=\s*(?P<WindowId>\d+)',
     re.IGNORECASE | re.DOTALL
@@ -178,19 +188,30 @@ def parse_hand_start(text: str) -> Optional[Dict[str, Any]]:
     STD_POS_MAPS[key] = build_stdpos_map(payload)
     return payload
 
+def _parse_amount_decimal(amount: Optional[str]) -> Decimal:
+    """解析金额为 Decimal，支持 7 / 7.5 / 7,5 / -1.25；失败返回 0"""
+    if not amount:
+        return Decimal("0")
+    s = amount.strip().replace(",", ".")
+    try:
+        return Decimal(s)
+    except InvalidOperation:
+        return Decimal("0")
+
 def parse_action(text: str) -> Optional[Dict[str, Any]]:
     m = RE_ACTION.search(text)
     if not m:
         return None
     action = _normalize_action(m.group("Action"))
     amount = m.group("Amount")
+    print ("========:", amount)
     payload = {
         "Type": "Action",
         "GameNumber": int(m.group("GameNumber")),
         "WindowId": int(m.group("WindowId")),
         "SeatNumber": int(m.group("SeatNumber")),
         "Action": action,
-        "Amount": int(amount) if amount and amount.lstrip("-").isdigit() else 0
+        "Amount": float(amount) if amount else 0
     }
     return payload
 
@@ -279,8 +300,8 @@ def to_init_payload(msg: Dict[str, Any]) -> Dict[str, Any]:
 
     table = msg.get("Table")
     stakes = table.get("Stakes") or {}
-    bb = int(stakes.get("BigBlind") or 0)
-    anti = int(stakes.get("Ante") or 0)
+    bb = float(stakes.get("BigBlind") or 0)
+    anti = float(stakes.get("Ante") or 0)
 
     key = (msg.get("GameNumber"), msg.get("WindowId"))
     stdmap = STD_POS_MAPS.get(key, {})
